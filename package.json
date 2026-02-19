@@ -1,0 +1,12 @@
+{
+  "name": "visual-explainer",
+  "version": "0.1.0",
+  "pi": {
+    "skills": [
+      "./SKILL.md"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}

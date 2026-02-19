@@ -28,25 +28,35 @@ Tables are worse. Ask the agent to compare 15 requirements against a plan and yo
 
 ## Install
 
-The skill follows the [Agent Skills specification](https://agentskills.io/specification). Clone it into your agent's skills directory:
+The skill follows the [Agent Skills specification](https://agentskills.io/specification).
+
+For Pi (recommended), install it as a package:
 
 ```bash
-# Pi
-git clone https://github.com/nicobailon/visual-explainer.git ~/.pi/agent/skills/visual-explainer
+# Persistent install
+pi install git:github.com/nicobailon/visual-explainer
 
-# Claude Code
-git clone https://github.com/nicobailon/visual-explainer.git ~/.claude/skills/visual-explainer
-
-# Other agents — point at the directory containing SKILL.md,
-# or paste its contents into your system prompt
+# One-off run for the current session
+pi -e git:github.com/nicobailon/visual-explainer
 ```
 
-For Pi, restart after cloning. To get the slash commands (`/diff-review`, `/plan-review`, etc.), copy the prompt templates and install the [pi-prompt-template-model](https://github.com/nicobailon/pi-prompt-template-model) extension:
+This package includes both the skill and prompt templates, so commands like `/diff-review` and `/plan-review` are available without manually copying prompts.
+
+Legacy Pi setup (still supported):
 
 ```bash
+git clone https://github.com/nicobailon/visual-explainer.git ~/.pi/agent/skills/visual-explainer
 cp ~/.pi/agent/skills/visual-explainer/prompts/*.md ~/.pi/agent/prompts/
 pi install npm:pi-prompt-template-model
 ```
+
+For Claude Code:
+
+```bash
+git clone https://github.com/nicobailon/visual-explainer.git ~/.claude/skills/visual-explainer
+```
+
+For other agents, point at the directory containing `SKILL.md`, or paste its contents into your system prompt.
 
 If you have [surf-cli](https://github.com/nicobailon/surf-cli) installed, the skill can also generate illustrations via Gemini Nano Banana Pro and embed them in pages. The agent detects surf automatically and skips image generation if it's not there.
 
