@@ -264,7 +264,7 @@ Always validate the final path stays within `~/.agent/diagrams/`. Never accept u
 const userInput = "../../etc/passwd"; // Malicious input
 const safeName = sanitizeFilename(userInput); // Results in: "etc-passwd.html"
 const fullPath = `${process.env.HOME}/.agent/diagrams/${safeName}`;
-// Validates to: /Users/username/.agent/diagrams/etc-passwd.html
+// Validates to: $HOME/.agent/diagrams/etc-passwd.html
 ```
 
 ### Content Security Policy
