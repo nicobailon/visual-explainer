@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src https://cdn.jsdelivr.net;">
 <title>CI/CD Pipeline — Reference Template</title>
 <!--
   Reference template for the visual-explainer skill: Mermaid diagrams.
@@ -341,6 +342,8 @@
 </div>
 
 <script type="module">
+  // Note: SRI integrity checks not available for ESM dynamic imports (browser limitation)
+  // CDN version is pinned to @11 for consistency
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs';
 
