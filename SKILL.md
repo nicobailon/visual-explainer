@@ -199,6 +199,7 @@ Every diagram is a single self-contained `.html` file. No external assets except
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com;">
   <title>Descriptive Title</title>
   <link href="https://fonts.googleapis.com/css2?family=...&display=swap" rel="stylesheet">
   <style>
@@ -212,6 +213,88 @@ Every diagram is a single self-contained `.html` file. No external assets except
 </body>
 </html>
 ```
+
+## Security: Input Sanitization
+
+All dynamic content inserted into generated HTML must be properly escaped to prevent XSS vulnerabilities. HTML files are opened directly in browsers, making them potential attack vectors if they render untrusted input.
+
+### HTML Escaping
+
+Git commit messages, file contents, user input, and any dynamic data must be HTML-escaped before insertion:
+
+```javascript
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+```
+
+**Apply to:**
+- Commit messages in diff-review diagrams
+- File contents in code snippet displays
+- Mermaid diagram labels containing user input
+- Table cells with dynamic data
+- Any text derived from file paths, git output, or user-provided content
+
+**Exception:** Pre-validated safe content like hardcoded labels, CSS color values, and numeric data from trusted sources. When in doubt, escape.
+
+### Path Sanitization
+
+Output filenames must be sanitized to prevent path traversal attacks:
+
+```javascript
+function sanitizeFilename(name) {
+  return name
+    .replace(/[^a-zA-Z0-9-_]/g, '-')  // Replace unsafe chars with hyphens
+    .replace(/\.\.+/g, '')              // Remove directory traversal sequences
+    .replace(/^-+|-+$/g, '')            // Trim leading/trailing hyphens
+    .substring(0, 100)                  // Limit length
+    + '.html';
+}
+```
+
+Always validate the final path stays within `~/.agent/diagrams/`. Never accept user-provided paths directly.
+
+**Example safe usage:**
+```javascript
+const userInput = "../../etc/passwd"; // Malicious input
+const safeName = sanitizeFilename(userInput); // Results in: "etc-passwd.html"
+const fullPath = `${process.env.HOME}/.agent/diagrams/${safeName}`;
+// Validates to: /Users/username/.agent/diagrams/etc-passwd.html
+```
+
+### Content Security Policy
+
+All generated HTML files include a CSP meta tag to restrict script sources and prevent injection attacks:
+
+```html
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; 
+               style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; 
+               font-src https://fonts.gstatic.com;">
+```
+
+This policy:
+- Allows scripts only from the same origin, jsDelivr CDN, and inline scripts
+- Allows styles from the same origin, Google Fonts, and inline styles
+- Allows fonts only from Google Fonts CDN
+- Blocks all other external resources by default
+
+**Note on 'unsafe-inline':** Required for inline `<style>` and `<script>` blocks in self-contained HTML files. Mitigated by the fact that agents control all inline content generation.
+
+### CDN Security Considerations
+
+**Subresource Integrity (SRI):** ESM dynamic imports (e.g., Mermaid libraries) do not support integrity attributes due to browser limitations. To mitigate CDN compromise risk:
+- Pin CDN URLs to specific major versions (e.g., `@11` not `@latest`)
+- Use well-established CDNs (jsDelivr, Google Fonts)
+- Document the CDN limitation in generated files
+
+**Google Fonts SRI limitation:** Google Fonts CSS files are dynamically generated per user-agent and update over time, making SRI hashes infeasible. Consider self-hosting fonts for maximum security in sensitive environments.
 
 ## Quality Checks
 

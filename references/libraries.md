@@ -2,6 +2,15 @@
 
 Optional CDN libraries for cases where pure CSS/HTML isn't enough. Only include what the diagram actually needs — most diagrams need zero external JS.
 
+## Security Note: CDN Resources
+
+**Subresource Integrity (SRI) limitation:** ESM dynamic imports (used for Mermaid) do not support `integrity` attributes due to browser limitations. To mitigate CDN supply chain risk:
+- Pin all CDN URLs to specific major versions (e.g., `@11` not `@latest`)
+- Use well-established CDNs (jsDelivr, unpkg, cdnjs)
+- All templates include Content Security Policy headers to restrict allowed script sources
+
+**Google Fonts limitation:** Google Fonts CSS is dynamically generated per-browser and updates over time, making SRI hashes infeasible. For maximum security in sensitive environments, consider self-hosting fonts.
+
 ## Mermaid.js — Diagramming Engine
 
 Use for flowcharts, sequence diagrams, ER diagrams, state machines, mind maps, class diagrams, and any diagram where automatic node positioning and edge routing saves effort. Mermaid handles layout — you handle theming.
