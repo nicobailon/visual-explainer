@@ -403,7 +403,7 @@ Use when a diagram has 10+ elements and you want a choreographed entrance sequen
 
   if (!prefersReduced) {
     anime({
-      targets: '.node',
+      targets: '.ve-card',
       opacity: [0, 1],
       translateY: [20, 0],
       delay: anime.stagger(80, { start: 200 }),
@@ -436,10 +436,10 @@ Use when a diagram has 10+ elements and you want a choreographed entrance sequen
 
 When using anime.js, set initial opacity to 0 in CSS so elements don't flash before the animation:
 ```css
-.node { opacity: 0; }
+.ve-card { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .node { opacity: 1 !important; }
+  .ve-card { opacity: 1 !important; }
 }
 ```
 
