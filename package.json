@@ -5,7 +5,7 @@
   "keywords": ["pi-package"],
   "license": "MIT",
   "pi": {
-    "skills": ["./"],
+    "skills": ["./SKILL.md"],
     "prompts": ["./prompts"]
   }
 }
