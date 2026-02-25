@@ -44,6 +44,7 @@ git clone https://github.com/nicobailon/visual-explainer.git ~/.claude/skills/vi
 For Pi, restart after cloning. To get the slash commands (`/diff-review`, `/plan-review`, etc.), copy the prompt templates:
 
 ```bash
+mkdir -p ~/.pi/agent/prompts
 cp ~/.pi/agent/skills/visual-explainer/prompts/*.md ~/.pi/agent/prompts/
 ```
 
