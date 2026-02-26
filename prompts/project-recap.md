@@ -3,6 +3,26 @@ description: Generate a visual HTML project recap — rebuild mental model of a 
 ---
 Load the visual-explainer skill, then generate a comprehensive visual project recap as a self-contained HTML page.
 
+## Quick Mode (`--quick`)
+
+Preserve original behavior by default. Only use quick mode if the user includes `--quick`.
+
+If `--quick` is present:
+1. Remove `--quick` from args.
+2. Read `./quick/README.md`.
+3. Build a compact **JSON spec** for the quick architecture renderer that summarizes current project state:
+   - title/subtitle = project and time window
+   - gateway cards = major modules/entry points
+   - pipeline steps = recent activity flow and current execution path
+   - database cards = durable state, logs, and knowledge stores
+   - outputs = what is working, in progress, risky, and next steps
+   - include KPIs and legend
+4. Save spec to `/tmp/ve-quick-recap-<timestamp>.json`.
+5. Render with:
+   - `node $HOME/.pi/agent/skills/visual-explainer/quick/render-architecture.mjs /tmp/ve-quick-recap-<timestamp>.json ~/.agent/diagrams/<descriptive-name>-recap-quick.html`
+6. Open the resulting HTML and report path.
+7. If quick render fails, or if the request needs full recap depth beyond quick schema, fall back immediately to the full workflow below.
+
 Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a warm editorial or paper/ink aesthetic with muted blues and greens, but vary fonts and palette from previous diagrams.
 
 **Time window** — determine the recency window from `$1`:
