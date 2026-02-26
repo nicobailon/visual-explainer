@@ -55,6 +55,21 @@ The skill ships with five prompt templates:
 | `/project-recap` | Mental model snapshot for context-switching back to a project |
 | `/fact-check` | Verify accuracy of a review page or plan doc against actual code |
 
+### `--quick` mode (preserves default behavior)
+
+Default behavior is unchanged: full one-shot HTML generation.
+
+When you add `--quick` to `/generate-web-diagram`, the skill uses a static renderer pipeline:
+1. Model emits compact JSON spec
+2. `quick/render-architecture.mjs` assembles HTML
+3. If quick render fails, it falls back to the original full-generation path
+
+Example:
+
+```
+/generate-web-diagram --quick architecture overview of our rpc layer
+```
+
 `/diff-review` is probably the most useful. Run it with no arguments to diff against `main`, or pass any git ref:
 
 ```

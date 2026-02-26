@@ -14,6 +14,17 @@ Generate self-contained HTML files for technical diagrams, visualizations, and d
 
 **Proactive table rendering.** When you're about to present tabular data as an ASCII box-drawing table in the terminal (comparisons, audits, feature matrices, status reports, any structured rows/columns), generate an HTML page instead. The threshold: if the table has 4+ rows or 3+ columns, it belongs in the browser. Don't wait for the user to ask — render it as HTML automatically and tell them the file path. You can still include a brief text summary in the chat, but the table itself should be the HTML page.
 
+## Quick Mode (`--quick`)
+
+Default behavior remains the original full-HTML mechanism. Only use quick mode when the user explicitly includes `--quick`.
+
+Quick mode uses the static renderer at `./quick/render-architecture.mjs`:
+- Model outputs a compact JSON spec (see `./quick/README.md`)
+- Renderer assembles final HTML with reusable CSS/components
+- Faster and cheaper than regenerating full CSS/HTML every run
+
+**Fallback rule (mandatory):** if quick rendering fails, or if the request is not a good fit for the architecture schema, immediately fall back to the original full-HTML workflow in this skill.
+
 ## Workflow
 
 ### 1. Think (5 seconds, not 5 minutes)

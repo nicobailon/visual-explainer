@@ -3,6 +3,26 @@ description: Generate a visual HTML plan review — current codebase state vs. p
 ---
 Load the visual-explainer skill, then generate a comprehensive visual plan review as a self-contained HTML page, comparing the current codebase against a proposed implementation plan.
 
+## Quick Mode (`--quick`)
+
+Preserve original behavior by default. Only use quick mode if the user includes `--quick`.
+
+If `--quick` is present:
+1. Remove `--quick` from args.
+2. Read `./quick/README.md`.
+3. Build a compact **JSON spec** for the quick architecture renderer that summarizes plan-vs-code status:
+   - title/subtitle summarize plan scope and confidence
+   - gateway cards = current-state modules and planned touchpoints
+   - pipeline steps = plan parse, code cross-check, gap detection, risk synthesis
+   - database cards = files/config/tests/docs impacted
+   - outputs = matches, gaps, risks, and recommendations
+   - include KPIs and legend
+4. Save spec to `/tmp/ve-quick-plan-<timestamp>.json`.
+5. Render with:
+   - `node $HOME/.pi/agent/skills/visual-explainer/quick/render-architecture.mjs /tmp/ve-quick-plan-<timestamp>.json ~/.agent/diagrams/<descriptive-name>-plan-quick.html`
+6. Open the resulting HTML and report path.
+7. If quick render fails, or if the request requires full plan-review depth beyond quick schema, fall back immediately to the full workflow below.
+
 Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
 
 **Inputs:**
