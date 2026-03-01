@@ -8,7 +8,7 @@ Use for flowcharts, sequence diagrams, ER diagrams, state machines, mind maps, c
 
 Do NOT use for dashboards — CSS Grid card layouts with Chart.js look better for those. Data tables use `<table>` elements.
 
-**CDN — always use `startOnLoad: false` with explicit `mermaid.run()`:**
+**CDN — use `startOnLoad: false` with explicit `mermaid.run()` when you need a post-render hook (e.g., auto-fit):**
 ```html
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
@@ -48,7 +48,7 @@ Always use `theme: 'base'` — it's the only theme where all `themeVariables` ar
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false,
     theme: 'base',
     look: 'classic',
     themeVariables: {

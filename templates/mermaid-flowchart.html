@@ -377,6 +377,7 @@
   // Render all diagrams and then make SVGs fill their containers
   await mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
 
+  // Strip Mermaid's hardcoded pixel dimensions so CSS (width:100%; height:auto) takes effect
   document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
     var svg = wrap.querySelector('svg');
     if (!svg) return;
@@ -387,9 +388,6 @@
     }
     svg.removeAttribute('width');
     svg.removeAttribute('height');
-    svg.style.width   = '100%';
-    svg.style.height  = 'auto';
-    svg.style.display = 'block';
   });
 </script>
 <script>

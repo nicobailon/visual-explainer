@@ -255,14 +255,14 @@ Mermaid diagrams are often too small to read comfortably, especially complex flo
 .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
-/* width: 100% lets the auto-fit JS make the SVG fill the container */
+/* width: 100% so the SVG can fill the container once Mermaid's fixed pixel attrs are removed */
 .mermaid-wrap .mermaid {
   width: 100%;
   transition: transform 0.2s ease;
   transform-origin: top center;
 }
 
-/* SVG responsiveness — applied by the auto-fit JS after mermaid.run() */
+/* Responsive sizing — takes effect after the auto-fit JS strips Mermaid's hardcoded width/height attrs */
 .mermaid-wrap .mermaid svg {
   width: 100%;
   height: auto;
