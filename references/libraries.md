@@ -203,6 +203,16 @@ If you need multi-line labels or special characters, use a `flowchart` instead o
 
 Most Mermaid failures come from a few recurring issues. Follow these rules to avoid invalid diagrams:
 
+**For multi-line flowchart node labels, use `<br/>` (not `\n`).** Mermaid flowcharts interpret `<br/>` as a line break, but escaped `\n` in labels often renders as literal text:
+
+```
+%% WRONG — renders literal "\n" in node text
+A["Copilot Backend\n/api + /api/voicebot"] --> B["Redis"]
+
+%% RIGHT — renders on two lines
+A["Copilot Backend<br/>/api + /api/voicebot"] --> B["Redis"]
+```
+
 **Quote labels with special characters.** Parentheses, colons, commas, brackets, and ampersands break the parser when unquoted. Wrap any label containing special characters in double quotes:
 
 ```
