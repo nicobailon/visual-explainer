@@ -215,7 +215,7 @@ Two approaches depending on what matters more:
 ### C4 Architecture Diagrams
 **Use Mermaid flowchart syntax — NOT native C4.** Use `graph TD` with `subgraph` blocks for C4 boundaries. Native `C4Context` hardcodes sharp corners, its own font, blue icons, and inline SVG colors that ignore `themeVariables` — it always clashes with custom palettes.
 
-**Flowchart-as-C4 pattern:** Persons → rounded nodes `("👤 User")`, systems → `["App"]`, databases → `[("DB")]`, boundaries → `subgraph` blocks, relationships → `-->|"HTTPS"|`. Use `classDef` + `:::className` to style external systems differently. This inherits `themeVariables`, `fontFamily`, and CSS overrides like every other Mermaid diagram.
+**Flowchart-as-C4 pattern:** Persons → rounded nodes `(("Name"))`, systems → rectangles `["Name"]`, databases → cylinders `[("Name")]`, boundaries → `subgraph` blocks, relationships → labeled arrows `-->|"protocol"|`. Use `classDef` + `:::className` to visually differentiate external systems (e.g., dashed borders). This inherits `themeVariables`, `fontFamily`, and CSS overrides like every other Mermaid diagram.
 
 ### Data Tables / Comparisons / Audits
 Use a real `<table>` element — not CSS Grid pretending to be a table. Tables get accessibility, copy-paste behavior, and column alignment for free. The reference template at `./templates/data-table.html` demonstrates all patterns below.

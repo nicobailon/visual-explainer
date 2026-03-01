@@ -403,7 +403,7 @@ graph TD
   app -->|"SQL"| db
   app -->|"SMTP"| email
   app -->|"API"| payment
-  classDef ext fill:var(--surface2),stroke:var(--border-bright),stroke-dasharray:5 5
+  classDef ext fill:none,stroke-dasharray:5 5
 </pre>
 ```
 
