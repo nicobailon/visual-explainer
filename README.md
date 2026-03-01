@@ -40,6 +40,13 @@ mkdir -p ~/.claude/commands
 cp ~/.claude/skills/visual-explainer/prompts/*.md ~/.claude/commands/
 ```
 
+**OpenAI Codex:**
+```bash
+git clone https://github.com/nicobailon/visual-explainer.git ~/.agents/skills/visual-explainer
+mkdir -p ~/.agents/commands
+cp ~/.agents/skills/visual-explainer/prompts/*.md ~/.agents/commands/
+```
+
 ## Commands
 
 | Command | What it does |
