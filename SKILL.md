@@ -28,7 +28,7 @@ For prose accents, see "Prose Page Elements" in `./references/css-patterns.md`. 
 
 **Who is looking?** A developer understanding a system? A PM seeing the big picture? A team reviewing a proposal? This shapes information density and visual complexity.
 
-**What type of content?** Architecture, flowchart, sequence, data flow, schema/ER, state machine, mind map, data table, timeline, dashboard, or prose-first page. Each has distinct layout needs and rendering approaches (see Diagram Types below).
+**What type of content?** Architecture, flowchart, sequence, data flow, schema/ER, state machine, mind map, class diagram, C4 architecture, data table, timeline, dashboard, or prose-first page. Each has distinct layout needs and rendering approaches (see Diagram Types below).
 
 **What aesthetic?** Pick one and commit. The constrained aesthetics (Blueprint, Editorial, Paper/ink) are safer — they have specific requirements that prevent generic output. The flexible ones (IDE-inspired) require more discipline.
 
@@ -53,7 +53,7 @@ Vary the choice each time. If the last diagram was dark and technical, make the 
 
 **Read the reference material** before generating. Don't memorize it — read it each time to absorb the patterns.
 - For text-heavy architecture overviews (card content matters more than topology): read `./templates/architecture.html`
-- For flowcharts, sequence diagrams, ER, state machines, mind maps: read `./templates/mermaid-flowchart.html`
+- For flowcharts, sequence diagrams, ER, state machines, mind maps, class diagrams, C4: read `./templates/mermaid-flowchart.html`
 - For data tables, comparisons, audits, feature matrices: read `./templates/data-table.html`
 - For slide deck presentations (when `--slides` flag is present or `/generate-slides` is invoked): read `./templates/slide-deck.html` and `./references/slide-patterns.md`
 - For prose-heavy publishable pages (READMEs, articles, blog posts, essays): read the "Prose Page Elements" section in `./references/css-patterns.md` and "Typography by Content Voice" in `./references/libraries.md`
@@ -74,6 +74,8 @@ Vary the choice each time. If the last diagram was dark and technical, make the 
 | ER / schema diagram | **Mermaid** | Relationship lines between many entities need auto-routing |
 | State machine | **Mermaid** | State transitions with labeled edges need automatic layout |
 | Mind map | **Mermaid** | Hierarchical branching needs automatic positioning |
+| Class diagram | **Mermaid** | Inheritance, composition, aggregation lines with automatic routing |
+| C4 architecture | **Mermaid** | Use `graph TD` + `subgraph` for C4 (not native `C4Context` — it ignores themes) |
 | Data table | HTML `<table>` | Semantic markup, accessibility, copy-paste behavior |
 | Timeline | CSS (central line + cards) | Simple linear layout doesn't need a layout engine |
 | Dashboard | CSS Grid + Chart.js | Card grid with embedded charts |
@@ -206,6 +208,14 @@ Two approaches depending on what matters more:
 
 ### Mind Maps / Hierarchical Breakdowns
 **Use Mermaid.** Use `mindmap` syntax for hierarchical branching from a root node. Mermaid handles the radial layout automatically. Style with `themeVariables` to control node colors at each depth level.
+
+### Class Diagrams
+**Use Mermaid.** Use `classDiagram` syntax for domain modeling, OOP design, and entity relationships with typed properties and methods. Supports relationships: association (`-->`), composition (`*--`), aggregation (`o--`), and inheritance (`<|--`). Add multiplicity labels (e.g., `"1" --> "*"`) and abstract/interface markers (`<<interface>>`, `<<abstract>>`). For simple entity boxes without OOP semantics (no methods, no inheritance), prefer `erDiagram` instead — it produces cleaner output for pure data modeling.
+
+### C4 Architecture Diagrams
+**Use Mermaid flowchart syntax — NOT native C4.** Use `graph TD` with `subgraph` blocks for C4 boundaries. Native `C4Context` hardcodes sharp corners, its own font, blue icons, and inline SVG colors that ignore `themeVariables` — it always clashes with custom palettes.
+
+**Flowchart-as-C4 pattern:** Persons → rounded nodes `("👤 User")`, systems → `["App"]`, databases → `[("DB")]`, boundaries → `subgraph` blocks, relationships → `-->|"HTTPS"|`. Use `classDef` + `:::className` to style external systems differently. This inherits `themeVariables`, `fontFamily`, and CSS overrides like every other Mermaid diagram.
 
 ### Data Tables / Comparisons / Audits
 Use a real `<table>` element — not CSS Grid pretending to be a table. Tables get accessibility, copy-paste behavior, and column alignment for free. The reference template at `./templates/data-table.html` demonstrates all patterns below.
