@@ -152,10 +152,15 @@
   }
 
   .mermaid-wrap .mermaid {
-    display: flex;
-    justify-content: center;
+    width: 100%;
     transition: transform 0.2s ease;
     transform-origin: top center;
+  }
+
+  .mermaid-wrap .mermaid svg {
+    width: 100%;
+    height: auto;
+    display: block;
   }
 
   .zoom-controls {
@@ -346,7 +351,7 @@
 
   mermaid.registerLayoutLoaders(elkLayouts);
   mermaid.initialize({
-    startOnLoad: true,
+    startOnLoad: false, // use mermaid.run() instead — gives a Promise to hook auto-fit
     theme: 'base',
     look: 'classic',
     layout: 'elk',
@@ -367,6 +372,24 @@
       noteTextColor: isDark ? '#ccfbf1' : '#134e4a',
       noteBorderColor: isDark ? '#fbbf24' : '#d97706',
     }
+  });
+
+  // Render all diagrams and then make SVGs fill their containers
+  await mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    var svg = wrap.querySelector('svg');
+    if (!svg) return;
+    if (!svg.getAttribute('viewBox')) {
+      var w = parseFloat(svg.getAttribute('width'))  || svg.viewBox.baseVal.width  || 800;
+      var h = parseFloat(svg.getAttribute('height')) || svg.viewBox.baseVal.height || 400;
+      svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    }
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.style.width   = '100%';
+    svg.style.height  = 'auto';
+    svg.style.display = 'block';
   });
 </script>
 <script>

@@ -233,7 +233,7 @@ li::before {
 
 Mermaid diagrams are often too small to read comfortably, especially complex flowcharts and sequence diagrams. Add zoom controls to every `.mermaid-wrap` container.
 
-**Centering fix.** Mermaid SVGs render at a fixed size and default to the top-left of their container, leaving dead space in larger containers. Always add `display: flex; align-items: center; justify-content: center;` to `.mermaid-wrap` so the SVG centers regardless of container size. Use `transform-origin: center center` so zoom radiates from the middle.
+**Responsive sizing.** Mermaid renders SVGs with fixed pixel `width`/`height` attributes. Without post-processing, diagrams sit as a small island inside their container — flex-centering makes this worse by leaving dead space on all sides. The correct approach is to strip those attributes after `mermaid.run()` resolves, preserve `viewBox`, and apply `width: 100%; height: auto` so the SVG scales like a responsive image. The `.mermaid` child must carry `width: 100%` for this to propagate. Use `transform-origin: top center` so zoom radiates from the top edge. See the JavaScript section below for the required auto-fit snippet.
 
 **Small diagrams in slides.** If a diagram has fewer than ~7 nodes with no branching, it will render tiny in a full-viewport slide container. For simple linear flows (A → B → C → D), use CSS pipeline cards instead of Mermaid — see `slide-patterns.md` "CSS Pipeline Slide." Reserve Mermaid for complex graphs where automatic edge routing is actually needed.
 
@@ -245,11 +245,8 @@ Mermaid diagrams are often too small to read comfortably, especially complex flo
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 32px 24px;
+  padding: 48px 24px 32px; /* top padding accounts for zoom controls */
   overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -258,9 +255,18 @@ Mermaid diagrams are often too small to read comfortably, especially complex flo
 .mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
+/* width: 100% lets the auto-fit JS make the SVG fill the container */
 .mermaid-wrap .mermaid {
+  width: 100%;
   transition: transform 0.2s ease;
-  transform-origin: center center;
+  transform-origin: top center;
+}
+
+/* SVG responsiveness — applied by the auto-fit JS after mermaid.run() */
+.mermaid-wrap .mermaid svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .zoom-controls {
@@ -388,6 +394,33 @@ document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
 ```
 
 Scroll-to-zoom requires Ctrl/Cmd+scroll to avoid hijacking normal page scroll. Click-and-drag panning activates only when zoomed in (zoom > 1). Cursor changes to `grab`/`grabbing` to signal the behavior. The zoom range is capped at 0.3x–5x.
+
+### Auto-fit after render (required)
+
+Mermaid renders SVGs with hardcoded pixel `width`/`height` attributes. Without this step, every diagram sits as a small fixed-size island regardless of how wide its container is. Call this **immediately after `await mermaid.run()`** resolves — it won't work with `startOnLoad: true` because there's no render callback.
+
+```javascript
+// Call once after await mermaid.run() resolves
+function autoFitMermaidDiagrams() {
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    var svg = wrap.querySelector('svg');
+    if (!svg) return;
+    // Preserve layout information before stripping fixed dimensions
+    if (!svg.getAttribute('viewBox')) {
+      var w = parseFloat(svg.getAttribute('width'))  || svg.viewBox.baseVal.width  || 800;
+      var h = parseFloat(svg.getAttribute('height')) || svg.viewBox.baseVal.height || 400;
+      svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    }
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+    svg.style.width   = '100%';
+    svg.style.height  = 'auto';
+    svg.style.display = 'block';
+  });
+}
+```
+
+This works because the `viewBox` encodes the diagram's internal coordinate space. Removing the fixed pixel dimensions lets the SVG scale like a responsive image — CSS width drives the rendered size, the aspect ratio is preserved automatically.
 
 ## Grid Layouts
 

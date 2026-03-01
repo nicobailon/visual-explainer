@@ -8,14 +8,19 @@ Use for flowcharts, sequence diagrams, ER diagrams, state machines, mind maps, c
 
 Do NOT use for dashboards — CSS Grid card layouts with Chart.js look better for those. Data tables use `<table>` elements.
 
-**CDN:**
+**CDN — always use `startOnLoad: false` with explicit `mermaid.run()`:**
 ```html
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
-  mermaid.initialize({ startOnLoad: true, /* ... */ });
+  mermaid.initialize({ startOnLoad: false, /* ... */ });
+
+  await mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+  autoFitMermaidDiagrams(); // see css-patterns.md → Auto-fit after render
 </script>
 ```
+
+**Why `startOnLoad: false`?** `startOnLoad: true` fires an internal `DOMContentLoaded` listener with no render callback, so there's no hook to post-process the SVGs. `mermaid.run()` returns a Promise that resolves once every diagram is rendered — making it the only reliable place to strip the hardcoded pixel dimensions and apply responsive sizing (see css-patterns.md → Auto-fit after render).
 
 **With ELK layout** (required for `layout: 'elk'` — it's a separate package, not bundled in core):
 ```html
@@ -24,11 +29,14 @@ Do NOT use for dashboards — CSS Grid card layouts with Chart.js look better fo
   import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs';
 
   mermaid.registerLayoutLoaders(elkLayouts);
-  mermaid.initialize({ startOnLoad: true, layout: 'elk', /* ... */ });
+  mermaid.initialize({ startOnLoad: false, layout: 'elk', /* ... */ });
+
+  await mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+  autoFitMermaidDiagrams();
 </script>
 ```
 
-Without the ELK import and registration, `layout: 'elk'` silently falls back to dagre. Only import ELK when you actually need it — it adds significant bundle weight. Most simple diagrams render fine with dagre.
+Without the ELK import and registration, `layout: 'elk'` silently falls back to dagre. Only import ELK when you actually need it — it adds significant bundle weight and can produce inconsistent sizing on complex graphs. Most diagrams render well with dagre (the default).
 
 ### Deep Theming
 
