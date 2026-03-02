@@ -288,6 +288,57 @@ For implementation plans and architecture docs, **don't display entire source fi
 
 If someone needs the full file, put it in a collapsible section or link to it.
 
+## Directory Tree
+
+For file structures, use `<pre>` with monospace + `white-space: pre`. Tree connectors (`├──`, `└──`, `│`) only work when vertically aligned — they become noise if text wraps.
+
+```css
+.dir-tree {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.dir-tree .ann { color: var(--text-dim); font-size: 11px; font-style: italic; }
+.dir-tree .hl  { color: var(--accent); font-weight: 600; }
+```
+
+```html
+<pre class="dir-tree">my-project/
+├── src/
+│   ├── <span class="hl">index.ts</span>       <span class="ann">— entry point</span>
+│   ├── services/
+│   │   └── <span class="hl">api.py</span>     <span class="ann">(142 lines)</span>
+│   └── utils/
+├── tests/            <span class="ann">(14 test files)</span>
+└── README.md</pre>
+```
+
+For labeled trees, wrap in a card. For side-by-side comparisons, put two cards in a grid:
+
+```css
+.dir-tree-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.dir-tree-card__header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.dir-tree-card .dir-tree { border: none; border-radius: 0; }
+
+/* Side-by-side: two .dir-tree-card in a grid */
+.dir-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .dir-compare { grid-template-columns: 1fr; } }
+```
+
+**Never** render tree connectors inside wrapping text (`white-space: normal`), flex children, or grid items — the vertical pipes lose alignment and the hierarchy becomes unreadable.
+
 ## Overflow Protection
 
 Grid and flex children default to `min-width: auto`, which prevents them from shrinking below their content width. Long text, inline code badges, and non-wrapping elements will blow out containers.
