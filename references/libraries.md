@@ -190,6 +190,35 @@ UI -->|Use as Reference| RET
 
 Avoid opaque light fills like `fill:#fefce8` — they render as bright boxes in dark mode.
 
+### Flowchart Label Line Breaks
+
+In flowcharts, Mermaid does not convert `\n` inside labels to visual line breaks — it renders literal `\n` text. Use `<br/>` inside quoted labels:
+
+```
+%% WRONG — renders literal "\n"
+A["User Inputs\nSTDIN + Telegram"]
+
+%% RIGHT — real line break in flowchart labels
+A["User Inputs<br/>STDIN + Telegram"]
+```
+
+If incoming Mermaid text may contain `\n` labels, normalize before `mermaid.initialize()`:
+
+```javascript
+document.querySelectorAll('pre.mermaid').forEach(function(pre) {
+  var src = pre.textContent || '';
+  if (!/^\s*(flowchart|graph)\b/m.test(src)) return;
+  if (!src.includes('\\\\n') && !src.includes('<')) return;
+  pre.textContent = src.replace(/([\[\(\{])"([^"\r\n]*)"([\]\)\}])/g, function(_, open, label, close) {
+    var withBreaks = label.replace(/\\\\n/g, '<br/>');
+    var escapedAngles = withBreaks.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return open + '"' + escapedAngles.replace(/&lt;br\/&gt;/g, '<br/>') + '"' + close;
+  });
+});
+```
+
+If a label includes literal angle brackets (example: `artifacts/<run_id>`), escape them as `&lt;run_id&gt;`.
+
 ### stateDiagram-v2 Label Limitations
 
 State diagram transition labels have a strict parser. Avoid:

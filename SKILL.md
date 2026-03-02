@@ -86,6 +86,8 @@ Vary the choice each time. If the last diagram was dark and technical, make the 
 
 **Mermaid layout direction:** Prefer `flowchart TD` (top-down) over `flowchart LR` (left-to-right) for complex diagrams. LR spreads horizontally and makes labels unreadable when there are many nodes. Use LR only for simple 3-4 node linear flows. See `./references/libraries.md` "Layout Direction: TD vs LR".
 
+**Mermaid label line breaks (flowchart):** For multi-line labels, use `<br/>` inside quoted labels. Do not use `\n` — Mermaid renders it as literal text (for example `User Inputs\nSTDIN`). Example: `A["User Inputs<br/>STDIN"]`. If labels need literal angle brackets, escape them (`&lt;run_id&gt;`).
+
 **Mermaid CSS class collision constraint:** Never define `.node` as a page-level CSS class. Mermaid.js uses `.node` internally on SVG `<g>` elements with `transform: translate(x, y)` for positioning. Page-level `.node` styles (hover transforms, box-shadows) leak into diagrams and break layout. Use the namespaced `.ve-card` class for card components instead. The only safe way to style Mermaid's `.node` is scoped under `.mermaid` (e.g., `.mermaid .node rect`).
 
 **AI-generated illustrations (optional).** If [surf-cli](https://github.com/nicobailon/surf-cli) is available, you can generate images via Gemini and embed them in the page for creative, illustrative, explanatory, educational, or decorative purposes. Check availability with `which surf`. If available:

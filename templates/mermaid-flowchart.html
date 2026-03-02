@@ -344,6 +344,30 @@
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+  function sanitizeFlowchartLabelText(label) {
+    var withBreaks = label.replace(/\\\\n/g, '<br/>');
+    var escapedAngles = withBreaks
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return escapedAngles.replace(/&lt;br\/&gt;/g, '<br/>');
+  }
+
+  function normalizeMermaidLineBreaks() {
+    document.querySelectorAll('pre.mermaid').forEach(function(pre) {
+      var src = pre.textContent || '';
+      var isFlowchart = /^\s*(flowchart|graph)\b/m.test(src);
+      if (!isFlowchart) return;
+      if (src.indexOf('\\\\n') === -1 && src.indexOf('<') === -1) return;
+      // Mermaid flowchart labels use <br/> for line breaks.
+      // Rewrite quoted node labels only; don't touch edge labels or other syntax.
+      pre.textContent = src.replace(/([\[\(\{])"([^"\r\n]*)"([\]\)\}])/g, function(_, open, label, close) {
+        return open + '"' + sanitizeFlowchartLabelText(label) + '"' + close;
+      });
+    });
+  }
+
+  normalizeMermaidLineBreaks();
+
   mermaid.registerLayoutLoaders(elkLayouts);
   mermaid.initialize({
     startOnLoad: true,
