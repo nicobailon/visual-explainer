@@ -28,29 +28,32 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 
 ## Install
 
+**Claude Code (plugin — recommended):**
+```bash
+claude /plugin install --scope local https://github.com/nicobailon/visual-explainer
+```
+
+Or for development/testing:
+```bash
+claude --plugin-dir ./visual-explainer
+```
+
 **Pi:**
 ```bash
 pi install https://github.com/nicobailon/visual-explainer
-```
-
-**Claude Code:**
-```bash
-git clone https://github.com/nicobailon/visual-explainer.git ~/.claude/skills/visual-explainer
-mkdir -p ~/.claude/commands
-cp ~/.claude/skills/visual-explainer/prompts/*.md ~/.claude/commands/
 ```
 
 ## Commands
 
 | Command | What it does |
 |---------|-------------|
-| `/generate-web-diagram` | Generate an HTML diagram for any topic |
-| `/generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
-| `/generate-slides` | Generate a magazine-quality slide deck |
-| `/diff-review` | Visual diff review with architecture comparison and code review |
-| `/plan-review` | Compare a plan against the codebase with risk assessment |
-| `/project-recap` | Mental model snapshot for context-switching back to a project |
-| `/fact-check` | Verify accuracy of a document against actual code |
+| `/visual-explainer:generate-web-diagram` | Generate an HTML diagram for any topic |
+| `/visual-explainer:generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
+| `/visual-explainer:generate-slides` | Generate a magazine-quality slide deck |
+| `/visual-explainer:diff-review` | Visual diff review with architecture comparison and code review |
+| `/visual-explainer:plan-review` | Compare a plan against the codebase with risk assessment |
+| `/visual-explainer:project-recap` | Mental model snapshot for context-switching back to a project |
+| `/visual-explainer:fact-check` | Verify accuracy of a document against actual code |
 
 The agent also kicks in automatically when it's about to dump a complex table in the terminal (4+ rows or 3+ columns) — it renders HTML instead.
 
@@ -59,8 +62,8 @@ The agent also kicks in automatically when it's about to dump a complex table in
 Any command that produces a scrollable page supports `--slides` to generate a slide deck instead:
 
 ```
-/diff-review --slides
-/project-recap --slides 2w
+/visual-explainer:diff-review --slides
+/visual-explainer:project-recap --slides 2w
 ```
 
 https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
@@ -68,14 +71,24 @@ https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 ## How It Works
 
 ```
-SKILL.md (workflow + design principles)
-    ↓
+.claude-plugin/
+└── plugin.json       ← plugin manifest
+skills/
+└── visual-explainer/
+    └── SKILL.md      ← workflow + design principles
+commands/             ← slash commands
+├── diff-review.md
+├── fact-check.md
+├── generate-slides.md
+├── generate-visual-plan.md
+├── generate-web-diagram.md
+├── plan-review.md
+└── project-recap.md
 references/           ← agent reads before generating
 ├── css-patterns.md   (layouts, animations, theming)
 ├── libraries.md      (Mermaid, Chart.js, fonts)
 ├── responsive-nav.md (sticky TOC for multi-section pages)
 └── slide-patterns.md (slide engine, transitions, presets)
-    ↓
 templates/            ← reference templates with different palettes
 ├── architecture.html
 ├── mermaid-flowchart.html
