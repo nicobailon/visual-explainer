@@ -5,9 +5,6 @@
   "author": {
     "name": "nicobailon"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nicobailon/visual-explainer"
-  },
+  "repository": "https://github.com/nicobailon/visual-explainer",
   "license": "MIT"
 }
