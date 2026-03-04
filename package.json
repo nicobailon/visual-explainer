@@ -1,6 +1,6 @@
 {
   "name": "visual-explainer",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, and data tables",
   "keywords": [
     "pi-package"
@@ -8,10 +8,10 @@
   "license": "MIT",
   "pi": {
     "skills": [
-      "./"
+      "./skills/visual-explainer"
     ],
     "prompts": [
-      "./prompts"
+      "./commands"
     ]
   }
 }
