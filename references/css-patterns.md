@@ -512,216 +512,393 @@ Add zoom controls to every `.mermaid-wrap` container for complex diagrams.
 
 **Small diagrams in slides.** If a diagram has fewer than ~7 nodes with no branching, it will render tiny in a full-viewport slide container. For simple linear flows (A → B → C → D), use CSS pipeline cards instead of Mermaid — see `slide-patterns.md` "CSS Pipeline Slide." Reserve Mermaid for complex graphs where automatic edge routing is actually needed.
 
+### Adaptive Zoom/Pan Engine
+
+The zoom system uses **vector-based SVG resizing** instead of CSS `zoom` or `transform: scale()`. On zoom, the SVG's CSS `width`/`height` change while the `viewBox` keeps it vector-crisp at any zoom level. Panning uses `transform: translate()` only — no scroll-based panning.
+
+**Why not CSS zoom or transform: scale?**
+
+- `transform: scale()` doesn't change layout size. Content expands into negative coordinate space that can't be scrolled to.
+- CSS `zoom` changes layout size (good), but doesn't allow zoom-toward-cursor, and large charts still render too small initially because there's no fit logic.
+- **SVG viewBox resizing** gives crisp vectors at any zoom, zoom-toward-cursor, and smart initial fit that adapts to chart size.
+
+**Smart fit modes.** On load, the engine computes how to best fit the diagram:
+
+- **contain** — fits entirely within the viewport (default for small/medium charts)
+- **width-priority** — fills the viewport width, allows vertical scrolling (for tall charts where contain would be unreadably small)
+- **height-priority** — fills the viewport height (for wide charts)
+
+A **readability floor** (default 58%) prevents charts from rendering so small that text is unreadable. If the contain scale falls below this floor, the engine switches to width-priority or height-priority based on the chart's aspect ratio.
+
+**Adaptive viewport height.** The `.mermaid-wrap` container auto-sizes its height based on the chart's aspect ratio, clamped between `minHeight` (360px) and `maxHeightPx` (960px). No more guessing `min-height` values.
+
 ### Full Pattern
 
 ```css
+.diagram-shell {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 28px rgba(3, 12, 17, 0.08);
+}
+
+.diagram-shell__hint {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
 .mermaid-wrap {
   position: relative;
-  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 32px 24px;
-  overflow: auto;
-  /* CRITICAL: center the diagram both horizontally and vertically */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* Prevent vertical flowcharts from compressing into unreadable thumbnails */
-  min-height: 400px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  background: var(--surface2, var(--surface));
+  overflow: hidden;
+  /* Adaptive: JS will set height based on chart aspect ratio.
+     This clamp provides the initial size before JS runs. */
+  height: clamp(360px, 72vh, 920px);
+  min-height: 240px;
 }
-.mermaid-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
-.mermaid-wrap::-webkit-scrollbar-track { background: transparent; }
-.mermaid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.mermaid-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
-/* For shorter diagrams that don't need the full height */
-.mermaid-wrap--compact { min-height: 200px; }
+.mermaid-viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: default;
+}
 
-/* For very tall vertical flowcharts */
-.mermaid-wrap--tall { min-height: 600px; }
+.mermaid-wrap.is-zoomed .mermaid-viewport { cursor: grab; }
+.mermaid-wrap.is-panning .mermaid-viewport { cursor: grabbing; user-select: none; }
 
-.mermaid-wrap .mermaid {
-  /* Use CSS zoom instead of transform: scale().
-     Zoom changes actual layout size, so overflow scrolls normally in all directions.
-     Transform only changes visual appearance — content expanding upward/leftward
-     goes into negative space which can't be scrolled to.
-     Supported in all browsers (Firefox added support in v126, June 2024).
-     Note: zoom is not animatable, so no transition. */
-  /* Optional: start at >1 for complex diagrams that render too small.
-     The diagram stays centered, renders larger, and zoom controls still work. */
-  zoom: 1.4;
+.mermaid-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(0, 0);
+  will-change: transform;
+}
+
+.mermaid-canvas svg {
+  display: block;
+  max-width: none;
+  height: auto;
+  width: auto;
 }
 
 .zoom-controls {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
   display: flex;
   gap: 2px;
-  z-index: 10;
-  background: var(--surface);
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 90%, transparent 10%);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px;
+  border-radius: 8px;
+  padding: 3px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .zoom-controls button {
   width: 28px;
   height: 28px;
   border: none;
-  background: transparent;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
+  border-radius: 6px;
   font-size: 14px;
+  line-height: 1;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  background: transparent;
   cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .zoom-controls button:hover {
-  background: var(--border);
   color: var(--text);
+  background: var(--accent-dim, var(--border));
 }
 
-.mermaid-wrap { cursor: grab; }
-.mermaid-wrap.is-panning { cursor: grabbing; user-select: none; }
+.zoom-label {
+  min-width: 110px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  padding: 0 0.4rem;
+}
 ```
-
-**Why zoom instead of transform?**
-
-CSS `transform: scale()` only changes visual appearance — the element's layout box stays the same size. When you scale from `center center`, content expands upward and leftward into negative coordinate space. Scroll containers can't scroll to negative positions, so the top and left of the zoomed content get clipped.
-
-CSS `zoom` actually changes the element's layout size. The content grows downward and rightward like any other growing element, staying fully scrollable.
 
 ### HTML
 
 ```html
-<div class="mermaid-wrap">
-  <div class="zoom-controls">
-    <button onclick="zoomDiagram(this, 1.2)" title="Zoom in">+</button>
-    <button onclick="zoomDiagram(this, 0.8)" title="Zoom out">&minus;</button>
-    <button onclick="resetZoom(this)" title="Reset zoom">&#8634;</button>
-    <button onclick="openDiagramFullscreen(this)" title="Open full size in new tab">&#x26F6;</button>
+<section class="diagram-shell">
+  <p class="diagram-shell__hint">
+    Ctrl/Cmd + wheel to zoom. Scroll to pan. Drag to pan when zoomed. Double-click to fit.
+  </p>
+  <div class="mermaid-wrap" id="diagram-wrap">
+    <div class="zoom-controls">
+      <button type="button" id="zoom-in" title="Zoom in">+</button>
+      <button type="button" id="zoom-out" title="Zoom out">&minus;</button>
+      <button type="button" id="zoom-fit" title="Smart fit">&#8634;</button>
+      <button type="button" id="zoom-one" title="1:1 zoom">1:1</button>
+      <button type="button" id="zoom-expand" title="Open full size in new tab">&#x26F6;</button>
+      <span class="zoom-label" id="zoom-label">Loading...</span>
+    </div>
+    <div class="mermaid-viewport" id="diagram-viewport">
+      <div class="mermaid mermaid-canvas" id="diagram-canvas"></div>
+    </div>
   </div>
-  <pre class="mermaid">
-    graph TD
-      A --> B
-  </pre>
-</div>
+</section>
 ```
 
-**Click to expand.** Clicking anywhere on the diagram (without dragging) opens it full-size in a new tab. The expand button (⛶) in the zoom controls does the same thing.
+**Interaction summary:**
+
+- **Ctrl/Cmd + wheel** zooms toward cursor position
+- **Regular scroll** pans when the rendered diagram overflows its container
+- **Click-and-drag** pans when zoomed
+- **Double-click** resets to smart fit
+- **Click expand button (⛶)** opens full-size diagram in a new tab
+- **1:1 button** shows the diagram at its native rendered pixel size
 
 ### JavaScript
 
-Add once at the end of the page. Handles button clicks and scroll-to-zoom on all `.mermaid-wrap` containers:
+The chart source should be in a `<script type="text/plain" id="diagram-source">` block. The engine uses Mermaid's `render()` API (not `startOnLoad`) for explicit control over SVG sizing.
 
 ```javascript
-// Match this to the CSS zoom value (or 1 if not set)
-var INITIAL_ZOOM = 1.4;
+// =====================================================
+// Adaptive Mermaid Zoom/Pan Engine
+// Vector-based: resizes SVG via viewBox + CSS width/height
+// Panning via translate() only — no scroll-based panning
+// =====================================================
 
-function zoomDiagram(btn, factor) {
-  var wrap = btn.closest('.mermaid-wrap');
-  var target = wrap.querySelector('.mermaid');
-  var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-  var next = Math.min(Math.max(current * factor, 0.5), 5);
-  target.dataset.zoom = next;
-  target.style.zoom = next;
+const config = {
+  fitPadding: 28,       // px padding around diagram when fitting
+  minHeight: 360,       // minimum container height
+  maxHeightPx: 960,     // maximum container height in px
+  maxHeightVh: 0.84,    // maximum container height as viewport fraction
+  maxInitialZoom: 1.8,  // never start zoomed in past this
+  minZoom: 0.08,        // minimum zoom level
+  maxZoom: 6.5,         // maximum zoom level
+  zoomStep: 0.14,       // zoom factor per button click or scroll tick
+  readabilityFloor: 0.58 // if contain scale < this, switch to width/height priority
+};
+
+const state = {
+  zoom: 1, fitZoom: 1, fitMode: 'contain',
+  panX: 0, panY: 0, svgW: 0, svgH: 0
+};
+
+const wrap     = document.getElementById('diagram-wrap');
+const viewport = document.getElementById('diagram-viewport');
+const canvas   = document.getElementById('diagram-canvas');
+const label    = document.getElementById('zoom-label');
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+
+// --- Read natural SVG size from multiple sources ---
+function readSvgNaturalSize(svg) {
+  let w = 0, h = 0;
+  if (svg.viewBox?.baseVal?.width > 0)  { w = svg.viewBox.baseVal.width;  h = svg.viewBox.baseVal.height; }
+  if (!w) { w = parseFloat(svg.getAttribute('width')) || 0;  h = parseFloat(svg.getAttribute('height')) || 0; }
+  if (!w && typeof svg.getBBox === 'function') { const b = svg.getBBox(); w = b.width; h = b.height; }
+  if (!w) { const r = svg.getBoundingClientRect(); w = r.width || 1000; h = r.height || 700; }
+  if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  return { w, h };
 }
 
-function resetZoom(btn) {
-  var wrap = btn.closest('.mermaid-wrap');
-  var target = wrap.querySelector('.mermaid');
-  target.dataset.zoom = INITIAL_ZOOM;
-  target.style.zoom = INITIAL_ZOOM;
+// --- Auto-size container height based on chart aspect ratio ---
+function setAdaptiveHeight() {
+  if (!state.svgW) return;
+  const usableW = Math.max(280, wrap.getBoundingClientRect().width - 2);
+  const idealH = (state.svgH / state.svgW) * usableW + config.fitPadding * 2;
+  const maxVp = Math.floor(window.innerHeight * config.maxHeightVh);
+  const hardMax = Math.min(config.maxHeightPx, Math.max(config.minHeight + 40, maxVp));
+  wrap.style.height = Math.round(clamp(idealH, config.minHeight, hardMax)) + 'px';
 }
 
-function openDiagramFullscreen(btn) {
-  var wrap = btn.closest('.mermaid-wrap');
-  openMermaidInNewTab(wrap);
+// --- Constrain pan so diagram stays within visible bounds ---
+function constrainPan() {
+  const vpW = viewport.clientWidth, vpH = viewport.clientHeight;
+  const rW = state.svgW * state.zoom, rH = state.svgH * state.zoom;
+  const pad = config.fitPadding;
+  state.panX = (rW + pad * 2 <= vpW) ? (vpW - rW) / 2 : clamp(state.panX, vpW - rW - pad, pad);
+  state.panY = (rH + pad * 2 <= vpH) ? (vpH - rH) / 2 : clamp(state.panY, vpH - rH - pad, pad);
 }
 
-function openMermaidInNewTab(wrap) {
-  var svg = wrap.querySelector('.mermaid svg');
+// --- Apply current zoom + pan to the SVG ---
+function applyTransform() {
+  const svg = canvas.querySelector('svg');
+  if (!svg || !state.svgW) return;
+  constrainPan();
+  svg.style.width  = (state.svgW * state.zoom) + 'px';
+  svg.style.height = (state.svgH * state.zoom) + 'px';
+  canvas.style.transform = `translate(${state.panX}px, ${state.panY}px)`;
+  label.textContent = Math.round(state.zoom * 100) + '% — ' + state.fitMode;
+  wrap.classList.toggle('is-zoomed', state.zoom > state.fitZoom + 0.01 || state.zoom > 1.02);
+}
+
+// --- Smart fit: contain, width-priority, or height-priority ---
+function computeSmartFit() {
+  const vpW = viewport.clientWidth, vpH = viewport.clientHeight;
+  const aW = Math.max(80, vpW - config.fitPadding * 2);
+  const aH = Math.max(80, vpH - config.fitPadding * 2);
+  const contain = Math.min(aW / state.svgW, aH / state.svgH);
+  let zoom = contain, mode = 'contain';
+  if (contain < config.readabilityFloor) {
+    const chartR = state.svgH / state.svgW;
+    const vpR = vpH / Math.max(vpW, 1);
+    if (chartR >= vpR) { zoom = aW / state.svgW; mode = 'width-priority'; }
+    else               { zoom = aH / state.svgH; mode = 'height-priority'; }
+  }
+  return { zoom: clamp(zoom, config.minZoom, config.maxInitialZoom), mode };
+}
+
+function fitDiagram() {
+  if (!state.svgW) return;
+  const fit = computeSmartFit();
+  state.zoom = fit.zoom;  state.fitZoom = fit.zoom;  state.fitMode = fit.mode;
+  state.panX = (viewport.clientWidth  - state.svgW * state.zoom) / 2;
+  state.panY = (viewport.clientHeight - state.svgH * state.zoom) / 2;
+  applyTransform();
+}
+
+function setOneToOne() {
+  state.zoom = clamp(1, config.minZoom, config.maxZoom);
+  state.fitMode = '1:1';
+  state.panX = (viewport.clientWidth  - state.svgW * state.zoom) / 2;
+  state.panY = (viewport.clientHeight - state.svgH * state.zoom) / 2;
+  applyTransform();
+}
+
+function zoomAround(factor, cx, cy) {
+  const next = clamp(state.zoom * factor, config.minZoom, config.maxZoom);
+  const ratio = next / state.zoom;
+  state.panX = cx - ratio * (cx - state.panX);
+  state.panY = cy - ratio * (cy - state.panY);
+  state.zoom = next;  state.fitMode = 'custom';
+  applyTransform();
+}
+
+function canPanNow() {
+  const rW = state.svgW * state.zoom, rH = state.svgH * state.zoom;
+  return rW + config.fitPadding * 2 > viewport.clientWidth
+      || rH + config.fitPadding * 2 > viewport.clientHeight;
+}
+
+// --- Click-to-expand: open full-size SVG in new tab ---
+function openMermaidInNewTab() {
+  var svg = canvas.querySelector('svg');
   if (!svg) return;
-
-  // Clone the SVG and remove any inline transforms from zoom
   var clone = svg.cloneNode(true);
-  clone.style.zoom = '';
-  clone.style.transform = '';
-
-  // Get computed styles for theming
+  clone.style.width = '';  clone.style.height = '';
   var styles = getComputedStyle(document.documentElement);
   var bg = styles.getPropertyValue('--bg').trim() || '#ffffff';
-
-  // Build standalone HTML page
-  var html = '<!DOCTYPE html>' +
-    '<html lang="en"><head><meta charset="UTF-8">' +
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>Diagram</title>' +
-    '<style>' +
-    'body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: ' + bg + '; padding: 40px; box-sizing: border-box; }' +
-    'svg { max-width: 100%; max-height: 90vh; height: auto; }' +
-    '</style></head><body>' +
-    clone.outerHTML +
-    '</body></html>';
-
-  var blob = new Blob([html], { type: 'text/html' });
-  var url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+    '<title>Diagram</title><style>' +
+    'body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+    'background:' + bg + ';padding:40px;box-sizing:border-box}' +
+    'svg{max-width:100%;max-height:90vh;height:auto}' +
+    '</style></head><body>' + clone.outerHTML + '</body></html>';
+  window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
 }
 
-document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
-  // Ctrl/Cmd + scroll to zoom
-  wrap.addEventListener('wheel', function(e) {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    var target = wrap.querySelector('.mermaid');
-    var current = parseFloat(target.dataset.zoom || INITIAL_ZOOM);
-    var factor = e.deltaY < 0 ? 1.1 : 0.9;
-    var next = Math.min(Math.max(current * factor, 0.5), 5);
-    target.dataset.zoom = next;
-    target.style.zoom = next;
-  }, { passive: false });
+// --- Wire interactions ---
+document.getElementById('zoom-in').addEventListener('click', () =>
+  zoomAround(1 + config.zoomStep, viewport.clientWidth / 2, viewport.clientHeight / 2));
+document.getElementById('zoom-out').addEventListener('click', () =>
+  zoomAround(1 / (1 + config.zoomStep), viewport.clientWidth / 2, viewport.clientHeight / 2));
+document.getElementById('zoom-fit').addEventListener('click', fitDiagram);
+document.getElementById('zoom-one').addEventListener('click', setOneToOne);
+document.getElementById('zoom-expand').addEventListener('click', openMermaidInNewTab);
+viewport.addEventListener('dblclick', fitDiagram);
 
-  // Click-and-drag to pan, click (without drag) to open full-size
-  var startX, startY, scrollL, scrollT, startTime, didPan;
-  wrap.addEventListener('mousedown', function(e) {
-    if (e.target.closest('.zoom-controls')) return;
-    wrap.classList.add('is-panning');
-    startX = e.clientX;
-    startY = e.clientY;
-    scrollL = wrap.scrollLeft;
-    scrollT = wrap.scrollTop;
-    startTime = Date.now();
-    didPan = false;
-  });
-  window.addEventListener('mousemove', function(e) {
-    if (!wrap.classList.contains('is-panning')) return;
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) didPan = true;
-    wrap.scrollLeft = scrollL - dx;
-    wrap.scrollTop = scrollT - dy;
-  });
-  window.addEventListener('mouseup', function() {
-    if (!wrap.classList.contains('is-panning')) return;
-    wrap.classList.remove('is-panning');
-    // If click was quick and didn't move much, open full-size
-    var elapsed = Date.now() - startTime;
-    if (!didPan && elapsed < 300) {
-      openMermaidInNewTab(wrap);
-    }
-  });
+// Ctrl/Cmd+wheel = zoom toward cursor; regular scroll = pan
+viewport.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    zoomAround(e.deltaY < 0 ? 1 + config.zoomStep : 1 / (1 + config.zoomStep),
+               e.clientX - rect.left, e.clientY - rect.top);
+    return;
+  }
+  if (canPanNow()) {
+    e.preventDefault();
+    state.panX -= e.deltaX;  state.panY -= e.deltaY;
+    applyTransform();
+  }
+}, { passive: false });
+
+// Click-and-drag to pan
+let dragging = false, sx, sy, spx, spy;
+viewport.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.zoom-controls') || !canPanNow()) return;
+  dragging = true;  wrap.classList.add('is-panning');
+  sx = e.clientX;  sy = e.clientY;  spx = state.panX;  spy = state.panY;
+  e.preventDefault();
 });
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  state.panX = spx + (e.clientX - sx);  state.panY = spy + (e.clientY - sy);
+  applyTransform();
+});
+window.addEventListener('mouseup', () => {
+  if (!dragging) return;
+  dragging = false;  wrap.classList.remove('is-panning');
+});
+
+// Touch: single-finger pan, two-finger pinch-to-zoom
+let td = 0, tcx = 0, tcy = 0;
+viewport.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; spx = state.panX; spy = state.panY; }
+  else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+    td = Math.sqrt(dx * dx + dy * dy);
+    const r = viewport.getBoundingClientRect();
+    tcx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+    tcy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+  }
+}, { passive: true });
+viewport.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1 && canPanNow()) {
+    e.preventDefault();
+    state.panX = spx + (e.touches[0].clientX - sx);  state.panY = spy + (e.touches[0].clientY - sy);
+    applyTransform();
+  } else if (e.touches.length === 2 && td > 0) {
+    e.preventDefault();
+    const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    zoomAround(d / td, tcx, tcy);  td = d;
+  }
+}, { passive: false });
+
+// Refit on container resize
+new ResizeObserver(() => { if (state.svgW) { setAdaptiveHeight(); fitDiagram(); } }).observe(wrap);
+
+// --- Render diagram ---
+async function renderDiagram() {
+  const source = document.getElementById('diagram-source').textContent.trim();
+  const { svg } = await mermaid.render('diagram-' + Date.now(), source);
+  canvas.innerHTML = svg;
+  const svgNode = canvas.querySelector('svg');
+  if (!svgNode) return;
+  const size = readSvgNaturalSize(svgNode);
+  state.svgW = size.w;  state.svgH = size.h;
+  svgNode.removeAttribute('width');  svgNode.removeAttribute('height');
+  svgNode.style.maxWidth = 'none';   svgNode.style.display = 'block';
+  setAdaptiveHeight();
+  fitDiagram();
+}
+renderDiagram();
 ```
 
-Scroll-to-zoom requires Ctrl/Cmd+scroll to avoid hijacking normal page scroll. Cursor changes to `grab`/`grabbing` to signal pan mode. The zoom range is capped at 0.5x–5x. **Clicking without dragging opens the diagram full-size in a new browser tab.**
+**Interaction summary.** Ctrl/Cmd+scroll zooms toward the cursor. Regular scroll pans when zoomed. Drag pans when the diagram overflows. Double-click resets to smart fit. The expand button (⛶) opens the diagram full-size in a new browser tab. Touch supports single-finger pan and two-finger pinch-to-zoom.
 
 ## Grid Layouts
 
