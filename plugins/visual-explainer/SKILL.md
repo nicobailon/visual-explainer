@@ -363,12 +363,12 @@ Share visual explainer pages instantly via Vercel. No account or authentication 
 
 **Usage:**
 ```bash
-bash {{skill_dir}}/scripts/share.sh <html-file>
+bash ./scripts/share.sh <html-file>
 ```
 
 **Example:**
 ```bash
-bash {{skill_dir}}/scripts/share.sh ~/.agent/diagrams/my-diagram.html
+bash ./scripts/share.sh ~/.agent/diagrams/my-diagram.html
 
 # Output:
 # ✓ Shared successfully!
