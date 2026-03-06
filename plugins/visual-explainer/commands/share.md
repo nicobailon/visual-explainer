@@ -31,8 +31,10 @@ No Vercel account, Cloudflare account, or API keys needed. The deployment is "cl
 
 ## Script Location
 
+After loading the `visual-explainer` skill, run the script relative to the skill directory:
+
 ```bash
-bash {{skill_dir}}/scripts/share.sh <file>
+bash ./scripts/share.sh <file>
 ```
 
 ## Output

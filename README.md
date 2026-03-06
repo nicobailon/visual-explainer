@@ -36,20 +36,16 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 
 Note: Claude Code plugins namespace commands as `/visual-explainer:command-name`.
 
-**Pi (manual):**
+**Pi:**
 ```bash
-# Clone the repo
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+# Install globally
+pi install git:github.com/nicobailon/visual-explainer
 
-# Install skill
-cp -r /tmp/visual-explainer/plugins/visual-explainer ~/.pi/agent/skills/visual-explainer
-
-# Install prompt templates (slash commands)
-cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.pi/agent/prompts/
-
-# Cleanup
-rm -rf /tmp/visual-explainer
+# Or install for just the current project
+pi install -l git:github.com/nicobailon/visual-explainer
 ```
+
+This loads the `visual-explainer` skill plus the prompt templates (`/diff-review`, `/plan-review`, `/generate-web-diagram`, etc.) directly from the git repo.
 
 **OpenAI Codex:**
 ```bash
