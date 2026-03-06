@@ -2,10 +2,10 @@
   "name": "visual-explainer",
   "version": "0.5.1",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, and data tables",
-  "keywords": [
-    "claude-code-plugin",
-    "agent-skill",
-    "pi-package"
-  ],
-  "license": "MIT"
+  "keywords": ["claude-code-plugin", "agent-skill", "pi-package"],
+  "license": "MIT",
+  "pi": {
+    "skills": ["./plugins/visual-explainer"],
+    "prompts": ["./plugins/visual-explainer/commands"]
+  }
 }
