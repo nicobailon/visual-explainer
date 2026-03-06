@@ -4,7 +4,8 @@
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, and data tables",
   "keywords": [
     "claude-code-plugin",
-    "agent-skill"
+    "agent-skill",
+    "pi-package"
   ],
   "license": "MIT"
 }
