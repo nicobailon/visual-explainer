@@ -117,6 +117,7 @@ Based on PR #25 by [@peak-flow](https://github.com/peak-flow), with additional m
 ## [0.4.3] - 2026-03-01
 
 ### Mermaid Zoom and Positioning Fixes
+
 - **Fixed zoom clipping**: Replaced `transform: scale()` with CSS `zoom` property. Transform only changes visual appearance — content expanding upward/leftward goes into negative space which can't be scrolled to. Zoom changes actual layout size, so overflow scrolls normally in all directions.
 - **Fixed vertical centering**: Changed `align-items: flex-start` to `align-items: center` so diagrams are centered both horizontally and vertically in their container.
 - **Added initial zoom**: Complex diagrams can start at zoom > 1 (e.g., 1.4x) for better readability while keeping zoom controls functional.
@@ -136,29 +137,35 @@ Based on PR #25 by [@peak-flow](https://github.com/peak-flow), with additional m
 ## [0.4.2] - 2026-03-01
 
 ### Link Styling
+
 - New "Link Styling" section in `css-patterns.md` — never rely on browser default link colors; use accent colors with sufficient contrast
 
 ## [0.4.1] - 2026-03-01
 
 ### Mermaid Layout Direction
+
 - New "Layout Direction: TD vs LR" section in `libraries.md`
 - Prefer `flowchart TD` (top-down) over `flowchart LR` (left-to-right) for complex diagrams
 - LR spreads horizontally and makes labels unreadable with many nodes
 - Rule: use TD for 5+ nodes or any branching; LR only for simple 3-4 node linear flows
 
 ### Documentation
+
 - Simplified README: trimmed Usage section, consolidated Install, added Slide Deck Mode section
 - Added `/generate-visual-plan` to command table
 
 ## [0.4.0] - 2026-02-28
 
 ### New Prompt Template
+
 - `/generate-visual-plan` — generate visual implementation plans for features and extensions. Produces editorial/blueprint-style HTML pages with problem comparison panels, state machine diagrams, code snippets, edge case tables, and implementation notes. Designed for documenting feature specs before implementation.
 
 ### Prose Accent Patterns
+
 Added patterns for use as accent elements within visual pages.
 
 **`css-patterns.md`** — New "Prose Page Elements" section:
+
 - Body text settings (font-size, line-height, max-width for comfortable reading)
 - Lead paragraph patterns (larger size, drop cap variants)
 - Pull quotes (border-left, centered with quotation mark)
@@ -168,18 +175,22 @@ Added patterns for use as accent elements within visual pages.
 - Prose-specific anti-patterns
 
 **`libraries.md`** — New "Typography by Content Voice" section:
+
 - Font recommendations by content type (literary, technical, bold, minimal)
 - Special mention of Literata for screen reading
 
 **`SKILL.md`** — New sections:
+
 - "Prose Accent Elements" — when to use lead paragraphs, pull quotes, callouts
 - "Documentation" — content-to-visual mapping (features→cards, steps→flows, APIs→tables)
 
 ### Overflow Fix: List Markers in Bordered Containers
+
 - `css-patterns.md`: New section "List markers overlapping container borders" with three solutions
 - Rule of thumb: use `list-style-position: inside` or `padding-left: 2em` for lists in bordered containers
 
 ### Mermaid Fixes
+
 - Centering: narrow vertical flowcharts must be centered, not left-aligned
 - Scaling: complex diagrams with 10+ nodes render too small — increase fontSize to 18-20px or use CSS scale transform
 - Special characters: node labels starting with `/`, `\`, `(`, `{` must be quoted to avoid shape syntax conflicts
@@ -187,6 +198,7 @@ Added patterns for use as accent elements within visual pages.
 - New "Node Label Special Characters" section in libraries.md
 
 ### Code Block Patterns
+
 - `css-patterns.md`: New "Code Blocks" section with:
   - Basic pattern with `white-space: pre-wrap` (critical for preserving line breaks)
   - File header pattern for displaying code with filename
@@ -196,6 +208,7 @@ Added patterns for use as accent elements within visual pages.
 ## [0.3.0] - 2026-02-26
 
 ### Anti-Slop Guardrails
+
 - Added explicit "Anti-Patterns (AI Slop)" section to SKILL.md with forbidden patterns
 - Removed "Neon dashboard" and "Gradient mesh" from allowed aesthetics — they always produce generic output
 - Categorized aesthetics as "Constrained" (safer) vs "Flexible" (use with caution)
@@ -208,12 +221,14 @@ Added patterns for use as accent elements within visual pages.
 - Referenced `websocket-implementation-plan.html` as positive example of Blueprint aesthetic
 
 ### Template Fixes
+
 - Replaced violet secondary colors in `mermaid-flowchart.html` with sky blue to match anti-slop guidelines
 - Updated Mermaid themeVariables example in `libraries.md` to use teal/slate palette instead of violet
 
 ## [0.2.0] - 2026-02-25
 
 ### Slide Deck Mode
+
 - New output format: magazine-quality slide deck presentations as self-contained HTML files
 - 10 slide types: Title, Section Divider, Content, Split, Diagram, Dashboard, Table, Code, Quote, Full-Bleed
 - SlideEngine JS: keyboard/touch/wheel navigation, progress bar, nav dots, slide counter, keyboard hints with auto-fade
@@ -231,6 +246,7 @@ Added patterns for use as accent elements within visual pages.
 - Fix quote slides with long text (proportional font-size reduction)
 
 ### Files
+
 - `references/slide-patterns.md` — slide engine CSS, all 10 type layouts, transitions, nav chrome, content density limits, presets
 - `templates/slide-deck.html` — reference template demonstrating all 10 types in Midnight Editorial preset
 - `prompts/generate-slides.md` — slash command for generating slide decks
@@ -262,6 +278,7 @@ Added patterns for use as accent elements within visual pages.
 Initial release.
 
 ### Skill
+
 - Core workflow: Think (pick aesthetic) → Structure (read template) → Style (apply design) → Deliver (write + open)
 - 11 diagram types with rendering approach routing (Mermaid, CSS Grid, HTML tables, Chart.js)
 - 9 aesthetic directions (monochrome terminal, editorial, blueprint, neon, paper/ink, sketch, IDE-inspired, data-dense, gradient mesh)
@@ -273,16 +290,19 @@ Initial release.
 - Quality checks: squint test, swap test, overflow protection, zoom controls verification
 
 ### References
+
 - `css-patterns.md` — theme setup, depth tiers, node cards, grid layouts, data tables, status badges, KPI cards, before/after panels, connectors, animations (fadeUp, fadeScale, drawIn, countUp), collapsible sections, overflow protection, generated image containers
 - `libraries.md` — Mermaid (CDN, ELK, deep theming, hand-drawn mode, CSS overrides, diagram examples), Chart.js, anime.js, Google Fonts with 13 font pairings
 - `responsive-nav.md` — sticky sidebar TOC on desktop, horizontal scrollable bar on mobile, scroll spy
 
 ### Templates
+
 - `architecture.html` — CSS Grid card layout, terracotta/sage palette, depth tiers, flow arrows, pipeline with parallel branches
 - `mermaid-flowchart.html` — Mermaid flowchart with ELK + handDrawn mode, teal/cyan palette, zoom controls
 - `data-table.html` — HTML table with KPI cards, status badges, collapsible details, rose/cranberry palette
 
 ### Prompt Templates
+
 - `/generate-web-diagram` — generate a diagram for any topic
 - `/diff-review` — visual diff review with architecture comparison, KPI dashboard, code review, decision log
 - `/plan-review` — plan vs. codebase with current/planned architecture, risk assessment, understanding gaps

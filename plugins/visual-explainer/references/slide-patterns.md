@@ -13,6 +13,7 @@ When converting a plan, spec, review, or any structured document into slides, fo
 **Step 1 — Inventory the source.** Read the entire source document and enumerate every section, subsection, card, table row, decision, specification, collapsible detail, and footnote. Count them. A plan with 7 sections, 6 decision cards, a 7-row file table, 4 presets, 6 technique guides, and an engine spec with 3 sub-specs and 2 collapsibles is ~25 distinct content items that all need slide real estate.
 
 **Step 2 — Map source to slides.** Assign each inventory item to one or more slides. Every item must appear somewhere. Rules:
+
 - If a section has 6 decisions, all 6 need slides — not the 2 that fit on one split slide.
 - If a table has 7 rows, all 7 rows show up.
 - Collapsible/expandable details in the source are not optional in the deck — they become their own slides.
@@ -33,12 +34,12 @@ The deck is a scroll-snap container. Each slide is exactly one viewport tall.
 
 ```html
 <body>
-<div class="deck">
-  <section class="slide slide--title"> ... </section>
-  <section class="slide slide--content"> ... </section>
-  <section class="slide slide--diagram"> ... </section>
-  <!-- one <section> per slide -->
-</div>
+  <div class="deck">
+    <section class="slide slide--title">...</section>
+    <section class="slide slide--content">...</section>
+    <section class="slide slide--diagram">...</section>
+    <!-- one <section> per slide -->
+  </div>
 </body>
 ```
 
@@ -110,15 +111,15 @@ Slide typography is 2–3× larger than scrollable pages. Page-sized text on a v
 }
 ```
 
-| Element | Size range | Notes |
-|---------|-----------|-------|
-| Display (title slides) | 48–120px | `10vw` preferred, weight 800 |
-| Section numbers | 100–240px | Ultra-light (weight 200), decorative |
-| Headings | 28–48px | `5vw` preferred, weight 700 |
-| Body / bullets | 16–24px | `2.2vw` preferred, 1.6 line-height |
-| Code blocks | 14–18px | `1.8vw` preferred, mono |
-| Quotes | 24–48px | `4vw` preferred, serif italic |
-| Labels / captions | 10–14px | Mono, uppercase, dimmed |
+| Element                | Size range | Notes                                |
+| ---------------------- | ---------- | ------------------------------------ |
+| Display (title slides) | 48–120px   | `10vw` preferred, weight 800         |
+| Section numbers        | 100–240px  | Ultra-light (weight 200), decorative |
+| Headings               | 28–48px    | `5vw` preferred, weight 700          |
+| Body / bullets         | 16–24px    | `2.2vw` preferred, 1.6 line-height   |
+| Code blocks            | 14–18px    | `1.8vw` preferred, mono              |
+| Quotes                 | 24–48px    | `4vw` preferred, serif italic        |
+| Labels / captions      | 10–14px    | Mono, uppercase, dimmed              |
 
 ## Cinematic Transitions
 
@@ -154,12 +155,24 @@ IntersectionObserver adds `.visible` when a slide enters the viewport. Slides an
 }
 
 /* Stagger delays — up to 6 children per slide */
-.slide.visible .reveal:nth-child(1) { transition-delay: 0.1s; }
-.slide.visible .reveal:nth-child(2) { transition-delay: 0.2s; }
-.slide.visible .reveal:nth-child(3) { transition-delay: 0.3s; }
-.slide.visible .reveal:nth-child(4) { transition-delay: 0.4s; }
-.slide.visible .reveal:nth-child(5) { transition-delay: 0.5s; }
-.slide.visible .reveal:nth-child(6) { transition-delay: 0.6s; }
+.slide.visible .reveal:nth-child(1) {
+  transition-delay: 0.1s;
+}
+.slide.visible .reveal:nth-child(2) {
+  transition-delay: 0.2s;
+}
+.slide.visible .reveal:nth-child(3) {
+  transition-delay: 0.3s;
+}
+.slide.visible .reveal:nth-child(4) {
+  transition-delay: 0.4s;
+}
+.slide.visible .reveal:nth-child(5) {
+  transition-delay: 0.5s;
+}
+.slide.visible .reveal:nth-child(6) {
+  transition-delay: 0.6s;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .slide,
@@ -213,7 +226,9 @@ All navigation is `position: fixed` with high z-index, layered above slides. Sty
   border: none;
   padding: 0;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .deck-dot:hover {
@@ -296,8 +311,8 @@ Add once at the end of the page. Handles navigation, chrome updates, and scroll-
 ```javascript
 class SlideEngine {
   constructor() {
-    this.deck = document.querySelector('.deck');
-    this.slides = [...document.querySelectorAll('.slide')];
+    this.deck = document.querySelector(".deck");
+    this.slides = [...document.querySelectorAll(".slide")];
     this.current = 0;
     this.total = this.slides.length;
     this.buildChrome();
@@ -308,102 +323,129 @@ class SlideEngine {
 
   buildChrome() {
     // Progress bar
-    var bar = document.createElement('div');
-    bar.className = 'deck-progress';
+    var bar = document.createElement("div");
+    bar.className = "deck-progress";
     document.body.appendChild(bar);
     this.bar = bar;
 
     // Nav dots
-    var dots = document.createElement('div');
-    dots.className = 'deck-dots';
+    var dots = document.createElement("div");
+    dots.className = "deck-dots";
     var self = this;
-    this.slides.forEach(function(_, i) {
-      var d = document.createElement('button');
-      d.className = 'deck-dot';
-      d.title = 'Slide ' + (i + 1);
-      d.onclick = function() { self.goTo(i); };
+    this.slides.forEach(function (_, i) {
+      var d = document.createElement("button");
+      d.className = "deck-dot";
+      d.title = "Slide " + (i + 1);
+      d.onclick = function () {
+        self.goTo(i);
+      };
       dots.appendChild(d);
     });
     document.body.appendChild(dots);
     this.dots = [].slice.call(dots.children);
 
     // Counter
-    var ctr = document.createElement('div');
-    ctr.className = 'deck-counter';
+    var ctr = document.createElement("div");
+    ctr.className = "deck-counter";
     document.body.appendChild(ctr);
     this.counter = ctr;
 
     // Keyboard hints
-    var hints = document.createElement('div');
-    hints.className = 'deck-hints';
-    hints.textContent = '\u2190 \u2192 or scroll to navigate';
+    var hints = document.createElement("div");
+    hints.className = "deck-hints";
+    hints.textContent = "\u2190 \u2192 or scroll to navigate";
     document.body.appendChild(hints);
     this.hints = hints;
-    this.hintTimer = setTimeout(function() {
-      hints.classList.add('faded');
+    this.hintTimer = setTimeout(function () {
+      hints.classList.add("faded");
     }, 4000);
   }
 
   bindEvents() {
     var self = this;
     // Keyboard — skip if focus is inside interactive content
-    document.addEventListener('keydown', function(e) {
-      if (e.target.closest('.mermaid-wrap, .table-scroll, .code-scroll, input, textarea, [contenteditable]')) return;
-      if (['ArrowDown', 'ArrowRight', ' ', 'PageDown'].includes(e.key)) {
-        e.preventDefault(); self.next();
-      } else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) {
-        e.preventDefault(); self.prev();
-      } else if (e.key === 'Home') {
-        e.preventDefault(); self.goTo(0);
-      } else if (e.key === 'End') {
-        e.preventDefault(); self.goTo(self.total - 1);
+    document.addEventListener("keydown", function (e) {
+      if (
+        e.target.closest(
+          ".mermaid-wrap, .table-scroll, .code-scroll, input, textarea, [contenteditable]",
+        )
+      )
+        return;
+      if (["ArrowDown", "ArrowRight", " ", "PageDown"].includes(e.key)) {
+        e.preventDefault();
+        self.next();
+      } else if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) {
+        e.preventDefault();
+        self.prev();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        self.goTo(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        self.goTo(self.total - 1);
       }
       self.fadeHints();
     });
 
     // Touch swipe
     var touchY;
-    this.deck.addEventListener('touchstart', function(e) {
-      touchY = e.touches[0].clientY;
-    }, { passive: true });
-    this.deck.addEventListener('touchend', function(e) {
+    this.deck.addEventListener(
+      "touchstart",
+      function (e) {
+        touchY = e.touches[0].clientY;
+      },
+      { passive: true },
+    );
+    this.deck.addEventListener("touchend", function (e) {
       var dy = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(dy) > 50) { dy > 0 ? self.next() : self.prev(); }
+      if (Math.abs(dy) > 50) {
+        dy > 0 ? self.next() : self.prev();
+      }
     });
   }
 
   observe() {
     var self = this;
-    var obs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          self.current = self.slides.indexOf(entry.target);
-          self.update();
-        }
-      });
-    }, { threshold: 0.5 });
-    this.slides.forEach(function(s) { obs.observe(s); });
+    var obs = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            self.current = self.slides.indexOf(entry.target);
+            self.update();
+          }
+        });
+      },
+      { threshold: 0.5 },
+    );
+    this.slides.forEach(function (s) {
+      obs.observe(s);
+    });
   }
 
   goTo(i) {
-    this.slides[Math.max(0, Math.min(i, this.total - 1))]
-      .scrollIntoView({ behavior: 'smooth' });
+    this.slides[Math.max(0, Math.min(i, this.total - 1))].scrollIntoView({ behavior: "smooth" });
   }
 
-  next() { if (this.current < this.total - 1) this.goTo(this.current + 1); }
-  prev() { if (this.current > 0) this.goTo(this.current - 1); }
+  next() {
+    if (this.current < this.total - 1) this.goTo(this.current + 1);
+  }
+  prev() {
+    if (this.current > 0) this.goTo(this.current - 1);
+  }
 
   update() {
-    this.bar.style.width = ((this.current + 1) / this.total * 100) + '%';
+    this.bar.style.width = ((this.current + 1) / this.total) * 100 + "%";
     var self = this;
-    this.dots.forEach(function(d, i) { d.classList.toggle('active', i === self.current); });
-    this.counter.textContent = (this.current + 1) + ' / ' + this.total;
+    this.dots.forEach(function (d, i) {
+      d.classList.toggle("active", i === self.current);
+    });
+    this.counter.textContent = this.current + 1 + " / " + this.total;
   }
 
   fadeHints() {
     clearTimeout(this.hintTimer);
-    this.hints.classList.add('faded');
+    this.hints.classList.add("faded");
   }
 }
 ```
@@ -413,7 +455,7 @@ class SlideEngine {
 ```html
 <script>
   // After Mermaid/Chart.js initialization (if used), or at end of <body>:
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", function () {
     autoFit();
     new SlideEngine();
   });
@@ -427,36 +469,37 @@ A single post-render function that handles all known content overflow cases. Age
 ```javascript
 function autoFit() {
   // Mermaid SVGs: fill container instead of rendering at intrinsic size
-  document.querySelectorAll('.mermaid svg').forEach(function(svg) {
-    svg.removeAttribute('height');
-    svg.style.width = '100%';
-    svg.style.maxWidth = '100%';
-    svg.style.height = 'auto';
-    svg.parentElement.style.width = '100%';
+  document.querySelectorAll(".mermaid svg").forEach(function (svg) {
+    svg.removeAttribute("height");
+    svg.style.width = "100%";
+    svg.style.maxWidth = "100%";
+    svg.style.height = "auto";
+    svg.parentElement.style.width = "100%";
   });
 
   // KPI values: visually scale down text that overflows card width
-  document.querySelectorAll('.slide__kpi-val').forEach(function(el) {
+  document.querySelectorAll(".slide__kpi-val").forEach(function (el) {
     if (el.scrollWidth > el.clientWidth) {
       var s = el.clientWidth / el.scrollWidth;
-      el.style.transform = 'scale(' + s + ')';
-      el.style.transformOrigin = 'left top';
+      el.style.transform = "scale(" + s + ")";
+      el.style.transformOrigin = "left top";
     }
   });
 
   // Blockquotes: reduce font proportionally for long text
-  document.querySelectorAll('.slide--quote blockquote').forEach(function(el) {
+  document.querySelectorAll(".slide--quote blockquote").forEach(function (el) {
     var len = el.textContent.trim().length;
     if (len > 100) {
       var scale = Math.max(0.5, 100 / len);
       var fs = parseFloat(getComputedStyle(el).fontSize);
-      el.style.fontSize = Math.max(16, Math.round(fs * scale)) + 'px';
+      el.style.fontSize = Math.max(16, Math.round(fs * scale)) + "px";
     }
   });
 }
 ```
 
 Three cases, one function:
+
 - **Mermaid:** SVGs render with fixed dimensions inside flex containers — force them to fill available width.
 - **KPI values:** Long text strings at hero scale overflow card boundaries — `transform: scale()` shrinks visually without reflow.
 - **Blockquotes:** Quotes longer than ~100 characters get proportionally smaller font. The 0.5 floor prevents unreadably small text; if it needs more than 50% shrink, it should have been a content slide.
@@ -565,7 +608,7 @@ Heading + bullets or paragraphs. Asymmetric layout — content offset to one sid
 }
 
 .slide--content .slide__bullets li::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 18px;
@@ -723,9 +766,18 @@ For simple linear flows (build steps, deployment stages, data pipelines) where M
       <div class="pipeline__file">output-file.md</div>
     </div>
     <div class="pipeline__arrow">
-      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14m-4-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20">
+        <path
+          d="M5 12h14m-4-4l4 4-4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
     </div>
-    <div class="pipeline__step"> ... </div>
+    <div class="pipeline__step">...</div>
     <!-- repeat step + arrow pairs -->
   </div>
 </section>
@@ -794,8 +846,14 @@ For simple linear flows (build steps, deployment stages, data pipelines) where M
 }
 
 @media (max-width: 768px) {
-  .pipeline { flex-direction: column; }
-  .pipeline__arrow { justify-content: center; padding: 4px 0; transform: rotate(90deg); }
+  .pipeline {
+    flex-direction: column;
+  }
+  .pipeline__arrow {
+    justify-content: center;
+    padding: 4px 0;
+    transform: rotate(90deg);
+  }
 }
 ```
 
@@ -865,7 +923,9 @@ KPI cards at presentation scale (48–64px hero numbers). Mini-charts via Chart.
   <h2 class="slide__heading reveal">Data Title</h2>
   <div class="table-wrap reveal" style="flex:1; min-height:0;">
     <div class="table-scroll">
-      <table class="data-table"> ... </table>
+      <table class="data-table">
+        ...
+      </table>
     </div>
   </div>
 </section>
@@ -954,9 +1014,7 @@ KPI cards at presentation scale (48–64px hero numbers). Mini-charts via Chart.
 ```html
 <section class="slide slide--quote">
   <div class="slide__quote-mark reveal">&ldquo;</div>
-  <blockquote class="reveal">
-    The best code is the code you don't have to write.
-  </blockquote>
+  <blockquote class="reveal">The best code is the code you don't have to write.</blockquote>
   <cite class="reveal">&mdash; Someone Wise</cite>
 </section>
 ```
@@ -1031,7 +1089,12 @@ Background image (surf-generated or CSS gradient) dominates the viewport. Text o
 .slide__scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.1) 50%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.1) 50%,
+    transparent 100%
+  );
   z-index: 1;
 }
 
@@ -1043,7 +1106,11 @@ Background image (surf-generated or CSS gradient) dominates the viewport. Text o
 
 /* When no generated image, use a bold CSS gradient background */
 .slide__bg--gradient {
-  background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 60%, var(--bg) 40%) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 60%, var(--bg) 40%) 100%
+  );
 }
 ```
 
@@ -1056,8 +1123,8 @@ Inline SVG accents lift slides from functional to editorial. Use sparingly — o
 ```html
 <!-- Top-right corner mark -->
 <svg class="slide__decor slide__decor--corner" width="120" height="120" viewBox="0 0 120 120">
-  <line x1="120" y1="0" x2="120" y2="40" stroke="var(--accent)" stroke-width="2" opacity="0.2"/>
-  <line x1="80" y1="0" x2="120" y2="0" stroke="var(--accent)" stroke-width="2" opacity="0.2"/>
+  <line x1="120" y1="0" x2="120" y2="40" stroke="var(--accent)" stroke-width="2" opacity="0.2" />
+  <line x1="80" y1="0" x2="120" y2="0" stroke="var(--accent)" stroke-width="2" opacity="0.2" />
 </svg>
 ```
 
@@ -1079,9 +1146,19 @@ Inline SVG accents lift slides from functional to editorial. Use sparingly — o
 ```html
 <!-- Horizontal rule with diamond -->
 <svg class="slide__decor slide__decor--divider" width="200" height="20" viewBox="0 0 200 20">
-  <line x1="0" y1="10" x2="85" y2="10" stroke="var(--accent)" stroke-width="1" opacity="0.3"/>
-  <rect x="92" y="3" width="14" height="14" transform="rotate(45 99 10)" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.3"/>
-  <line x1="115" y1="10" x2="200" y2="10" stroke="var(--accent)" stroke-width="1" opacity="0.3"/>
+  <line x1="0" y1="10" x2="85" y2="10" stroke="var(--accent)" stroke-width="1" opacity="0.3" />
+  <rect
+    x="92"
+    y="3"
+    width="14"
+    height="14"
+    transform="rotate(45 99 10)"
+    fill="none"
+    stroke="var(--accent)"
+    stroke-width="1"
+    opacity="0.3"
+  />
+  <line x1="115" y1="10" x2="200" y2="10" stroke="var(--accent)" stroke-width="1" opacity="0.3" />
 </svg>
 ```
 
@@ -1090,7 +1167,7 @@ Inline SVG accents lift slides from functional to editorial. Use sparingly — o
 ```css
 /* Faint grid dots behind a slide */
 .slide--with-grid::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
@@ -1147,6 +1224,7 @@ rm /tmp/ve-slide-title.png
 ```
 
 **Prompt craft for slides:** Be specific about style, dominant colors, and mood. Pull colors from the preset's CSS variables. Examples:
+
 - Terminal Mono: "dark abstract circuit board pattern, green (#50fa7b) traces on near-black (#0a0e14), minimal, technical"
 - Midnight Editorial: "deep navy abstract composition, warm gold accent light, cinematic depth of field, premium editorial feel"
 - Warm Signal: "warm cream textured paper with terracotta geometric accents, confident modern design"
@@ -1162,6 +1240,7 @@ rm /tmp/ve-slide-title.png
 Consecutive slides must vary their spatial approach. Three centered slides in a row means push one off-axis.
 
 **Composition patterns to alternate between:**
+
 - Centered (title slides, quotes)
 - Left-heavy: content on the left 60%, breathing room on the right
 - Right-heavy: content on the right 60%, visual or whitespace on the left
@@ -1185,18 +1264,18 @@ Slides get projected, screen-shared, viewed at distance. Design accordingly:
 
 Each slide must fit in exactly 100dvh. If content exceeds these limits, the agent splits across multiple slides — never scrolls within a slide.
 
-| Slide type | Max content |
-|-----------|-------------|
-| Title | 1 heading + 1 subtitle |
-| Section Divider | 1 number + 1 heading + optional subhead |
-| Content | 1 heading + 5–6 bullets (max 2 lines each) |
-| Split | 1 heading + 2 panels, each follows its inner type's limits |
-| Diagram | 1 heading + 1 Mermaid diagram (max 8–10 nodes) |
-| Dashboard | 1 heading + 6 KPI cards. Hero values ≤6 chars (numbers, %, short labels). Longer strings belong in the label row. |
-| Table | 1 heading + 8 rows; overflow paginates to next slide |
-| Code | 1 heading + 10 lines of code |
-| Quote | 1 short quote (~25 words / ~150 chars max) + 1 attribution. Longer quotes are content slides, not quote slides. |
-| Full-Bleed | 1 heading + 1 subtitle over background |
+| Slide type      | Max content                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Title           | 1 heading + 1 subtitle                                                                                            |
+| Section Divider | 1 number + 1 heading + optional subhead                                                                           |
+| Content         | 1 heading + 5–6 bullets (max 2 lines each)                                                                        |
+| Split           | 1 heading + 2 panels, each follows its inner type's limits                                                        |
+| Diagram         | 1 heading + 1 Mermaid diagram (max 8–10 nodes)                                                                    |
+| Dashboard       | 1 heading + 6 KPI cards. Hero values ≤6 chars (numbers, %, short labels). Longer strings belong in the label row. |
+| Table           | 1 heading + 8 rows; overflow paginates to next slide                                                              |
+| Code            | 1 heading + 10 lines of code                                                                                      |
+| Quote           | 1 short quote (~25 words / ~150 chars max) + 1 attribution. Longer quotes are content slides, not quote slides.   |
+| Full-Bleed      | 1 heading + 1 subtitle over background                                                                            |
 
 ## Responsive Height Breakpoints
 
@@ -1208,15 +1287,25 @@ Height-based scaling is more critical for slides than width. Each breakpoint pro
   .slide {
     padding: clamp(24px, 4vh, 40px) clamp(32px, 6vw, 80px);
   }
-  .slide__display { font-size: clamp(36px, 8vw, 72px); }
-  .slide--divider .slide__number { font-size: clamp(80px, 16vw, 160px); }
+  .slide__display {
+    font-size: clamp(36px, 8vw, 72px);
+  }
+  .slide--divider .slide__number {
+    font-size: clamp(80px, 16vw, 160px);
+  }
 }
 
 /* Small tablets / landscape phones */
 @media (max-height: 600px) {
-  .slide__decor { display: none; } /* hide decorative SVGs */
-  .slide--quote { padding: clamp(32px, 6vh, 60px) clamp(40px, 8vw, 100px); }
-  .slide__quote-mark { display: none; }
+  .slide__decor {
+    display: none;
+  } /* hide decorative SVGs */
+  .slide--quote {
+    padding: clamp(32px, 6vh, 60px) clamp(40px, 8vw, 100px);
+  }
+  .slide__quote-mark {
+    display: none;
+  }
 }
 
 /* Aggressive: landscape phones */
@@ -1224,16 +1313,28 @@ Height-based scaling is more critical for slides than width. Each breakpoint pro
   .slide {
     padding: clamp(16px, 3vh, 24px) clamp(24px, 5vw, 48px);
   }
-  .deck-dots { display: none; } /* dots clutter tiny viewports */
-  .slide__display { font-size: clamp(28px, 7vw, 48px); }
+  .deck-dots {
+    display: none;
+  } /* dots clutter tiny viewports */
+  .slide__display {
+    font-size: clamp(28px, 7vw, 48px);
+  }
 }
 
 /* Width breakpoint for grids */
 @media (max-width: 768px) {
-  .slide--content .slide__inner { grid-template-columns: 1fr; }
-  .slide--content .slide__aside { display: none; }
-  .slide--split .slide__panels { grid-template-columns: 1fr; }
-  .slide--dashboard .slide__kpis { grid-template-columns: repeat(2, 1fr); }
+  .slide--content .slide__inner {
+    grid-template-columns: 1fr;
+  }
+  .slide--content .slide__aside {
+    display: none;
+  }
+  .slide--split .slide__panels {
+    grid-template-columns: 1fr;
+  }
+  .slide--dashboard .slide__kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 ```
 
@@ -1247,8 +1348,8 @@ Deep navy, serif display, warm gold accents. Cinematic, premium. Dark-first.
 
 ```css
 :root {
-  --font-body: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --font-body: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
   --bg: #0f1729;
   --surface: #162040;
   --surface2: #1d2b52;
@@ -1288,8 +1389,8 @@ Cream paper, bold sans, terracotta/coral accents. Confident and modern. Light-fi
 
 ```css
 :root {
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-mono: 'Azeret Mono', 'SF Mono', monospace;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "Azeret Mono", "SF Mono", monospace;
   --bg: #faf6f0;
   --surface: #ffffff;
   --surface2: #f5ece0;
@@ -1329,8 +1430,8 @@ Dark, monospace everything, green/cyan accents, faint grid. Developer-native. Da
 
 ```css
 :root {
-  --font-body: 'Geist Mono', 'SF Mono', Consolas, monospace;
-  --font-mono: 'Geist Mono', 'SF Mono', Consolas, monospace;
+  --font-body: "Geist Mono", "SF Mono", Consolas, monospace;
+  --font-mono: "Geist Mono", "SF Mono", Consolas, monospace;
   --bg: #0a0e14;
   --surface: #12161e;
   --surface2: #1a1f2a;
@@ -1370,8 +1471,8 @@ White, geometric sans, single bold accent, visible grid. Minimal and precise. Li
 
 ```css
 :root {
-  --font-body: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'Fira Code', 'SF Mono', monospace;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --font-mono: "Fira Code", "SF Mono", monospace;
   --bg: #ffffff;
   --surface: #f8f8f8;
   --surface2: #f0f0f0;

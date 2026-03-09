@@ -9,22 +9,24 @@ Use for flowcharts, sequence diagrams, ER diagrams, state machines, mind maps, c
 Do NOT use for dashboards — CSS Grid card layouts with Chart.js look better for those. Data tables use `<table>` elements.
 
 **CDN:**
+
 ```html
 <script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 
-  mermaid.initialize({ startOnLoad: true, /* ... */ });
+  mermaid.initialize({ startOnLoad: true /* ... */ });
 </script>
 ```
 
 **With ELK layout** (required for `layout: 'elk'` — it's a separate package, not bundled in core):
+
 ```html
 <script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs';
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs";
 
   mermaid.registerLayoutLoaders(elkLayouts);
-  mermaid.initialize({ startOnLoad: true, layout: 'elk', /* ... */ });
+  mermaid.initialize({ startOnLoad: true, layout: "elk" /* ... */ });
 </script>
 ```
 
@@ -36,34 +38,34 @@ Always use `theme: 'base'` — it's the only theme where all `themeVariables` ar
 
 ```html
 <script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   mermaid.initialize({
     startOnLoad: true,
-    theme: 'base',
-    look: 'classic',
+    theme: "base",
+    look: "classic",
     themeVariables: {
       // Background and surfaces — teal/slate palette (not violet/indigo!)
-      primaryColor: isDark ? '#134e4a' : '#ccfbf1',
-      primaryBorderColor: isDark ? '#14b8a6' : '#0d9488',
-      primaryTextColor: isDark ? '#f0fdfa' : '#134e4a',
-      secondaryColor: isDark ? '#1e293b' : '#f0fdf4',
-      secondaryBorderColor: isDark ? '#059669' : '#16a34a',
-      secondaryTextColor: isDark ? '#f1f5f9' : '#1e293b',
-      tertiaryColor: isDark ? '#27201a' : '#fef3c7',
-      tertiaryBorderColor: isDark ? '#d97706' : '#f59e0b',
-      tertiaryTextColor: isDark ? '#fef3c7' : '#27201a',
+      primaryColor: isDark ? "#134e4a" : "#ccfbf1",
+      primaryBorderColor: isDark ? "#14b8a6" : "#0d9488",
+      primaryTextColor: isDark ? "#f0fdfa" : "#134e4a",
+      secondaryColor: isDark ? "#1e293b" : "#f0fdf4",
+      secondaryBorderColor: isDark ? "#059669" : "#16a34a",
+      secondaryTextColor: isDark ? "#f1f5f9" : "#1e293b",
+      tertiaryColor: isDark ? "#27201a" : "#fef3c7",
+      tertiaryBorderColor: isDark ? "#d97706" : "#f59e0b",
+      tertiaryTextColor: isDark ? "#fef3c7" : "#27201a",
       // Lines and edges
-      lineColor: isDark ? '#64748b' : '#94a3b8',
+      lineColor: isDark ? "#64748b" : "#94a3b8",
       // Text
-      fontSize: '16px',
-      fontFamily: 'var(--font-body)',
+      fontSize: "16px",
+      fontFamily: "var(--font-body)",
       // Notes and labels
-      noteBkgColor: isDark ? '#1e293b' : '#fefce8',
-      noteTextColor: isDark ? '#f1f5f9' : '#1e293b',
-      noteBorderColor: isDark ? '#fbbf24' : '#d97706',
-    }
+      noteBkgColor: isDark ? "#1e293b" : "#fefce8",
+      noteTextColor: isDark ? "#f1f5f9" : "#1e293b",
+      noteBorderColor: isDark ? "#fbbf24" : "#d97706",
+    },
   });
 </script>
 ```
@@ -90,9 +92,16 @@ Mermaid renders SVG. Override its classes for pixel-perfect control that `themeV
    but any classDef that sets color: will hardcode a single value that
    breaks in the opposite color scheme. Fix: never set color: in classDef,
    and always include these CSS overrides. */
-.mermaid .nodeLabel { color: var(--text) !important; }
-.mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
-.mermaid .edgeLabel rect { fill: var(--bg) !important; }
+.mermaid .nodeLabel {
+  color: var(--text) !important;
+}
+.mermaid .edgeLabel {
+  color: var(--text-dim) !important;
+  background-color: var(--bg) !important;
+}
+.mermaid .edgeLabel rect {
+  fill: var(--bg) !important;
+}
 
 /* Node shapes */
 .mermaid .node rect,
@@ -158,6 +167,7 @@ classDef muted fill:#7c6f6411,stroke:#7c6f6444,stroke-width:1px
 Mermaid uses certain characters for shape syntax. Node labels containing these characters cause syntax errors unless quoted.
 
 **Shape characters to watch:**
+
 - `[/text/]` — parallelogram
 - `[\text\]` — trapezoid (alt)
 - `[/text\]` — trapezoid
@@ -193,6 +203,7 @@ Avoid opaque light fills like `fill:#fefce8` — they render as bright boxes in 
 ### stateDiagram-v2 Label Limitations
 
 State diagram transition labels have a strict parser. Avoid:
+
 - `<br/>` — only works in flowcharts; causes a parse error in state diagrams
 - Parentheses in labels — `cancel()` can confuse the parser
 - Multiple colons — the first `:` is the label delimiter; extra colons in the label text may break parsing
@@ -240,12 +251,12 @@ Auth --> API
 
 **Arrow styles for semantic meaning:**
 
-| Arrow | Meaning | Use for |
-|-------|---------|---------|
-| `-->` | Solid | Primary flow |
-| `-.->` | Dotted | Optional, async, or fallback paths |
-| `==>` | Thick | Critical or highlighted path |
-| `--x` | Cross | Rejected or blocked |
+| Arrow          | Meaning | Use for                              |
+| -------------- | ------- | ------------------------------------ |
+| `-->`          | Solid   | Primary flow                         |
+| `-.->`         | Dotted  | Optional, async, or fallback paths   |
+| `==>`          | Thick   | Critical or highlighted path         |
+| `--x`          | Cross   | Rejected or blocked                  |
 | `-->\|label\|` | Labeled | Decision branches, data descriptions |
 
 **Escape pipes in labels.** If a label contains a literal `|`, use `#124;` (HTML entity) or rephrase to avoid it — pipes delimit edge labels in flowcharts.
@@ -272,10 +283,10 @@ B->>S: POST /submit with selected indices
 
 **When to use each:**
 
-| Direction | Use when | Avoid when |
-|-----------|----------|------------|
-| `TD` (top-down) | Complex diagrams, 5+ nodes, hierarchies, architecture | Simple A→B→C linear flows |
-| `LR` (left-to-right) | Simple linear flows, 3-4 nodes, pipelines | Complex graphs, many branches |
+| Direction            | Use when                                              | Avoid when                    |
+| -------------------- | ----------------------------------------------------- | ----------------------------- |
+| `TD` (top-down)      | Complex diagrams, 5+ nodes, hierarchies, architecture | Simple A→B→C linear flows     |
+| `LR` (left-to-right) | Simple linear flows, 3-4 nodes, pipelines             | Complex graphs, many branches |
 
 **Rule of thumb:** If the diagram has more than one row of nodes or any branching, use `TD`. The extra vertical space makes labels readable.
 
@@ -284,7 +295,7 @@ B->>S: POST /submit with selected indices
 flowchart LR
   A --> B --> C --> D --> E
   A --> F --> G --> H
-  
+
 %% RIGHT — TD uses vertical space, labels stay readable
 flowchart TD
   A --> B --> C --> D --> E
@@ -294,6 +305,7 @@ flowchart TD
 ### Diagram Type Examples
 
 **Flowchart with decisions:**
+
 ```html
 <pre class="mermaid">
 graph TD
@@ -309,6 +321,7 @@ graph TD
 ```
 
 **Sequence diagram:**
+
 ```html
 <pre class="mermaid">
 sequenceDiagram
@@ -327,6 +340,7 @@ sequenceDiagram
 ```
 
 **ER diagram:**
+
 ```html
 <pre class="mermaid">
 erDiagram
@@ -341,6 +355,7 @@ erDiagram
 ```
 
 **State diagram:**
+
 ```html
 <pre class="mermaid">
 stateDiagram-v2
@@ -355,6 +370,7 @@ stateDiagram-v2
 ```
 
 **Mind map:**
+
 ```html
 <pre class="mermaid">
 mindmap
@@ -438,7 +454,7 @@ Quick-reference for choosing the right Mermaid syntax:
 Mermaid initializes once — it can't reactively switch themes. Read the preference at load time inside your `<script type="module">`:
 
 ```javascript
-const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 // Use isDark to pick light or dark values in themeVariables
 ```
 
@@ -454,24 +470,27 @@ Use for bar charts, line charts, pie/doughnut charts, radar charts, and other da
 <canvas id="myChart" width="600" height="300"></canvas>
 
 <script>
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const textColor = isDark ? '#8b949e' : '#6b7280';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const fontFamily = getComputedStyle(document.documentElement)
-    .getPropertyValue('--font-body').trim() || 'system-ui, sans-serif';
+  const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const textColor = isDark ? "#8b949e" : "#6b7280";
+  const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const fontFamily =
+    getComputedStyle(document.documentElement).getPropertyValue("--font-body").trim() ||
+    "system-ui, sans-serif";
 
-  new Chart(document.getElementById('myChart'), {
-    type: 'bar',
+  new Chart(document.getElementById("myChart"), {
+    type: "bar",
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-      datasets: [{
-        label: 'Feedback Items',
-        data: [45, 62, 78, 91, 120],
-        backgroundColor: isDark ? 'rgba(129, 140, 248, 0.6)' : 'rgba(79, 70, 229, 0.6)',
-        borderColor: isDark ? '#818cf8' : '#4f46e5',
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
+      labels: ["Jan", "Feb", "Mar", "Apr", "May"],
+      datasets: [
+        {
+          label: "Feedback Items",
+          data: [45, 62, 78, 91, 120],
+          backgroundColor: isDark ? "rgba(129, 140, 248, 0.6)" : "rgba(79, 70, 229, 0.6)",
+          borderColor: isDark ? "#818cf8" : "#4f46e5",
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -479,15 +498,22 @@ Use for bar charts, line charts, pie/doughnut charts, radar charts, and other da
         legend: { labels: { color: textColor, font: { family: fontFamily } } },
       },
       scales: {
-        x: { ticks: { color: textColor, font: { family: fontFamily } }, grid: { color: gridColor } },
-        y: { ticks: { color: textColor, font: { family: fontFamily } }, grid: { color: gridColor } },
-      }
-    }
+        x: {
+          ticks: { color: textColor, font: { family: fontFamily } },
+          grid: { color: gridColor },
+        },
+        y: {
+          ticks: { color: textColor, font: { family: fontFamily } },
+          grid: { color: gridColor },
+        },
+      },
+    },
   });
 </script>
 ```
 
 Wrap the canvas in a styled container:
+
 ```css
 .chart-container {
   background: var(--surface);
@@ -510,35 +536,37 @@ Use when a diagram has 10+ elements and you want a choreographed entrance sequen
 <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
 
 <script>
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (!prefersReduced) {
     anime({
-      targets: '.ve-card',
+      targets: ".ve-card",
       opacity: [0, 1],
       translateY: [20, 0],
       delay: anime.stagger(80, { start: 200 }),
-      easing: 'easeOutCubic',
+      easing: "easeOutCubic",
       duration: 500,
     });
 
     anime({
-      targets: '.connector path',
+      targets: ".connector path",
       strokeDashoffset: [anime.setDashoffset, 0],
-      easing: 'easeInOutCubic',
+      easing: "easeInOutCubic",
       duration: 800,
       delay: anime.stagger(150, { start: 600 }),
     });
 
-    document.querySelectorAll('[data-count]').forEach(el => {
+    document.querySelectorAll("[data-count]").forEach((el) => {
       anime({
         targets: { val: 0 },
         val: parseInt(el.dataset.count),
         round: 1,
         duration: 1200,
         delay: 400,
-        easing: 'easeOutExpo',
-        update: (anim) => { el.textContent = anim.animations[0].currentValue; }
+        easing: "easeOutExpo",
+        update: (anim) => {
+          el.textContent = anim.animations[0].currentValue;
+        },
       });
     });
   }
@@ -546,11 +574,16 @@ Use when a diagram has 10+ elements and you want a choreographed entrance sequen
 ```
 
 When using anime.js, set initial opacity to 0 in CSS so elements don't flash before the animation:
+
 ```css
-.ve-card { opacity: 0; }
+.ve-card {
+  opacity: 0;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ve-card { opacity: 1 !important; }
+  .ve-card {
+    opacity: 1 !important;
+  }
 }
 ```
 
@@ -559,42 +592,47 @@ When using anime.js, set initial opacity to 0 in CSS so elements don't flash bef
 Always load with `display=swap` for fast rendering. Pick a distinctive pairing — body + mono at minimum, optionally a display font for the title.
 
 **FORBIDDEN as `--font-body` (AI slop signals):**
+
 - Inter — the single most overused AI default font
 - Roboto — generic Android/Google default
 - Arial, Helvetica — system defaults with no character
 - system-ui alone without a named font — signals zero design intent
 
 ```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
 ```
 
 Define as CSS variables for easy reference:
+
 ```css
 :root {
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+  --font-body: "Outfit", system-ui, sans-serif;
+  --font-mono: "Space Mono", "SF Mono", Consolas, monospace;
 }
 ```
 
 **Font pairings** (rotate — never use the same pairing twice in a row):
 
-| Body / Headings | Mono / Labels | Feel | Use for |
-|---|---|---|---|
-| DM Sans | Fira Code | Friendly, developer | Blueprint, technical docs |
-| Instrument Serif | JetBrains Mono | Editorial, refined | Plan reviews, decision logs |
-| IBM Plex Sans | IBM Plex Mono | Reliable, readable | Architecture diagrams |
-| Bricolage Grotesque | Fragment Mono | Bold, characterful | Data tables, dashboards |
-| Plus Jakarta Sans | Azeret Mono | Rounded, approachable | Status reports, audits |
-| Outfit | Space Mono | Clean geometric, modern | Flowcharts, pipelines |
-| Sora | IBM Plex Mono | Technical, precise | ER diagrams, schemas |
-| Crimson Pro | Noto Sans Mono | Scholarly, serious | RFC reviews, specs |
-| Fraunces | Source Code Pro | Warm, distinctive | Project recaps |
-| Geist | Geist Mono | Vercel-inspired, sharp | Modern API docs |
-| Red Hat Display | Red Hat Mono | Cohesive family | System overviews |
-| Libre Franklin | Inconsolata | Classic, reliable | Data-dense tables |
-| Playfair Display | Roboto Mono | Elegant contrast | Executive summaries |
+| Body / Headings     | Mono / Labels   | Feel                    | Use for                     |
+| ------------------- | --------------- | ----------------------- | --------------------------- |
+| DM Sans             | Fira Code       | Friendly, developer     | Blueprint, technical docs   |
+| Instrument Serif    | JetBrains Mono  | Editorial, refined      | Plan reviews, decision logs |
+| IBM Plex Sans       | IBM Plex Mono   | Reliable, readable      | Architecture diagrams       |
+| Bricolage Grotesque | Fragment Mono   | Bold, characterful      | Data tables, dashboards     |
+| Plus Jakarta Sans   | Azeret Mono     | Rounded, approachable   | Status reports, audits      |
+| Outfit              | Space Mono      | Clean geometric, modern | Flowcharts, pipelines       |
+| Sora                | IBM Plex Mono   | Technical, precise      | ER diagrams, schemas        |
+| Crimson Pro         | Noto Sans Mono  | Scholarly, serious      | RFC reviews, specs          |
+| Fraunces            | Source Code Pro | Warm, distinctive       | Project recaps              |
+| Geist               | Geist Mono      | Vercel-inspired, sharp  | Modern API docs             |
+| Red Hat Display     | Red Hat Mono    | Cohesive family         | System overviews            |
+| Libre Franklin      | Inconsolata     | Classic, reliable       | Data-dense tables           |
+| Playfair Display    | Roboto Mono     | Elegant contrast        | Executive summaries         |
 
 The first 5 pairings are recommended for most use cases. Vary across consecutive diagrams.
 
@@ -602,11 +640,11 @@ The first 5 pairings are recommended for most use cases. Vary across consecutive
 
 For prose-heavy pages (documentation, articles, essays), match typography to the content's voice:
 
-| Voice | Fonts | Best For |
-|-------|-------|----------|
-| **Literary / Thoughtful** | Literata, Lora, Newsreader, Merriweather | Essays, personal posts, long-form articles |
-| **Technical / Precise** | IBM Plex Sans + Mono, Geist + Geist Mono, Source family | Documentation, READMEs, API references |
-| **Bold / Contemporary** | Bricolage Grotesque, Space Grotesk, DM Sans | Product pages, feature announcements |
-| **Minimal / Focused** | Source Serif 4 + Source Sans 3, Karla + Inconsolata | Tutorials, how-tos, focused reading |
+| Voice                     | Fonts                                                   | Best For                                   |
+| ------------------------- | ------------------------------------------------------- | ------------------------------------------ |
+| **Literary / Thoughtful** | Literata, Lora, Newsreader, Merriweather                | Essays, personal posts, long-form articles |
+| **Technical / Precise**   | IBM Plex Sans + Mono, Geist + Geist Mono, Source family | Documentation, READMEs, API references     |
+| **Bold / Contemporary**   | Bricolage Grotesque, Space Grotesk, DM Sans             | Product pages, feature announcements       |
+| **Minimal / Focused**     | Source Serif 4 + Source Sans 3, Karla + Inconsolata     | Tutorials, how-tos, focused reading        |
 
 **Literata** deserves special mention — it has optical sizing designed specifically for screen reading. Google's answer to Georgia, but modernized.
