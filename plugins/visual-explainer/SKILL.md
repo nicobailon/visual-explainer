@@ -199,6 +199,88 @@ Keep animations purposeful: entrance reveals, hover feedback, and user-initiated
 
 **Tell the user** the file path so they can re-open or share it.
 
+## Font Scale Widget
+
+Every visual-explainer page must include a font scale widget — a small fixed-position control (bottom-right corner) that lets readers adjust text size across 4 presets. This improves accessibility and accommodates different screen sizes and reading preferences.
+
+**How it works:** The widget sets `font-size` on the `<html>` element. All text in the page must use `rem` units so everything scales proportionally. The user's choice persists in `localStorage` and is restored on page load.
+
+**Presets (multiply the base font size):**
+
+| Button | Scale | Effect at 19px base |
+|--------|-------|---------------------|
+| Small A | 0.9× | 17px — compact/data-dense view |
+| Default A | 1× | 19px — standard reading size |
+| Large A | 1.12× | ~21px — comfortable reading |
+| XL A | 1.25× | ~24px — presentation/accessibility |
+
+**Implementation — include in every page:**
+
+HTML (place before main content, outside layout containers):
+```html
+<div class="font-scale" id="fontScale">
+  <button data-scale="0.9" title="Compact">A</button>
+  <button data-scale="1" class="active" title="Default">A</button>
+  <button data-scale="1.12" title="Large">A</button>
+  <button data-scale="1.25" title="Extra Large">A</button>
+</div>
+```
+
+CSS:
+```css
+.font-scale {
+  position: fixed; bottom: 20px; right: 20px; z-index: 300;
+  display: flex; gap: 2px;
+  background: var(--surface); border: 1px solid var(--border-bright);
+  border-radius: 8px; padding: 3px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.font-scale button {
+  border: none; background: transparent; color: var(--text-dim);
+  font-family: var(--font-body); cursor: pointer; border-radius: 5px;
+  transition: all 0.15s; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+}
+.font-scale button:nth-child(1) { font-size: 12px; }
+.font-scale button:nth-child(2) { font-size: 15px; }
+.font-scale button:nth-child(3) { font-size: 18px; }
+.font-scale button:nth-child(4) { font-size: 22px; }
+.font-scale button:hover { background: var(--surface2); color: var(--text); }
+.font-scale button.active {
+  background: var(--accent-dim); color: var(--accent); font-weight: 700;
+}
+@media (max-width: 768px) {
+  .font-scale { bottom: 12px; right: 12px; }
+}
+```
+
+JavaScript (place before closing `</body>`):
+```js
+(function() {
+  const widget = document.getElementById('fontScale');
+  const buttons = widget.querySelectorAll('button');
+  const root = document.documentElement;
+  const BASE = 19; // match your base font size
+  const stored = localStorage.getItem('ve-font-scale');
+  if (stored) {
+    root.style.fontSize = (BASE * parseFloat(stored)) + 'px';
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.scale === stored));
+  }
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.style.fontSize = (BASE * parseFloat(btn.dataset.scale)) + 'px';
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      localStorage.setItem('ve-font-scale', btn.dataset.scale);
+    });
+  });
+})();
+```
+
+**Important — use `rem` for all font sizes.** Since the widget works by changing the root font size, all text sizing in the page must use `rem` units (not `px`) to scale correctly. The only exceptions are the widget button sizes themselves (12/15/18/22px are fixed so they visually convey the size difference regardless of current scale) and UI chrome elements like zoom controls and badges that should remain constant.
+
+Use your page's accent color variables for the active button state (e.g., `--accent-dim` / `--accent`). The widget inherits the page's `--surface`, `--border-bright`, and `--text-dim` variables so it matches any theme automatically.
+
 ## Diagram Types
 
 ### Architecture / System Diagrams
