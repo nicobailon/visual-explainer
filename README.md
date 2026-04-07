@@ -119,6 +119,59 @@ plugins/
 
 The skill routes to the right approach automatically: Mermaid for flowcharts and diagrams, CSS Grid for architecture overviews, HTML tables for data, Chart.js for dashboards.
 
+## Agent-Hub Integration
+
+This fork is registered as a skill plugin in the iAiFy [AgentHub](https://github.com/AiFeatures) — the shared skill layer used by all 14 agents across the enterprise.
+
+### Manifest
+
+`agenthub-skill.json` at the repo root declares the skill to agent-hub:
+
+```json
+{
+  "name": "visual-explainer",
+  "version": "0.6.3",
+  "type": "output-skill",
+  "capabilities": ["diagram", "diff-review", "plan-review", "data-table", "slide-deck"],
+  "triggers": ["/diagram", "/diff-review", "/plan-review", "/explain"],
+  "output_format": "html",
+  "integration": {
+    "agent-hub": { "register_as": "skill", "category": "visualization" }
+  }
+}
+```
+
+### Integration points
+
+| Point | Detail |
+| --- | --- |
+| Skill entry point | `plugins/visual-explainer/SKILL.md` — loaded automatically when a trigger fires |
+| Commands | `plugins/visual-explainer/commands/*.md` — one file per slash command |
+| Templates | `plugins/visual-explainer/templates/` — reference HTML the agent reads before generating |
+| Output directory | `~/.agent/diagrams/` — shared across all hub agents |
+| Trigger namespace | `/visual-explainer:<command>` in Claude Code; bare `/command` in Pi |
+
+### Install into AgentHub
+
+```bash
+# Symlink the skill into the shared skills directory
+ln -s "$(pwd)/plugins/visual-explainer" ~/AgentHub/.agents/skills/visual-explainer
+
+# Verify the skill is discoverable
+ls ~/AgentHub/.agents/skills/visual-explainer/SKILL.md
+```
+
+After linking, any agent that loads skills from `~/AgentHub/.agents/skills/` will pick up visual-explainer automatically on the next session start.
+
+### Upstream sync
+
+The `upstream-watch` branch tracks `upstream/main` (nicobailon/visual-explainer). Sync is managed by `Ai-road-4-You/fork-sync` — do not raise PRs back to upstream.
+
+```bash
+git fetch upstream
+git log upstream/main..upstream-watch   # see what upstream has changed
+```
+
 ## Limitations
 
 - Requires a browser to view

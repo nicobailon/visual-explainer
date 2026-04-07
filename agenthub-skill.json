@@ -1,0 +1,20 @@
+{
+  "name": "visual-explainer",
+  "version": "0.6.3",
+  "type": "output-skill",
+  "description": "Generates styled HTML pages for diagrams, diff reviews, plan audits, data tables",
+  "capabilities": ["diagram", "diff-review", "plan-review", "data-table", "slide-deck"],
+  "triggers": ["/diagram", "/diff-review", "/plan-review", "/explain"],
+  "output_format": "html",
+  "themes": ["dark", "light"],
+  "dependencies": {
+    "mermaid": "built-in",
+    "browser": "required"
+  },
+  "integration": {
+    "agent-hub": {
+      "register_as": "skill",
+      "category": "visualization"
+    }
+  }
+}
