@@ -1,1 +1,74 @@
+# === OS ===
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# === Editor / IDE ===
+*.swp
+*.swo
+*~
+*.bak
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# === Node.js ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/
+
+# === Build output ===
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# === Logs ===
+*.log
+logs/
+
+# === Environment / secrets ===
+.env
+.env.*
+!.env.example
+
+# === Test / coverage ===
+coverage/
+.nyc_output/
+.c8-output/
+.coverage
+.coverage-tmp/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# === Terraform ===
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# === Misc ===
+*.tgz
+*.tar.gz
+*.zip

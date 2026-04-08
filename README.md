@@ -4,11 +4,49 @@
 
 # visual-explainer
 
-**An agent skill that turns complex terminal output into styled HTML pages you actually want to read.**
+Agent skill that turns complex terminal output into styled HTML pages and slide decks.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-Ask your agent to explain a system architecture, review a diff, or compare requirements against a plan. Instead of ASCII art and box-drawing tables, it generates a self-contained HTML page and opens it in your browser.
+## Why
+
+Coding agents default to ASCII art for diagrams and monospace tables for data. Both break down past trivial complexity — flowcharts become unreadable and tables wrap in the terminal. This skill generates self-contained HTML pages instead, with real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan, and no dependencies beyond a browser.
+
+## Status
+
+| Field | Value |
+|-------|-------|
+| Version | 0.6.3 |
+| Last release | 2026-03-09 |
+| Stability | Active development — production-used across iAiFy agents |
+| Fork of | [nicobailon/visual-explainer](https://github.com/nicobailon/visual-explainer) (do not PR upstream) |
+
+## Quick Start
+
+**Claude Code (marketplace):**
+```shell
+/plugin marketplace add AiFeatures/visual-explainer
+/plugin install visual-explainer@visual-explainer-marketplace
+```
+
+**Pi:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/AiFeatures/visual-explainer/main/install-pi.sh | bash
+```
+
+**OpenAI Codex:**
+```bash
+git clone --depth 1 https://github.com/AiFeatures/visual-explainer.git /tmp/visual-explainer
+cp -r /tmp/visual-explainer/plugins/visual-explainer ~/.agents/skills/visual-explainer
+rm -rf /tmp/visual-explainer
+```
+
+**AgentHub (enterprise):**
+```bash
+ln -s "$(pwd)/plugins/visual-explainer" ~/AgentHub/.agents/skills/visual-explainer
+```
+
+After install, invoke commands directly or let the agent activate the skill implicitly:
 
 ```
 > draw a diagram of our authentication flow
@@ -16,167 +54,69 @@ Ask your agent to explain a system architecture, review a diff, or compare requi
 > /plan-review ~/docs/refactor-plan.md
 ```
 
-https://github.com/user-attachments/assets/55ebc81b-8732-40f6-a4b1-7c3781aa96ec
-
-## Why
-
-Every coding agent defaults to ASCII art when you ask for a diagram. Box-drawing characters, monospace alignment hacks, text arrows. It works for trivial cases, but anything beyond a 3-box flowchart turns into an unreadable mess.
-
-Tables are worse. Ask the agent to compare 15 requirements against a plan and you get a wall of pipes and dashes that wraps and breaks in the terminal. The data is there but it's painful to read.
-
-This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. No build step, no dependencies beyond a browser.
-
-## Install
-
-**Claude Code (marketplace):**
-```shell
-/plugin marketplace add nicobailon/visual-explainer
-/plugin install visual-explainer@visual-explainer-marketplace
-```
-
-Note: Claude Code plugins namespace commands as `/visual-explainer:command-name`.
-
-**Pi:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/nicobailon/visual-explainer/main/install-pi.sh | bash
-```
-
-Or clone and run:
-```bash
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git
-cd visual-explainer && ./install-pi.sh
-```
-
-**OpenAI Codex:**
-```bash
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
-
-# Install skill
-cp -r /tmp/visual-explainer/plugins/visual-explainer ~/.agents/skills/visual-explainer
-
-# Optional: Install slash commands (deprecated, but works)
-mkdir -p ~/.codex/prompts
-cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.codex/prompts/
-
-rm -rf /tmp/visual-explainer
-```
-
-Invoke with `$visual-explainer` or let Codex activate it implicitly. With prompts installed, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
-
 ## Commands
 
-| Command | What it does |
+| Command | Description |
 |---------|-------------|
-| `/generate-web-diagram` | Generate an HTML diagram for any topic |
-| `/generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
-| `/generate-slides` | Generate a magazine-quality slide deck |
-| `/diff-review` | Visual diff review with architecture comparison and code review |
-| `/plan-review` | Compare a plan against the codebase with risk assessment |
-| `/project-recap` | Mental model snapshot for context-switching back to a project |
-| `/fact-check` | Verify accuracy of a document against actual code |
-| `/share` | Deploy an HTML page to Vercel and get a live URL |
+| `/generate-web-diagram` | HTML diagram for any topic |
+| `/generate-visual-plan` | Visual implementation plan for a feature |
+| `/generate-slides` | Magazine-quality slide deck |
+| `/diff-review` | Visual diff review with architecture comparison |
+| `/plan-review` | Plan vs. codebase with risk assessment |
+| `/project-recap` | Mental model snapshot for context-switching |
+| `/fact-check` | Verify a document against actual code |
+| `/share` | Deploy an HTML page to Vercel |
 
-The agent also kicks in automatically when it's about to dump a complex table in the terminal (4+ rows or 3+ columns) — it renders HTML instead.
+Any command that produces a scrollable page also supports `--slides` for slide deck output.
 
-## Slide Deck Mode
+The agent also activates automatically for complex tables (4+ rows or 3+ columns).
 
-Any command that produces a scrollable page supports `--slides` to generate a slide deck instead:
-
-```
-/diff-review --slides
-/project-recap --slides 2w
-```
-
-https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
-
-## How It Works
+## Architecture
 
 ```
-.claude-plugin/
-├── plugin.json           ← marketplace identity
-└── marketplace.json      ← plugin catalog
-plugins/
-└── visual-explainer/
-    ├── .claude-plugin/
-    │   └── plugin.json   ← plugin manifest
-    ├── SKILL.md           ← workflow + design principles
-    ├── commands/          ← slash commands
-    ├── references/        ← agent reads before generating
-    │   ├── css-patterns.md   (layouts, animations, theming)
-    │   ├── libraries.md      (Mermaid, Chart.js, fonts)
-    │   ├── responsive-nav.md (sticky TOC for multi-section pages)
-    │   └── slide-patterns.md (slide engine, transitions, presets)
-    ├── templates/         ← reference templates with different palettes
-    │   ├── architecture.html
-    │   ├── mermaid-flowchart.html
-    │   ├── data-table.html
-    │   └── slide-deck.html
-    └── scripts/
-        └── share.sh       ← deploy HTML to Vercel for sharing
+plugins/visual-explainer/
+├── SKILL.md              ← workflow + design principles
+├── commands/             ← slash command definitions
+├── references/           ← design system docs the agent reads before generating
+│   ├── css-patterns.md
+│   ├── libraries.md
+│   ├── responsive-nav.md
+│   └── slide-patterns.md
+├── templates/            ← reference HTML with different palettes
+│   ├── architecture.html
+│   ├── mermaid-flowchart.html
+│   ├── data-table.html
+│   └── slide-deck.html
+└── scripts/
+    └── share.sh          ← deploy to Vercel
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser
+**Output:** `~/.agent/diagrams/<filename>.html` → opens in browser.
 
-The skill routes to the right approach automatically: Mermaid for flowcharts and diagrams, CSS Grid for architecture overviews, HTML tables for data, Chart.js for dashboards.
+The skill routes automatically: Mermaid for flowcharts, CSS Grid for architecture overviews, HTML tables for data, Chart.js for dashboards.
 
-## Agent-Hub Integration
+## Development
 
-This fork is registered as a skill plugin in the iAiFy [AgentHub](https://github.com/AiFeatures) — the shared skill layer used by all 14 agents across the enterprise.
+This is a zero-build skill — no compile step, no test runner, no runtime dependencies. The repo contains Markdown prompts, HTML templates, and reference docs that agents consume directly.
 
-### Manifest
-
-`agenthub-skill.json` at the repo root declares the skill to agent-hub:
-
-```json
-{
-  "name": "visual-explainer",
-  "version": "0.6.3",
-  "type": "output-skill",
-  "capabilities": ["diagram", "diff-review", "plan-review", "data-table", "slide-deck"],
-  "triggers": ["/diagram", "/diff-review", "/plan-review", "/explain"],
-  "output_format": "html",
-  "integration": {
-    "agent-hub": { "register_as": "skill", "category": "visualization" }
-  }
-}
-```
-
-### Integration points
-
-| Point | Detail |
-| --- | --- |
-| Skill entry point | `plugins/visual-explainer/SKILL.md` — loaded automatically when a trigger fires |
-| Commands | `plugins/visual-explainer/commands/*.md` — one file per slash command |
-| Templates | `plugins/visual-explainer/templates/` — reference HTML the agent reads before generating |
-| Output directory | `~/.agent/diagrams/` — shared across all hub agents |
-| Trigger namespace | `/visual-explainer:<command>` in Claude Code; bare `/command` in Pi |
-
-### Install into AgentHub
+To work on it:
 
 ```bash
-# Symlink the skill into the shared skills directory
-ln -s "$(pwd)/plugins/visual-explainer" ~/AgentHub/.agents/skills/visual-explainer
-
-# Verify the skill is discoverable
-ls ~/AgentHub/.agents/skills/visual-explainer/SKILL.md
+git clone https://github.com/AiFeatures/visual-explainer.git
+cd visual-explainer
 ```
 
-After linking, any agent that loads skills from `~/AgentHub/.agents/skills/` will pick up visual-explainer automatically on the next session start.
+Validate templates by opening any `plugins/visual-explainer/templates/*.html` file in a browser.
 
-### Upstream sync
+## Deployment
 
-The `upstream-watch` branch tracks `upstream/main` (nicobailon/visual-explainer). Sync is managed by `Ai-road-4-You/fork-sync` — do not raise PRs back to upstream.
+CI/CD uses the enterprise shared workflows from [`Ai-road-4-You/enterprise-ci-cd@v1`](https://github.com/Ai-road-4-You/enterprise-ci-cd). Release tagging follows `release.yml@v1` with `tags-override: latest`.
 
-```bash
-git fetch upstream
-git log upstream/main..upstream-watch   # see what upstream has changed
-```
+Upstream sync is managed by [`Ai-road-4-You/fork-sync`](https://github.com/Ai-road-4-You/fork-sync) — do not raise PRs back to the upstream repo.
 
-## Limitations
+## Contributing
 
-- Requires a browser to view
-- Switching OS theme requires a page refresh for Mermaid SVGs
-- Results vary by model capability
+See [Ai-road-4-You/governance](https://github.com/Ai-road-4-You/governance).
 
 ## Credits
 
@@ -184,4 +124,4 @@ Borrows ideas from [Anthropic's frontend-design skill](https://github.com/anthro
 
 ## License
 
-MIT
+[MIT](LICENSE)
