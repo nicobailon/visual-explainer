@@ -3,7 +3,7 @@
 ## [0.7.0] - 2026-04-10
 
 ### Theme Switcher
-- Runtime palette and font switching via dropdown — 8 curated presets: Teal Slate, Terracotta Sage, Editorial Rose, Deep Navy Gold, Amber Emerald, Dracula, Nord, Catppuccin Mocha
+- Runtime palette and font switching via dropdown — 11 curated presets: Teal Slate, Terracotta Sage, Editorial Rose, Deep Navy Gold, Amber Emerald, Dracula, Nord, Catppuccin Mocha, Solarized Light, Rose Pine Dawn, GitHub Light
 - Each preset defines full light and dark palettes with all CSS custom properties (bg, surface, border, text, accent, node colors, status colors)
 - Google Fonts hot-reload via `<link>` element swap — fonts change instantly without page refresh
 - Mermaid diagrams re-render automatically on theme change with updated `themeVariables`
