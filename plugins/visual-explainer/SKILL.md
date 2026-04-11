@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires a browser to view generated HTML files. Optional surf-cli for AI image generation.
 metadata:
   author: nicobailon
-  version: "0.6.3"
+  version: "0.7.0"
 ---
 
 # Visual Explainer
@@ -189,7 +189,29 @@ Put your primary aesthetic in `:root` and the alternate in the media query:
 
 Keep animations purposeful: entrance reveals, hover feedback, and user-initiated interactions. Nothing should glow or pulse on its own.
 
-### 4. Deliver
+### 4. Interactive Controls (Required)
+
+**Every generated page must include the theme switcher toolbar.** Read the Theme Switcher, Share Button, and Background Switcher sections in `./references/css-patterns.md` for the full implementation. Read `./templates/theme-switcher-demo.html` as the canonical reference — it contains the complete working implementation with all presets, patterns, and share functionality.
+
+The toolbar goes in `<body>` as the first element (fixed top-right) and includes:
+1. **Light/dark mode toggle** — sun/moon button
+2. **Theme preset dropdown** — all 11 presets with font hot-reload and Mermaid re-render
+3. **Background pattern dropdown** — all 15+ patterns, mode-aware
+4. **Share dropdown** — Copy HTML (strips chrome, bakes theme) and Download .html
+
+**Implementation checklist:**
+- `<link id="theme-fonts">` in `<head>` (the engine swaps this href on preset change)
+- All 11 `THEME_PRESETS` with full light/dark palettes
+- All background patterns with `patLine()`, `patDot()`, `patLineBold()` helpers
+- `ThemeSwitcher` IIFE with `init()`, `setPreset()`, `toggleMode()`, `rerenderMermaid()`
+- `SharePage` IIFE with `copyHTML()`, `download()` — `getCleanHTML()` strips the toolbar and bakes CSS variables
+- Background menu populated dynamically from `BG_PATTERNS` array
+- `currentBgIndex` tracking + re-apply on theme change
+- Default preset: random (vary each generation). Default background: Dot Grid. Default mode: detect from `prefers-color-scheme`.
+
+**Do not abbreviate or subset the presets/patterns.** Copy them from the demo template. Missing presets or truncated pattern functions are bugs.
+
+### 5. Deliver
 
 **Output location:** Write to `~/.agent/diagrams/`. Use a descriptive filename based on content: `modem-architecture.html`, `pipeline-flow.html`, `schema-overview.html`. The directory persists across sessions.
 

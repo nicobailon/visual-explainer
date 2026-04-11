@@ -25,14 +25,14 @@
 ### Windows Support
 - Added Windows `start` command to browser-open instructions in SKILL.md
 
-### Print Styles
-- New `@media print` rules in `css-patterns.md`: preserve active theme, hide interactive chrome, prevent component splits with `break-inside: avoid`
-
 ### Accessibility
 - Color contrast guidance (WCAG 2.1 AA ratios)
 - Focus-visible keyboard indicators
 - ARIA landmarks guidance (nav, main, article)
 - Screen reader considerations for Mermaid diagrams, status indicators, images, tables
+
+### Removed
+- Print/PDF export (page breaks, PDF save, print preview) — CSS print layout was unreliable across browsers. May revisit with a different approach.
 
 ### Bug Fixes
 - Synced `marketplace.json` version from 0.5.1 to 0.6.3 (was stale)
