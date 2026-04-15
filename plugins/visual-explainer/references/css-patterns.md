@@ -6,6 +6,8 @@ Reusable patterns for layout, connectors, theming, and visual effects in self-co
 
 Always define both light and dark palettes via custom properties. Start with whichever fits the chosen aesthetic, ensure both work.
 
+If a theme is active (configured in `.claude/visual-explainer.local.md`), replace the example palette below with the theme's CSS custom properties. The variable names are identical, so all patterns in this file work unchanged. Read the theme file from `./themes/<theme-name>.md` for the exact values.
+
 ```css
 :root {
   --font-body: 'Outfit', system-ui, sans-serif;

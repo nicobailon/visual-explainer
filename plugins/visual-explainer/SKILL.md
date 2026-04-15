@@ -64,6 +64,95 @@ For prose accents, see "Prose Page Elements" in `./references/css-patterns.md`. 
 
 Vary the choice each time. If the last diagram was dark and technical, make the next one light and editorial. The swap test: if you replaced your styling with a generic dark theme and nobody would notice the difference, you haven't designed anything.
 
+**Interactive theme picker (always include).** Every generated page must include an interactive theme picker — a fixed row of 11 colored circle buttons (one per theme) that swap CSS custom properties on `<html>` and re-render Mermaid diagrams live. Read all 11 theme files from `./themes/` to extract the exact CSS variable values for each. The active theme button gets a white ring (`outline: 2px solid #fff`). Pick one theme as the default on load.
+
+Available themes (read from `./themes/<name>.md`): `dracula`, `nord`, `one-dark`, `catppuccin-mocha`, `tokyo-night`, `gruvbox-dark`, `synthwave-84`, `solarized-light`, `github-light`, `catppuccin-latte`, `gruvbox-light`.
+
+**Implementation pattern:**
+```js
+const themes = {
+  'tokyo-night': { '--bg': '#1a1b26', '--surface': '#24283b', /* ... all vars */ },
+  // ... one entry per theme, values from theme files
+};
+const mermaidThemeVars = {
+  'tokyo-night': { background: '#1a1b26', primaryColor: '...', /* ... */ },
+  // ...
+};
+
+function applyTheme(name) {
+  const vars = themes[name];
+  Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  document.querySelectorAll('.theme-btn').forEach(b =>
+    b.style.outline = b.dataset.theme === name ? '2px solid #fff' : 'none');
+  // Re-render Mermaid diagrams (read from data-source, NOT el.textContent —
+  // after first render el.textContent is SVG, not the diagram source)
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: mermaidThemeVars[name] });
+  for (const el of document.querySelectorAll('.mermaid')) {
+    el.removeAttribute('data-processed');
+    const { svg } = await mermaid.render(el.id + '-svg', el.dataset.source);
+    el.innerHTML = svg;
+  }
+}
+
+// Initial render — must save source to data-source BEFORE replacing innerHTML
+async function renderMermaid() {
+  const themeKey = getCurrentTheme();
+  initMermaid(themeKey);
+  for (const el of document.querySelectorAll('.mermaid')) {
+    if (!el.dataset.source) el.dataset.source = el.textContent; // save once
+    // Mermaid 11 uses htmlLabels (foreignObject) — literal \n in source is NOT
+    // interpreted as a line break. Convert to <br/> before render.
+    const src = el.dataset.source.replaceAll('\\n', '<br/>');
+    const { svg } = await mermaid.render(el.id + '-svg', src);
+    el.innerHTML = svg;
+  }
+}
+```
+
+**Critical:** Always save `el.textContent` to `el.dataset.source` before the first render. After render, `el.textContent` becomes SVG text — if re-render reads that instead of the original source, Mermaid throws "Syntax error in text".
+
+**`\n` in node labels:** Mermaid 11 renders flowchart labels as HTML inside `<foreignObject>`. Literal `\n` (two chars: backslash + n) in the diagram source is NOT converted to a line break — it appears as `\n` in the output. Always preprocess: `src.replaceAll('\\n', '<br/>')` before passing to `mermaid.render()`. Place the picker in a fixed header bar or sticky top strip; keep it out of the document flow so it doesn't break page layout.
+
+**Static config override.** If `.claude/visual-explainer.local.md` has a `theme:` field, use that theme as the default selected theme in the picker (not as a static override — the picker is always present).
+
+**Font pair picker (always include).** Every generated page must also include a font pair switcher — a row of small `Aa` chips (each rendered in its respective display font) that swap `--font-sans` and `--font-mono` CSS variables on `<html>` and re-render Mermaid diagrams live. Place it in the same fixed panel as the theme picker, below the theme dots.
+
+Use `--font-sans` and `--font-mono` CSS variables throughout: `body { font-family: var(--font-sans), system-ui, sans-serif; }` and all monospace elements `font-family: var(--font-mono), monospace`. Pass the current `--font-mono` value into Mermaid's `fontFamily` themeVariable: `getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim()`.
+
+Default font pairs to offer (load all via a single Google Fonts URL). List the default first in the HTML so it occupies the top-left chip position:
+- **Outfit / Cascadia Code** — clean, modern, excellent code readability **(default)**
+- **Space Grotesk / Fira Code** — rounded, friendly
+- **IBM Plex Sans / IBM Plex Mono** — systematic, professional
+- **Fraunces / JetBrains Mono** — editorial serif
+- **DM Sans / DM Mono** — minimal, clean
+- **Syne / JetBrains Mono** — geometric, technical
+
+Set matching defaults in `:root`: `--font-sans: 'Outfit'; --font-mono: 'Cascadia Code';`
+
+Use Google Fonts only — never system fonts like Consolas (Windows-only). Cascadia Code is the preferred developer mono and is available on Google Fonts.
+
+```js
+const fontPairs = {
+  'cascadia':      { sans: "'Outfit'",         mono: "'Cascadia Code'" },
+  'space-grotesk': { sans: "'Space Grotesk'",  mono: "'Fira Code'" },
+  'ibm':           { sans: "'IBM Plex Sans'",  mono: "'IBM Plex Mono'" },
+  'fraunces':      { sans: "'Fraunces'",       mono: "'JetBrains Mono'" },
+  'dm':            { sans: "'DM Sans'",        mono: "'DM Mono'" },
+  'syne':          { sans: "'Syne'",           mono: "'JetBrains Mono'" },
+};
+
+document.querySelectorAll('.font-opt').forEach(opt => {
+  opt.addEventListener('click', function() {
+    const pair = fontPairs[this.dataset.font];
+    document.documentElement.style.setProperty('--font-sans', pair.sans);
+    document.documentElement.style.setProperty('--font-mono', pair.mono);
+    document.querySelectorAll('.font-opt').forEach(o => o.classList.remove('active'));
+    this.classList.add('active');
+    setTimeout(renderMermaid, 100); // re-render with new fontFamily
+  });
+});
+```
+
 ### 2. Structure
 
 **Read the reference material** before generating. Don't memorize it — read it each time to absorb the patterns.
@@ -398,6 +487,7 @@ See `./commands/share.md` for the `/share` command template.
 Before delivering, verify:
 - **The squint test**: Blur your eyes. Can you still perceive hierarchy? Are sections visually distinct?
 - **The swap test**: Would replacing your fonts and colors with a generic dark theme make this indistinguishable from a template? If yes, push the aesthetic further.
+- **Theme picker present**: Every page must have the interactive 11-theme picker. Verify buttons render and switching works (CSS vars swap, Mermaid re-renders).
 - **Both themes**: Toggle your OS between light and dark mode. Both should look intentional, not broken.
 - **Information completeness**: Does the diagram actually convey what the user asked for? Pretty but incomplete is a failure.
 - **No overflow**: Resize the browser to different widths. No content should clip or escape its container. Every grid and flex child needs `min-width: 0`. Side-by-side panels need `overflow-wrap: break-word`. Never use `display: flex` on `<li>` for marker characters — it creates anonymous flex items that can't shrink, causing lines with many inline `<code>` badges to overflow. Use absolute positioning for markers instead. See the Overflow Protection section in `./references/css-patterns.md`.

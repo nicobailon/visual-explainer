@@ -89,6 +89,39 @@ Any command that produces a scrollable page supports `--slides` to generate a sl
 
 https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 
+## Themes
+
+You can set a preferred color palette so every generated page uses consistent colors. Create a config file in your project:
+
+```bash
+# .claude/visual-explainer.local.md
+---
+theme: dracula
+---
+```
+
+The agent reads this file and applies the theme's colors instead of picking its own. Fonts, layout, and animations are still chosen freely — only the color palette is fixed.
+
+**Available themes:**
+
+| Theme | Style | Primary mode |
+|-------|-------|-------------|
+| `dracula` | Purple/pink/cyan on cool dark | Dark |
+| `nord` | Arctic frost blues with aurora accents | Dark |
+| `one-dark` | Atom's blue/green/purple palette | Dark |
+| `catppuccin-mocha` | Soothing pastels on warm dark | Dark |
+| `tokyo-night` | Downtown Tokyo blues and purples | Dark |
+| `gruvbox-dark` | Retro groove warm oranges and greens | Dark |
+| `synthwave-84` | Neon pink/cyan/yellow on deep purple | Dark |
+| `solarized-light` | Ethan Schoonover's precise CIELAB palette | Light |
+| `github-light` | GitHub Primer clean blues and greens | Light |
+| `catppuccin-latte` | Soothing pastels on warm light | Light |
+| `gruvbox-light` | Retro groove faded earth tones | Light |
+
+Every theme includes both light and dark mode support via `prefers-color-scheme`. Every generated page includes an interactive theme picker with all 11 themes.
+
+**Adding custom themes:** Create a new file in `themes/<name>.md` following the same structure as existing themes. Define CSS custom properties (using the same variable names) and Mermaid themeVariables.
+
 ## How It Works
 
 ```
@@ -106,6 +139,9 @@ plugins/
     │   ├── libraries.md      (Mermaid, Chart.js, fonts)
     │   ├── responsive-nav.md (sticky TOC for multi-section pages)
     │   └── slide-patterns.md (slide engine, transitions, presets)
+    ├── themes/            ← 11 pre-built color themes
+    │   ├── dracula.md, nord.md, one-dark.md, ...
+    │   └── (add custom themes here)
     ├── templates/         ← reference templates with different palettes
     │   ├── architecture.html
     │   ├── mermaid-flowchart.html
@@ -122,7 +158,6 @@ The skill routes to the right approach automatically: Mermaid for flowcharts and
 ## Limitations
 
 - Requires a browser to view
-- Switching OS theme requires a page refresh for Mermaid SVGs
 - Results vary by model capability
 
 ## Credits
