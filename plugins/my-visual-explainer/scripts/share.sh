@@ -24,9 +24,13 @@ if [ ! -f "$HTML_FILE" ]; then
     exit 1
 fi
 
-# Find vercel-deploy skill
+# Find vercel-deploy skill (check Pi, Claude Code, and mounted skill paths)
 VERCEL_SCRIPT=""
-for dir in ~/.pi/agent/skills/vercel-deploy/scripts /mnt/skills/user/vercel-deploy/scripts; do
+for dir in \
+    ~/.pi/agent/skills/vercel-deploy/scripts \
+    ~/.claude/plugins/vercel-deploy/scripts \
+    ~/.claude/skills/vercel-deploy/scripts \
+    /mnt/skills/user/vercel-deploy/scripts; do
     if [ -f "$dir/deploy.sh" ]; then
         VERCEL_SCRIPT="$dir/deploy.sh"
         break

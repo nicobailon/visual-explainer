@@ -1,9 +1,9 @@
 ---
 description: Generate a visual HTML plan review — current codebase state vs. proposed implementation plan
 ---
-Load the visual-explainer skill, then generate a comprehensive visual plan review as a self-contained HTML page, comparing the current codebase against a proposed implementation plan.
+Load the my-visual-explainer skill, then generate a comprehensive visual plan review as a self-contained HTML page, comparing the current codebase against a proposed implementation plan.
 
-Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
+Follow the my-visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a blueprint/editorial aesthetic with current-state vs. planned-state panels, but vary fonts and palette from previous diagrams.
 
 **Inputs:**
 - Plan file: `$1` (path to a markdown plan, spec, or RFC document)

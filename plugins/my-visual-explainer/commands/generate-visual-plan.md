@@ -1,9 +1,9 @@
 ---
 description: Generate a visual HTML implementation plan — detailed feature specification with state machines, code snippets, and edge cases
 ---
-Load the visual-explainer skill, then generate a comprehensive visual implementation plan for `$@` as a self-contained HTML page.
+Load the my-visual-explainer skill, then generate a comprehensive visual implementation plan for `$@` as a self-contained HTML page.
 
-Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
+Follow the my-visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use an editorial or blueprint aesthetic, but vary fonts and palette from previous diagrams.
 
 **Data gathering phase** — understand the context before designing:
 

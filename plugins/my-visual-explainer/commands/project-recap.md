@@ -1,9 +1,9 @@
 ---
 description: Generate a visual HTML project recap — rebuild mental model of a project's current state, recent decisions, and cognitive debt hotspots
 ---
-Load the visual-explainer skill, then generate a comprehensive visual project recap as a self-contained HTML page.
+Load the my-visual-explainer skill, then generate a comprehensive visual project recap as a self-contained HTML page.
 
-Follow the visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a warm editorial or paper/ink aesthetic with muted blues and greens, but vary fonts and palette from previous diagrams.
+Follow the my-visual-explainer skill workflow. Read the reference template, CSS patterns, and mermaid theming references before generating. Use a warm editorial or paper/ink aesthetic with muted blues and greens, but vary fonts and palette from previous diagrams.
 
 **Time window** — determine the recency window from `$1`:
 - Shorthand like `2w`, `30d`, `3m`: parse to git's `--since` format (`2w` → `"2 weeks ago"`, `30d` → `"30 days ago"`, `3m` → `"3 months ago"`)

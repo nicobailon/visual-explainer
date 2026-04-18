@@ -1,6 +1,6 @@
 {
-  "name": "visual-explainer",
-  "version": "0.6.3",
+  "name": "my-visual-explainer",
+  "version": "0.7.1",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, and data tables",
   "keywords": [
     "claude-code-plugin",

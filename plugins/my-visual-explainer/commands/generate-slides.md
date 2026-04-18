@@ -1,9 +1,9 @@
 ---
 description: Generate a stunning magazine-quality slide deck as a self-contained HTML page
 ---
-Load the visual-explainer skill, then generate a slide deck for: $@
+Load the my-visual-explainer skill, then generate a slide deck for: $@
 
-Follow the visual-explainer skill workflow. Read the reference template at `./templates/slide-deck.html` and slide patterns at `./references/slide-patterns.md` before generating. Also read `./references/css-patterns.md` for shared patterns (Mermaid zoom controls, depth tiers, overflow protection) and `./references/libraries.md` for Mermaid theming, Chart.js, and font pairings.
+Follow the my-visual-explainer skill workflow. Read the reference template at `./templates/slide-deck.html` and slide patterns at `./references/slide-patterns.md` before generating. Also read `./references/css-patterns.md` for shared patterns (Mermaid zoom controls, depth tiers, overflow protection) and `./references/libraries.md` for Mermaid theming, Chart.js, and font pairings.
 
 **Slide output is always opt-in.** Only generate slides when this command is invoked or the user explicitly asks for a slide deck.
 

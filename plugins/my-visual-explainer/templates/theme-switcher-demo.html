@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Switcher Demo — Visual Explainer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="theme-fonts" rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+  <style>
+    /* === Base Reset === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* === CSS Custom Properties (defaults — overridden by ThemeSwitcher) === */
+    :root {
+      --font-body: 'Outfit', system-ui, sans-serif;
+      --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-elevated: #1c2333;
+      --border: rgba(255,255,255,0.06);
+      --border-bright: rgba(255,255,255,0.12);
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --accent: #22d3ee;
+      --accent-dim: rgba(34,211,238,0.12);
+      --node-a: #22d3ee;
+      --node-a-dim: rgba(34,211,238,0.12);
+      --node-b: #34d399;
+      --node-b-dim: rgba(52,211,153,0.12);
+      --node-c: #fbbf24;
+      --node-c-dim: rgba(251,191,36,0.12);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.12);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.12);
+      --orange: #fbbf24;
+      --orange-dim: rgba(251,191,36,0.12);
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      /* Background pattern applied by JS — see BG_PATTERNS */
+      color: var(--text);
+      padding: 40px;
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      margin-top: 48px;
+    }
+
+    /* === Theme Switcher === */
+    .theme-switcher {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 200;
+      font-family: var(--font-mono);
+    }
+
+    .theme-switcher__mode {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-dim);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .theme-switcher__mode:hover {
+      background: var(--surface-elevated);
+      color: var(--text);
+    }
+
+    .theme-switcher__dropdown { position: relative; }
+
+    .theme-switcher__trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .theme-switcher__trigger:hover {
+      background: var(--surface-elevated);
+      border-color: var(--border-bright);
+    }
+
+    .theme-switcher__caret {
+      font-size: 10px;
+      color: var(--text-dim);
+      transition: transform 0.15s;
+    }
+
+    .theme-switcher__trigger[aria-expanded="true"] .theme-switcher__caret {
+      transform: rotate(180deg);
+    }
+
+    .theme-switcher__menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 180px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      margin: 0;
+      list-style: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .theme-switcher__menu.open { display: block; }
+
+    .theme-switcher__menu li {
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.1s;
+    }
+
+    .theme-switcher__menu li:hover {
+      background: var(--accent-dim);
+    }
+
+    @media (max-width: 600px) {
+      .theme-switcher__label { display: none; }
+      .theme-switcher__trigger { padding: 8px; }
+    }
+
+    @media print {
+      .theme-switcher { display: none; }
+    }
+
+    /* === Background Dropdown === */
+    .bg-dropdown { position: relative; }
+
+    .bg-dropdown__trigger {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-dim);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .bg-dropdown__trigger:hover {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border-color: var(--border-bright);
+    }
+
+    .bg-dropdown__menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 160px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      margin: 0;
+      list-style: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 201;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .bg-dropdown__menu.open { display: block; }
+
+    .bg-dropdown__menu li {
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.1s;
+    }
+
+    .bg-dropdown__menu li:hover {
+      background: var(--accent-dim);
+    }
+
+    /* === Share Button === */
+    .share-dropdown { position: relative; }
+
+    .share-dropdown__trigger {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-dim);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .share-dropdown__trigger:hover {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border-color: var(--border-bright);
+    }
+
+    .share-dropdown__menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 160px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      margin: 0;
+      list-style: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      z-index: 201;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .share-dropdown__menu.open { display: block; }
+
+    .share-dropdown__menu li {
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .share-dropdown__menu li:hover {
+      background: var(--accent-dim);
+    }
+
+    .share-dropdown__menu li svg {
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+
+    .share-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      z-index: 300;
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .share-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* === Card Components === */
+    .ve-card {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 16px 20px;
+      position: relative;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .ve-card--elevated {
+      background: var(--surface-elevated);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .ve-card--hero {
+      background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+      border-color: color-mix(in srgb, var(--border) 50%, var(--accent) 50%);
+    }
+
+    .ve-card--accent-a { border-left: 3px solid var(--node-a); }
+    .ve-card--accent-b { border-left: 3px solid var(--node-b); }
+    .ve-card--accent-c { border-left: 3px solid var(--node-c); }
+
+    .ve-card__label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--node-a);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ve-card__label::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* === KPI Cards === */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .kpi-card__value {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi-card__label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      margin-top: 6px;
+    }
+
+    .kpi-card__trend {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .kpi-card__trend--up { color: var(--green); }
+    .kpi-card__trend--down { color: var(--red); }
+
+    /* === Status Badges === */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .status--match { background: var(--green-dim); color: var(--green); }
+    .status--gap { background: var(--red-dim); color: var(--red); }
+    .status--warn { background: var(--orange-dim); color: var(--orange); }
+    .status--info { background: var(--accent-dim); color: var(--accent); }
+
+    /* === Data Table === */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .data-table th {
+      background: var(--surface-elevated);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 2px solid var(--border-bright);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    .data-table tbody tr:nth-child(even) {
+      background: var(--accent-dim);
+    }
+
+    .data-table tbody tr {
+      transition: background 0.15s;
+    }
+
+    .data-table tbody tr:hover {
+      background: var(--border);
+    }
+
+    .data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* === Code Block === */
+    .code-block {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.5;
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 24px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    /* === Before/After Panels === */
+    .diff-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .diff-panels > * { min-width: 0; overflow-wrap: break-word; }
+
+    .diff-panel__header {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 16px;
+    }
+
+    .diff-panel__header--before {
+      background: var(--red-dim);
+      color: var(--red);
+      border-bottom: 2px solid var(--red);
+    }
+
+    .diff-panel__header--after {
+      background: var(--green-dim);
+      color: var(--green);
+      border-bottom: 2px solid var(--green);
+    }
+
+    .diff-panel__body {
+      padding: 16px;
+      background: var(--surface);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .diff-panels { grid-template-columns: 1fr; }
+    }
+
+    /* === Collapsible === */
+    details.collapsible {
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    details.collapsible summary {
+      padding: 14px 20px;
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+
+    details.collapsible summary:hover {
+      background: var(--surface-elevated);
+    }
+
+    details.collapsible summary::-webkit-details-marker { display: none; }
+
+    details.collapsible summary::before {
+      content: '\25B8';
+      font-size: 11px;
+      color: var(--text-dim);
+      transition: transform 0.15s;
+    }
+
+    details.collapsible[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    details.collapsible .collapsible__body {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* === Tags === */
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--node-a-dim);
+      color: var(--node-a);
+    }
+
+    .tag--b { background: var(--node-b-dim); color: var(--node-b); }
+    .tag--c { background: var(--node-c-dim); color: var(--node-c); }
+
+    /* === Mermaid === */
+    .diagram-shell { position: relative; margin-bottom: 32px; }
+
+    .diagram-shell__hint {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .mermaid-wrap {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      padding: 32px 24px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 300px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .mermaid-viewport {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      min-height: 250px;
+    }
+
+    .mermaid-canvas {
+      display: flex;
+      justify-content: center;
+    }
+
+    .zoom-controls {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 2px;
+      z-index: 10;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .zoom-controls button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .zoom-controls button:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .zoom-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      padding: 0 6px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Mermaid SVG text overrides */
+    .mermaid .nodeLabel { color: var(--text) !important; }
+    .mermaid .edgeLabel { color: var(--text-dim) !important; background-color: var(--bg) !important; }
+    .mermaid .edgeLabel rect { fill: var(--bg) !important; }
+
+    /* === Animations === */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .ve-card, .kpi-card, .table-wrap, .diff-panels, .diagram-shell, details.collapsible {
+      animation: fadeUp 0.4s ease-out both;
+      animation-delay: calc(var(--i, 0) * 0.05s);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* === Focus === */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    :focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    /* === Callout === */
+    .callout {
+      padding: 16px 20px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-dim);
+      margin: 24px 0;
+    }
+
+    .callout__title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    /* === Card Grid === */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* === Print === */
+    @page { margin: 0; size: auto; }
+
+    @media print {
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      body { padding: 40px !important; }
+      .theme-switcher, .zoom-controls, .diagram-shell__hint, .share-toast { display: none !important; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .ve-card, .ve-card--elevated, .ve-card--hero,
+      .kpi-card, .kpi-row, .table-wrap,
+      .code-block, .mermaid-wrap, .diagram-shell,
+      .diff-panels, details.collapsible, .card-grid, .callout {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Theme Switcher + Share -->
+<div class="theme-switcher">
+  <button class="theme-switcher__mode" onclick="ThemeSwitcher.toggleMode()"
+    title="Toggle light/dark" aria-label="Toggle light/dark mode">&#9790;</button>
+  <div class="theme-switcher__dropdown">
+    <button class="theme-switcher__trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span class="theme-switcher__label">Loading...</span>
+      <span class="theme-switcher__caret">&#9662;</span>
+    </button>
+    <ul class="theme-switcher__menu" role="listbox"></ul>
+  </div>
+  <div class="bg-dropdown">
+    <button class="bg-dropdown__trigger" aria-haspopup="menu" aria-expanded="false" title="Change background pattern">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    </button>
+    <ul class="bg-dropdown__menu" role="menu"></ul>
+  </div>
+  <div class="share-dropdown">
+    <button class="share-dropdown__trigger" aria-haspopup="menu" aria-expanded="false" title="Share this page">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+    </button>
+    <ul class="share-dropdown__menu" role="menu">
+      <li role="menuitem" onclick="SharePage.copyHTML()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy HTML
+      </li>
+      <li role="menuitem" onclick="SharePage.download()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download .html
+      </li>
+    </ul>
+  </div>
+  <div class="share-toast" id="share-toast"></div>
+</div>
+
+<div class="wrap">
+
+  <h1>Theme Switcher Demo</h1>
+  <p class="subtitle">my-visual-explainer component showcase &mdash; swap palettes and fonts live</p>
+
+  <!-- KPI Cards -->
+  <h2>KPI Dashboard</h2>
+  <div class="kpi-row">
+    <div class="kpi-card" style="--i:0">
+      <div class="kpi-card__value" style="color: var(--node-a)">11</div>
+      <div class="kpi-card__label">Theme Presets</div>
+      <div class="kpi-card__trend kpi-card__trend--up">+3 new</div>
+    </div>
+    <div class="kpi-card" style="--i:1">
+      <div class="kpi-card__value" style="color: var(--node-b)">13</div>
+      <div class="kpi-card__label">Font Pairings</div>
+    </div>
+    <div class="kpi-card" style="--i:2">
+      <div class="kpi-card__value" style="color: var(--node-c)">2</div>
+      <div class="kpi-card__label">Color Modes</div>
+      <div class="kpi-card__trend kpi-card__trend--up">light + dark</div>
+    </div>
+    <div class="kpi-card" style="--i:3">
+      <div class="kpi-card__value" style="color: var(--accent)">0</div>
+      <div class="kpi-card__label">External JS</div>
+    </div>
+  </div>
+
+  <!-- Card Grid -->
+  <h2>Card Components</h2>
+  <div class="card-grid">
+    <div class="ve-card ve-card--accent-a ve-card--elevated" style="--i:4">
+      <div class="ve-card__label" style="color: var(--node-a)">Primary Accent</div>
+      <p>Elevated card with left accent border. Uses <code style="font-family: var(--font-mono); font-size: 12px; background: var(--accent-dim); color: var(--accent); padding: 1px 5px; border-radius: 3px;">--node-a</code> color.</p>
+    </div>
+    <div class="ve-card ve-card--accent-b ve-card--elevated" style="--i:5">
+      <div class="ve-card__label" style="color: var(--node-b)">Secondary Accent</div>
+      <p>Each preset defines three node colors for visual variety across cards and diagram elements.</p>
+    </div>
+    <div class="ve-card ve-card--accent-c ve-card--elevated" style="--i:6">
+      <div class="ve-card__label" style="color: var(--node-c)">Tertiary Accent</div>
+      <p>Tags: <span class="tag">primary</span> <span class="tag tag--b">secondary</span> <span class="tag tag--c">tertiary</span></p>
+    </div>
+  </div>
+
+  <!-- Hero Card -->
+  <div class="ve-card ve-card--hero" style="--i:7; margin-bottom: 32px;">
+    <div class="ve-card__label" style="color: var(--accent)">Hero Card</div>
+    <p style="font-size: 18px; line-height: 1.5;">Hero cards use a subtle accent-tinted background to draw the eye. Use for executive summaries, key findings, or primary metrics. The border picks up the accent color at 50% mix.</p>
+  </div>
+
+  <!-- Status Badges -->
+  <h2>Status Indicators</h2>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px;">
+    <span class="status status--match">Match</span>
+    <span class="status status--gap">Gap</span>
+    <span class="status status--warn">Warning</span>
+    <span class="status status--info">Info</span>
+  </div>
+
+  <!-- Before/After Panels -->
+  <h2>Diff Panels</h2>
+  <div class="diff-panels" style="--i:8">
+    <div class="diff-panel__header diff-panel__header--before">Before</div>
+    <div class="diff-panel__header diff-panel__header--after">After</div>
+    <div class="diff-panel__body">
+      <p>Basic light/dark toggle with <code style="font-family: var(--font-mono); font-size: 12px;">prefers-color-scheme</code> media query. Single palette. No font switching. Mermaid stays stale on theme change.</p>
+    </div>
+    <div class="diff-panel__body">
+      <p>Full theme switcher dropdown with 8 curated presets. Live CSS variable swaps, Google Fonts hot-reload, and Mermaid re-rendering on every palette change.</p>
+    </div>
+  </div>
+
+  <!-- Data Table -->
+  <h2>Data Table</h2>
+  <div class="table-wrap" style="--i:9">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Preset</th>
+            <th>Body Font</th>
+            <th>Mono Font</th>
+            <th>Feel</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Teal Slate</td>
+            <td><code>Outfit</code></td>
+            <td><code>Space Mono</code></td>
+            <td>Clean, modern</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Terracotta Sage</td>
+            <td><code>DM Sans</code></td>
+            <td><code>Fira Code</code></td>
+            <td>Warm, earthy</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Editorial Rose</td>
+            <td><code>Instrument Serif</code></td>
+            <td><code>JetBrains Mono</code></td>
+            <td>Refined, serif</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Deep Navy Gold</td>
+            <td><code>IBM Plex Sans</code></td>
+            <td><code>IBM Plex Mono</code></td>
+            <td>Premium, serious</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Amber Emerald</td>
+            <td><code>Bricolage Grotesque</code></td>
+            <td><code>Fragment Mono</code></td>
+            <td>Bold, data-focused</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Dracula</td>
+            <td><code>Plus Jakarta Sans</code></td>
+            <td><code>Azeret Mono</code></td>
+            <td>IDE classic</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Nord</td>
+            <td><code>Sora</code></td>
+            <td><code>IBM Plex Mono</code></td>
+            <td>Arctic, calm</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+          <tr>
+            <td>Catppuccin Mocha</td>
+            <td><code>Red Hat Display</code></td>
+            <td><code>Red Hat Mono</code></td>
+            <td>Soft, pastel</td>
+            <td><span class="status status--match">Active</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Code Block -->
+  <h2>Code Block</h2>
+  <pre class="code-block" style="--i:10"><code>// Theme switching is one function call
+ThemeSwitcher.setPreset(2);  // Editorial Rose
+ThemeSwitcher.toggleMode();   // light &lt;-&gt; dark
+
+// Mermaid re-renders automatically
+// Google Fonts hot-reload via link swap
+// All CSS variables update in place</code></pre>
+
+  <!-- Collapsible -->
+  <h2>Collapsible Section</h2>
+  <details class="collapsible" style="--i:11">
+    <summary>Implementation Details (click to expand)</summary>
+    <div class="collapsible__body">
+      <p>The theme engine uses a closure pattern (<code style="font-family: var(--font-mono); font-size: 12px;">ThemeSwitcher</code> IIFE) with three public methods: <code style="font-family: var(--font-mono); font-size: 12px;">init()</code>, <code style="font-family: var(--font-mono); font-size: 12px;">setPreset(index)</code>, and <code style="font-family: var(--font-mono); font-size: 12px;">toggleMode()</code>.</p>
+      <p>Mermaid re-rendering works by reading the original source from <code style="font-family: var(--font-mono); font-size: 12px;">&lt;script type="text/plain" class="diagram-source"&gt;</code> elements, calling <code style="font-family: var(--font-mono); font-size: 12px;">mermaid.render()</code> with updated <code style="font-family: var(--font-mono); font-size: 12px;">themeVariables</code>, and replacing the SVG in the canvas.</p>
+    </div>
+  </details>
+
+  <!-- Callout -->
+  <div class="callout" style="--i:12">
+    <div class="callout__title">How to test</div>
+    <p>Click the dropdown in the top-right corner to switch between all 8 presets. Click the moon/sun button to toggle light/dark mode. Watch fonts, colors, badges, cards, table, diff panels, and the Mermaid diagram all update in sync.</p>
+  </div>
+
+  <!-- Mermaid Diagram -->
+  <h2>Mermaid Diagram (re-renders on theme change)</h2>
+  <section class="diagram-shell" style="--i:13">
+    <p class="diagram-shell__hint">
+      Theme switch re-renders this diagram with updated colors.
+    </p>
+    <div class="mermaid-wrap">
+      <div class="zoom-controls">
+        <button type="button" title="Zoom in" onclick="zoomDiagram(1.2)">+</button>
+        <button type="button" title="Zoom out" onclick="zoomDiagram(0.8)">&minus;</button>
+        <button type="button" title="Reset" onclick="zoomDiagram(0)">&#8634;</button>
+        <span class="zoom-label">100%</span>
+      </div>
+      <div class="mermaid-viewport">
+        <div class="mermaid mermaid-canvas"></div>
+      </div>
+    </div>
+    <script type="text/plain" class="diagram-source">
+graph TD
+  A["User Action"] --> B{"Theme Switcher"}
+  B -->|"Select Preset"| C["Update CSS Vars"]
+  B -->|"Toggle Mode"| D["Swap Light/Dark"]
+  C --> E["Hot-Reload Fonts"]
+  C --> F["Re-render Mermaid"]
+  D --> C
+  E --> G["Page Updated"]
+  F --> G
+    </script>
+  </section>
+
+</div><!-- /wrap -->
+
+<!-- === JavaScript === -->
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  window.mermaid = mermaid;
+
+  // === THEME PRESETS ===
+  const THEME_PRESETS = [
+    {
+      name: 'Teal Slate',
+      fonts: 'Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700',
+      fontBody: "'Outfit', system-ui, sans-serif",
+      fontMono: "'Space Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#f8f9fa', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+        '--text': '#1a1a2e', '--text-dim': '#6b7280',
+        '--accent': '#0891b2', '--accent-dim': 'rgba(8,145,178,0.1)',
+        '--node-a': '#0891b2', '--node-a-dim': 'rgba(8,145,178,0.1)',
+        '--node-b': '#059669', '--node-b-dim': 'rgba(5,150,105,0.1)',
+        '--node-c': '#d97706', '--node-c-dim': 'rgba(217,119,6,0.1)',
+        '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.1)',
+        '--red': '#ef4444', '--red-dim': 'rgba(239,68,68,0.1)',
+        '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.1)',
+      },
+      dark: {
+        '--bg': '#0d1117', '--surface': '#161b22', '--surface-elevated': '#1c2333',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.12)',
+        '--text': '#e6edf3', '--text-dim': '#8b949e',
+        '--accent': '#22d3ee', '--accent-dim': 'rgba(34,211,238,0.12)',
+        '--node-a': '#22d3ee', '--node-a-dim': 'rgba(34,211,238,0.12)',
+        '--node-b': '#34d399', '--node-b-dim': 'rgba(52,211,153,0.12)',
+        '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+        '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+        '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+        '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+      },
+    },
+    {
+      name: 'Terracotta Sage',
+      fonts: 'DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500',
+      fontBody: "'DM Sans', system-ui, sans-serif",
+      fontMono: "'Fira Code', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#faf7f5', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.07)', '--border-bright': 'rgba(0,0,0,0.12)',
+        '--text': '#292524', '--text-dim': '#78716c',
+        '--accent': '#c2410c', '--accent-dim': 'rgba(194,65,12,0.08)',
+        '--node-a': '#c2410c', '--node-a-dim': 'rgba(194,65,12,0.08)',
+        '--node-b': '#65a30d', '--node-b-dim': 'rgba(101,163,13,0.08)',
+        '--node-c': '#a16207', '--node-c-dim': 'rgba(161,98,7,0.08)',
+        '--green': '#65a30d', '--green-dim': 'rgba(101,163,13,0.08)',
+        '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+        '--orange': '#ea580c', '--orange-dim': 'rgba(234,88,12,0.08)',
+      },
+      dark: {
+        '--bg': '#1c1917', '--surface': '#292524', '--surface-elevated': '#44403c',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#fafaf9', '--text-dim': '#a8a29e',
+        '--accent': '#fb923c', '--accent-dim': 'rgba(251,146,60,0.12)',
+        '--node-a': '#fb923c', '--node-a-dim': 'rgba(251,146,60,0.12)',
+        '--node-b': '#a3e635', '--node-b-dim': 'rgba(163,230,53,0.12)',
+        '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+        '--green': '#a3e635', '--green-dim': 'rgba(163,230,53,0.12)',
+        '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+        '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+      },
+    },
+    {
+      name: 'Editorial Rose',
+      fonts: 'Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500',
+      fontBody: "'Instrument Serif', Georgia, serif",
+      fontMono: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#fafaf9', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.14)',
+        '--text': '#1c1917', '--text-dim': '#78716c',
+        '--accent': '#be123c', '--accent-dim': 'rgba(190,18,60,0.08)',
+        '--node-a': '#be123c', '--node-a-dim': 'rgba(190,18,60,0.08)',
+        '--node-b': '#0f766e', '--node-b-dim': 'rgba(15,118,110,0.08)',
+        '--node-c': '#92400e', '--node-c-dim': 'rgba(146,64,14,0.08)',
+        '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+        '--red': '#be123c', '--red-dim': 'rgba(190,18,60,0.08)',
+        '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.08)',
+      },
+      dark: {
+        '--bg': '#0f0d0d', '--surface': '#1a1717', '--surface-elevated': '#262121',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#f5f0ed', '--text-dim': '#a39e9b',
+        '--accent': '#fb7185', '--accent-dim': 'rgba(251,113,133,0.12)',
+        '--node-a': '#fb7185', '--node-a-dim': 'rgba(251,113,133,0.12)',
+        '--node-b': '#5eead4', '--node-b-dim': 'rgba(94,234,212,0.12)',
+        '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+        '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+        '--red': '#fb7185', '--red-dim': 'rgba(251,113,133,0.12)',
+        '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+      },
+    },
+    {
+      name: 'Deep Navy Gold',
+      fonts: 'IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+      fontBody: "'IBM Plex Sans', system-ui, sans-serif",
+      fontMono: "'IBM Plex Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#f5f5f4', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+        '--text': '#1e3a5f', '--text-dim': '#64748b',
+        '--accent': '#1e3a5f', '--accent-dim': 'rgba(30,58,95,0.08)',
+        '--node-a': '#1e3a5f', '--node-a-dim': 'rgba(30,58,95,0.08)',
+        '--node-b': '#d4a73a', '--node-b-dim': 'rgba(212,167,58,0.08)',
+        '--node-c': '#7c3aed', '--node-c-dim': 'rgba(124,58,237,0.08)',
+        '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+        '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+        '--orange': '#d4a73a', '--orange-dim': 'rgba(212,167,58,0.08)',
+      },
+      dark: {
+        '--bg': '#0a1628', '--surface': '#112240', '--surface-elevated': '#1a3050',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#ccd6f6', '--text-dim': '#8892b0',
+        '--accent': '#d4a73a', '--accent-dim': 'rgba(212,167,58,0.12)',
+        '--node-a': '#64b5f6', '--node-a-dim': 'rgba(100,181,246,0.12)',
+        '--node-b': '#d4a73a', '--node-b-dim': 'rgba(212,167,58,0.12)',
+        '--node-c': '#a78bfa', '--node-c-dim': 'rgba(167,139,250,0.12)',
+        '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+        '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+        '--orange': '#d4a73a', '--orange-dim': 'rgba(212,167,58,0.12)',
+      },
+    },
+    {
+      name: 'Amber Emerald',
+      fonts: 'Bricolage+Grotesque:wght@400;500;600;700&family=Fragment+Mono',
+      fontBody: "'Bricolage Grotesque', system-ui, sans-serif",
+      fontMono: "'Fragment Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#fafaf9', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.07)', '--border-bright': 'rgba(0,0,0,0.12)',
+        '--text': '#1c1917', '--text-dim': '#78716c',
+        '--accent': '#d97706', '--accent-dim': 'rgba(217,119,6,0.08)',
+        '--node-a': '#d97706', '--node-a-dim': 'rgba(217,119,6,0.08)',
+        '--node-b': '#059669', '--node-b-dim': 'rgba(5,150,105,0.08)',
+        '--node-c': '#0284c7', '--node-c-dim': 'rgba(2,132,199,0.08)',
+        '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+        '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+        '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.08)',
+      },
+      dark: {
+        '--bg': '#0c0a09', '--surface': '#1c1917', '--surface-elevated': '#292524',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#fafaf9', '--text-dim': '#a8a29e',
+        '--accent': '#fbbf24', '--accent-dim': 'rgba(251,191,36,0.12)',
+        '--node-a': '#fbbf24', '--node-a-dim': 'rgba(251,191,36,0.12)',
+        '--node-b': '#34d399', '--node-b-dim': 'rgba(52,211,153,0.12)',
+        '--node-c': '#38bdf8', '--node-c-dim': 'rgba(56,189,248,0.12)',
+        '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+        '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+        '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+      },
+    },
+    {
+      name: 'Dracula',
+      fonts: 'Plus+Jakarta+Sans:wght@400;500;600;700&family=Azeret+Mono:wght@400;500',
+      fontBody: "'Plus Jakarta Sans', system-ui, sans-serif",
+      fontMono: "'Azeret Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#f8f8f2', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.14)',
+        '--text': '#282a36', '--text-dim': '#6272a4',
+        '--accent': '#bd93f9', '--accent-dim': 'rgba(189,147,249,0.1)',
+        '--node-a': '#bd93f9', '--node-a-dim': 'rgba(189,147,249,0.1)',
+        '--node-b': '#50fa7b', '--node-b-dim': 'rgba(80,250,123,0.1)',
+        '--node-c': '#ffb86c', '--node-c-dim': 'rgba(255,184,108,0.1)',
+        '--green': '#50fa7b', '--green-dim': 'rgba(80,250,123,0.1)',
+        '--red': '#ff5555', '--red-dim': 'rgba(255,85,85,0.1)',
+        '--orange': '#ffb86c', '--orange-dim': 'rgba(255,184,108,0.1)',
+      },
+      dark: {
+        '--bg': '#282a36', '--surface': '#343746', '--surface-elevated': '#44475a',
+        '--border': 'rgba(255,255,255,0.08)', '--border-bright': 'rgba(255,255,255,0.14)',
+        '--text': '#f8f8f2', '--text-dim': '#6272a4',
+        '--accent': '#bd93f9', '--accent-dim': 'rgba(189,147,249,0.15)',
+        '--node-a': '#bd93f9', '--node-a-dim': 'rgba(189,147,249,0.15)',
+        '--node-b': '#50fa7b', '--node-b-dim': 'rgba(80,250,123,0.15)',
+        '--node-c': '#ffb86c', '--node-c-dim': 'rgba(255,184,108,0.15)',
+        '--green': '#50fa7b', '--green-dim': 'rgba(80,250,123,0.15)',
+        '--red': '#ff5555', '--red-dim': 'rgba(255,85,85,0.15)',
+        '--orange': '#ffb86c', '--orange-dim': 'rgba(255,184,108,0.15)',
+      },
+    },
+    {
+      name: 'Nord',
+      fonts: 'Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+      fontBody: "'Sora', system-ui, sans-serif",
+      fontMono: "'IBM Plex Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#eceff4', '--surface': '#e5e9f0', '--surface-elevated': '#d8dee9',
+        '--border': 'rgba(0,0,0,0.06)', '--border-bright': 'rgba(0,0,0,0.1)',
+        '--text': '#2e3440', '--text-dim': '#4c566a',
+        '--accent': '#5e81ac', '--accent-dim': 'rgba(94,129,172,0.1)',
+        '--node-a': '#5e81ac', '--node-a-dim': 'rgba(94,129,172,0.1)',
+        '--node-b': '#a3be8c', '--node-b-dim': 'rgba(163,190,140,0.1)',
+        '--node-c': '#ebcb8b', '--node-c-dim': 'rgba(235,203,139,0.1)',
+        '--green': '#a3be8c', '--green-dim': 'rgba(163,190,140,0.1)',
+        '--red': '#bf616a', '--red-dim': 'rgba(191,97,106,0.1)',
+        '--orange': '#d08770', '--orange-dim': 'rgba(208,135,112,0.1)',
+      },
+      dark: {
+        '--bg': '#2e3440', '--surface': '#3b4252', '--surface-elevated': '#434c5e',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#eceff4', '--text-dim': '#d8dee9',
+        '--accent': '#88c0d0', '--accent-dim': 'rgba(136,192,208,0.12)',
+        '--node-a': '#88c0d0', '--node-a-dim': 'rgba(136,192,208,0.12)',
+        '--node-b': '#a3be8c', '--node-b-dim': 'rgba(163,190,140,0.12)',
+        '--node-c': '#ebcb8b', '--node-c-dim': 'rgba(235,203,139,0.12)',
+        '--green': '#a3be8c', '--green-dim': 'rgba(163,190,140,0.12)',
+        '--red': '#bf616a', '--red-dim': 'rgba(191,97,106,0.12)',
+        '--orange': '#d08770', '--orange-dim': 'rgba(208,135,112,0.12)',
+      },
+    },
+    {
+      name: 'Catppuccin Mocha',
+      fonts: 'Red+Hat+Display:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500',
+      fontBody: "'Red Hat Display', system-ui, sans-serif",
+      fontMono: "'Red Hat Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#eff1f5', '--surface': '#e6e9ef', '--surface-elevated': '#dce0e8',
+        '--border': 'rgba(0,0,0,0.06)', '--border-bright': 'rgba(0,0,0,0.12)',
+        '--text': '#4c4f69', '--text-dim': '#6c6f85',
+        '--accent': '#8839ef', '--accent-dim': 'rgba(136,57,239,0.1)',
+        '--node-a': '#8839ef', '--node-a-dim': 'rgba(136,57,239,0.1)',
+        '--node-b': '#40a02b', '--node-b-dim': 'rgba(64,160,43,0.1)',
+        '--node-c': '#fe640b', '--node-c-dim': 'rgba(254,100,11,0.1)',
+        '--green': '#40a02b', '--green-dim': 'rgba(64,160,43,0.1)',
+        '--red': '#d20f39', '--red-dim': 'rgba(210,15,57,0.1)',
+        '--orange': '#fe640b', '--orange-dim': 'rgba(254,100,11,0.1)',
+      },
+      dark: {
+        '--bg': '#181825', '--surface': '#1e1e2e', '--surface-elevated': '#313244',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#cdd6f4', '--text-dim': '#a6adc8',
+        '--accent': '#cba6f7', '--accent-dim': 'rgba(203,166,247,0.12)',
+        '--node-a': '#cba6f7', '--node-a-dim': 'rgba(203,166,247,0.12)',
+        '--node-b': '#a6e3a1', '--node-b-dim': 'rgba(166,227,161,0.12)',
+        '--node-c': '#fab387', '--node-c-dim': 'rgba(250,179,135,0.12)',
+        '--green': '#a6e3a1', '--green-dim': 'rgba(166,227,161,0.12)',
+        '--red': '#f38ba8', '--red-dim': 'rgba(243,139,168,0.12)',
+        '--orange': '#fab387', '--orange-dim': 'rgba(250,179,135,0.12)',
+      },
+    },
+    {
+      name: 'Solarized Light',
+      fonts: 'Libre+Franklin:wght@400;500;600;700&family=Inconsolata:wght@400;500',
+      fontBody: "'Libre Franklin', system-ui, sans-serif",
+      fontMono: "'Inconsolata', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#fdf6e3', '--surface': '#eee8d5', '--surface-elevated': '#e8e1cc',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+        '--text': '#586e75', '--text-dim': '#93a1a1',
+        '--accent': '#268bd2', '--accent-dim': 'rgba(38,139,210,0.1)',
+        '--node-a': '#268bd2', '--node-a-dim': 'rgba(38,139,210,0.1)',
+        '--node-b': '#859900', '--node-b-dim': 'rgba(133,153,0,0.1)',
+        '--node-c': '#cb4b16', '--node-c-dim': 'rgba(203,75,22,0.1)',
+        '--green': '#859900', '--green-dim': 'rgba(133,153,0,0.1)',
+        '--red': '#dc322f', '--red-dim': 'rgba(220,50,47,0.1)',
+        '--orange': '#cb4b16', '--orange-dim': 'rgba(203,75,22,0.1)',
+      },
+      dark: {
+        '--bg': '#002b36', '--surface': '#073642', '--surface-elevated': '#0a4050',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#839496', '--text-dim': '#586e75',
+        '--accent': '#2aa198', '--accent-dim': 'rgba(42,161,152,0.12)',
+        '--node-a': '#2aa198', '--node-a-dim': 'rgba(42,161,152,0.12)',
+        '--node-b': '#859900', '--node-b-dim': 'rgba(133,153,0,0.12)',
+        '--node-c': '#cb4b16', '--node-c-dim': 'rgba(203,75,22,0.12)',
+        '--green': '#859900', '--green-dim': 'rgba(133,153,0,0.12)',
+        '--red': '#dc322f', '--red-dim': 'rgba(220,50,47,0.12)',
+        '--orange': '#cb4b16', '--orange-dim': 'rgba(203,75,22,0.12)',
+      },
+    },
+    {
+      name: 'Rose Pine Dawn',
+      fonts: 'Crimson+Pro:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500',
+      fontBody: "'Crimson Pro', Georgia, serif",
+      fontMono: "'Noto Sans Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#faf4ed', '--surface': '#fffaf3', '--surface-elevated': '#f2e9e1',
+        '--border': 'rgba(0,0,0,0.06)', '--border-bright': 'rgba(0,0,0,0.12)',
+        '--text': '#575279', '--text-dim': '#9893a5',
+        '--accent': '#d7827e', '--accent-dim': 'rgba(215,130,126,0.12)',
+        '--node-a': '#d7827e', '--node-a-dim': 'rgba(215,130,126,0.12)',
+        '--node-b': '#56949f', '--node-b-dim': 'rgba(86,148,159,0.12)',
+        '--node-c': '#ea9d34', '--node-c-dim': 'rgba(234,157,52,0.12)',
+        '--green': '#56949f', '--green-dim': 'rgba(86,148,159,0.12)',
+        '--red': '#b4637a', '--red-dim': 'rgba(180,99,122,0.12)',
+        '--orange': '#ea9d34', '--orange-dim': 'rgba(234,157,52,0.12)',
+      },
+      dark: {
+        '--bg': '#1a1520', '--surface': '#241e2b', '--surface-elevated': '#2e2636',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+        '--text': '#e0def4', '--text-dim': '#908caa',
+        '--accent': '#ebbcba', '--accent-dim': 'rgba(235,188,186,0.12)',
+        '--node-a': '#ebbcba', '--node-a-dim': 'rgba(235,188,186,0.12)',
+        '--node-b': '#9ccfd8', '--node-b-dim': 'rgba(156,207,216,0.12)',
+        '--node-c': '#f6c177', '--node-c-dim': 'rgba(246,193,119,0.12)',
+        '--green': '#9ccfd8', '--green-dim': 'rgba(156,207,216,0.12)',
+        '--red': '#eb6f92', '--red-dim': 'rgba(235,111,146,0.12)',
+        '--orange': '#f6c177', '--orange-dim': 'rgba(246,193,119,0.12)',
+      },
+    },
+    {
+      name: 'GitHub Light',
+      fonts: 'Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500',
+      fontBody: "'Geist', system-ui, sans-serif",
+      fontMono: "'Geist Mono', 'SF Mono', Consolas, monospace",
+      light: {
+        '--bg': '#ffffff', '--surface': '#f6f8fa', '--surface-elevated': '#eef1f4',
+        '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+        '--text': '#1f2328', '--text-dim': '#656d76',
+        '--accent': '#0969da', '--accent-dim': 'rgba(9,105,218,0.08)',
+        '--node-a': '#0969da', '--node-a-dim': 'rgba(9,105,218,0.08)',
+        '--node-b': '#1a7f37', '--node-b-dim': 'rgba(26,127,55,0.08)',
+        '--node-c': '#9a6700', '--node-c-dim': 'rgba(154,103,0,0.08)',
+        '--green': '#1a7f37', '--green-dim': 'rgba(26,127,55,0.08)',
+        '--red': '#cf222e', '--red-dim': 'rgba(207,34,46,0.08)',
+        '--orange': '#bc4c00', '--orange-dim': 'rgba(188,76,0,0.08)',
+      },
+      dark: {
+        '--bg': '#0d1117', '--surface': '#161b22', '--surface-elevated': '#21262d',
+        '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.12)',
+        '--text': '#e6edf3', '--text-dim': '#8b949e',
+        '--accent': '#58a6ff', '--accent-dim': 'rgba(88,166,255,0.12)',
+        '--node-a': '#58a6ff', '--node-a-dim': 'rgba(88,166,255,0.12)',
+        '--node-b': '#3fb950', '--node-b-dim': 'rgba(63,185,80,0.12)',
+        '--node-c': '#d29922', '--node-c-dim': 'rgba(210,153,34,0.12)',
+        '--green': '#3fb950', '--green-dim': 'rgba(63,185,80,0.12)',
+        '--red': '#f85149', '--red-dim': 'rgba(248,81,73,0.12)',
+        '--orange': '#d29922', '--orange-dim': 'rgba(210,153,34,0.12)',
+      },
+    },
+  ];
+
+  // === BACKGROUND PATTERNS ===
+  // Must be defined before ThemeSwitcher so apply() can re-run the active pattern on theme change
+  function patLine() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.18)';
+  }
+  function patLineBold() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.25)';
+  }
+  function patDot() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.22)';
+  }
+
+  let currentBgIndex = 0;
+
+  const BG_PATTERNS = [
+    { name: 'Dot Grid', apply: () => { const c = patDot(); document.body.style.backgroundImage = `radial-gradient(circle, ${c} 1px, transparent 1px)`; document.body.style.backgroundSize = '24px 24px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Hex Grid', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const stroke = isDark ? '%23ffffff' : '%23000000'; const op = isDark ? '0.14' : '0.25'; document.body.style.backgroundImage = `url("data:image/svg+xml,%3Csvg width='40' height='69.28' viewBox='0 0 40 69.28' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg stroke='${stroke}' stroke-width='1' stroke-opacity='${op}'%3E%3Cpolygon points='20 69.28 0 57.74 0 34.64 20 23.09 40 34.64 40 57.74'/%3E%3Cpolygon points='20 46.19 0 34.64 0 11.55 20 0 40 11.55 40 34.64'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`; document.body.style.backgroundSize = '40px 69.28px'; document.body.style.backgroundPosition = '0 0'; } },
+    { name: 'Diagonal Lines', apply: () => { const c = patLine(); document.body.style.backgroundImage = `repeating-linear-gradient(-45deg, transparent, transparent 30px, ${c} 30px, ${c} 31px)`; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Cross Hatch', apply: () => { const c = patLine(); document.body.style.backgroundImage = `repeating-linear-gradient(0deg, transparent, transparent 24px, ${c} 24px, ${c} 25px), repeating-linear-gradient(90deg, transparent, transparent 24px, ${c} 24px, ${c} 25px)`; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Radial Glow', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; document.body.style.backgroundImage = `radial-gradient(ellipse at 50% 0%, var(--accent) ${isDark ? '8%' : '6%'}, transparent 50%)`; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Dual Glow', apply: () => { document.body.style.backgroundImage = 'radial-gradient(at 20% 20%, var(--node-a) 5%, transparent 40%), radial-gradient(at 80% 60%, var(--node-b) 5%, transparent 40%)'; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Blueprint Grid', apply: () => { const c = patLine(); document.body.style.backgroundImage = `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`; document.body.style.backgroundSize = '48px 48px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Noise Texture', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const op = isDark ? '0.15' : '0.08'; document.body.style.backgroundImage = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='${op}'/%3E%3C/svg%3E")`; document.body.style.backgroundSize = '200px 200px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Honeycomb', apply: () => { const c = patDot(); const s = 28; const h = Math.round(s * Math.sqrt(3)); document.body.style.backgroundImage = `radial-gradient(circle farthest-side at ${s}px ${Math.round(h/3)}px, ${c} 3px, transparent 3px), radial-gradient(circle farthest-side at 0px ${Math.round(h*2/3)}px, ${c} 3px, transparent 3px)`; document.body.style.backgroundSize = `${s*2}px ${h}px`; document.body.style.backgroundPosition = ''; } },
+    { name: 'Isometric', apply: () => { const c = patLine(); const c2 = patLineBold(); document.body.style.backgroundImage = `repeating-linear-gradient(30deg, transparent, transparent 20px, ${c2} 20px, ${c2} 21px), repeating-linear-gradient(150deg, transparent, transparent 20px, ${c2} 20px, ${c2} 21px), repeating-linear-gradient(90deg, transparent, transparent 20px, ${c} 20px, ${c} 21px)`; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Topography', apply: () => { const c = patLine(); document.body.style.backgroundImage = `repeating-radial-gradient(circle at 50% 50%, transparent 0px, transparent 18px, ${c} 18px, ${c} 19px, transparent 19px, transparent 36px)`; document.body.style.backgroundSize = '72px 72px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Parchment', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const spot = isDark ? '40,35,28' : '200,180,140'; document.body.style.backgroundImage = `radial-gradient(ellipse at 30% 20%, rgba(${spot},${isDark ? '0.4' : '0.25'}) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(${spot},${isDark ? '0.3' : '0.2'}) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(${spot},${isDark ? '0.2' : '0.15'}) 0%, transparent 70%), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='${isDark ? "0.08" : "0.1"}'/%3E%3C/svg%3E")`; document.body.style.backgroundSize = 'auto, auto, auto, 300px 300px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Sketchbook', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const rule = isDark ? 'rgba(120,160,220,0.15)' : 'rgba(80,120,200,0.3)'; const margin = isDark ? 'rgba(220,100,100,0.12)' : 'rgba(200,60,60,0.35)'; document.body.style.backgroundImage = `linear-gradient(${rule} 1px, transparent 1px), linear-gradient(90deg, ${margin} 1px, transparent 1px), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)' opacity='${isDark ? "0.04" : "0.07"}'/%3E%3C/svg%3E")`; document.body.style.backgroundSize = '100% 28px, 100% 100%, 200px 200px'; document.body.style.backgroundPosition = '0 0, 60px 0, 0 0'; } },
+    { name: 'Graph Paper', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const thin = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)'; const thick = isDark ? 'rgba(100,160,220,0.12)' : 'rgba(60,120,200,0.25)'; document.body.style.backgroundImage = `linear-gradient(${thin} 1px, transparent 1px), linear-gradient(90deg, ${thin} 1px, transparent 1px), linear-gradient(${thick} 1px, transparent 1px), linear-gradient(90deg, ${thick} 1px, transparent 1px)`; document.body.style.backgroundSize = '10px 10px, 10px 10px, 50px 50px, 50px 50px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'Linen', apply: () => { const isDark = document.documentElement.getAttribute('data-theme') !== 'light'; const a = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.07)'; const b = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.05)'; document.body.style.backgroundImage = `repeating-linear-gradient(0deg, ${a} 0px, ${a} 1px, transparent 1px, transparent 3px), repeating-linear-gradient(90deg, ${b} 0px, ${b} 1px, transparent 1px, transparent 3px), url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)' opacity='${isDark ? "0.06" : "0.09"}'/%3E%3C/svg%3E")`; document.body.style.backgroundSize = 'auto, auto, 200px 200px'; document.body.style.backgroundPosition = ''; } },
+    { name: 'None', apply: () => { document.body.style.backgroundImage = 'none'; document.body.style.backgroundSize = 'auto'; document.body.style.backgroundPosition = ''; } },
+  ];
+
+  // === THEME ENGINE ===
+  const ThemeSwitcher = (function() {
+    let currentPresetIndex = 0;
+    let currentMode = 'dark';
+    let fontLink = null;
+
+    function init() {
+      currentPresetIndex = Math.floor(Math.random() * THEME_PRESETS.length);
+      currentMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      fontLink = document.getElementById('theme-fonts');
+      apply();
+    }
+
+    function apply() {
+      const preset = THEME_PRESETS[currentPresetIndex];
+      const vars = preset[currentMode];
+      const root = document.documentElement;
+
+      root.setAttribute('data-theme', currentMode);
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+      root.style.setProperty('--font-body', preset.fontBody);
+      root.style.setProperty('--font-mono', preset.fontMono);
+
+      if (fontLink) {
+        const href = 'https://fonts.googleapis.com/css2?family='
+          + preset.fonts + '&display=swap';
+        if (fontLink.getAttribute('href') !== href) {
+          fontLink.setAttribute('href', href);
+        }
+      }
+
+      const label = document.querySelector('.theme-switcher__label');
+      if (label) label.textContent = preset.name;
+      const modeBtn = document.querySelector('.theme-switcher__mode');
+      if (modeBtn) modeBtn.textContent = currentMode === 'dark' ? '\u2600' : '\u263E';
+
+      rerenderMermaid(vars);
+
+      // Re-apply current background pattern so it picks up mode-aware colors
+      if (typeof currentBgIndex !== 'undefined' && typeof BG_PATTERNS !== 'undefined' && BG_PATTERNS[currentBgIndex]) {
+        BG_PATTERNS[currentBgIndex].apply();
+      }
+    }
+
+    function setPreset(index) {
+      currentPresetIndex = index;
+      apply();
+    }
+
+    function toggleMode() {
+      currentMode = currentMode === 'dark' ? 'light' : 'dark';
+      apply();
+    }
+
+    function rerenderMermaid(vars) {
+      if (typeof mermaid === 'undefined') return;
+      var shells = document.querySelectorAll('.diagram-shell');
+      if (!shells.length) return;
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: vars['--node-a-dim'] || vars['--accent-dim'],
+          primaryBorderColor: vars['--node-a'] || vars['--accent'],
+          primaryTextColor: vars['--text'],
+          secondaryColor: vars['--node-b-dim'] || vars['--surface'],
+          secondaryBorderColor: vars['--node-b'] || vars['--border-bright'],
+          secondaryTextColor: vars['--text'],
+          tertiaryColor: vars['--node-c-dim'] || vars['--surface-elevated'],
+          tertiaryBorderColor: vars['--node-c'] || vars['--border-bright'],
+          tertiaryTextColor: vars['--text'],
+          lineColor: vars['--text-dim'],
+          fontSize: '16px',
+          fontFamily: 'var(--font-body)',
+          noteBkgColor: vars['--surface-elevated'] || vars['--surface'],
+          noteTextColor: vars['--text'],
+          noteBorderColor: vars['--border-bright'],
+        },
+      });
+
+      shells.forEach(function(shell) {
+        var source = shell.querySelector('.diagram-source');
+        var canvas = shell.querySelector('.mermaid-canvas');
+        if (!source || !canvas) return;
+        var code = source.textContent.trim();
+        if (!code) return;
+
+        var id = 'diagram-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+        mermaid.render(id, code).then(function(result) {
+          canvas.innerHTML = result.svg;
+        }).catch(function(err) {
+          console.warn('Theme switch: Mermaid re-render failed', err);
+        });
+      });
+    }
+
+    return { init, setPreset, toggleMode };
+  })();
+
+  window.ThemeSwitcher = ThemeSwitcher;
+
+  // === Simple zoom for demo ===
+  let currentZoom = 1;
+  window.zoomDiagram = function(factor) {
+    if (factor === 0) { currentZoom = 1; }
+    else { currentZoom *= factor; }
+    currentZoom = Math.max(0.3, Math.min(3, currentZoom));
+    const svg = document.querySelector('.mermaid-canvas svg');
+    if (svg) {
+      svg.style.transform = 'scale(' + currentZoom + ')';
+      svg.style.transformOrigin = 'center center';
+    }
+    const label = document.querySelector('.zoom-label');
+    if (label) label.textContent = Math.round(currentZoom * 100) + '%';
+  };
+
+  // === Init ===
+  // Initial Mermaid render
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: isDark ? 'rgba(34,211,238,0.12)' : 'rgba(8,145,178,0.1)',
+      primaryBorderColor: isDark ? '#22d3ee' : '#0891b2',
+      primaryTextColor: isDark ? '#e6edf3' : '#1a1a2e',
+      lineColor: isDark ? '#8b949e' : '#6b7280',
+      fontSize: '16px',
+      fontFamily: 'var(--font-body)',
+    },
+  });
+
+  // Render diagram from source
+  // Wrapped in try/catch so a Mermaid parse error does NOT halt the module
+  // script and leave dropdown/share/background buttons unwired.
+  const shell = document.querySelector('.diagram-shell');
+  const source = shell && shell.querySelector('.diagram-source');
+  const canvas = shell && shell.querySelector('.mermaid-canvas');
+  if (source && canvas) {
+    const code = source.textContent.trim();
+    const id = 'diagram-init-' + Date.now();
+    try {
+      const result = await mermaid.render(id, code);
+      canvas.innerHTML = result.svg;
+    } catch (err) {
+      console.warn('Initial Mermaid render failed:', err);
+      canvas.innerHTML = '<div style="color:var(--text-dim);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;">Diagram render failed &mdash; check console. UI controls still work.</div>';
+    }
+  }
+
+  // Init theme switcher (will re-render Mermaid with chosen preset)
+  try { ThemeSwitcher.init(); } catch (err) { console.warn('ThemeSwitcher init failed:', err); }
+
+  // Apply default background pattern (Dot Grid)
+  try { currentBgIndex = 0; BG_PATTERNS[0].apply(); } catch (err) { console.warn('Background apply failed:', err); }
+
+  // Build dropdown menu
+  const menu = document.querySelector('.theme-switcher__menu');
+  const trigger = document.querySelector('.theme-switcher__trigger');
+
+  THEME_PRESETS.forEach(function(preset, i) {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'option');
+    li.textContent = preset.name;
+    li.onclick = function() {
+      ThemeSwitcher.setPreset(i);
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    };
+    menu.appendChild(li);
+  });
+
+  trigger.onclick = function(e) {
+    e.stopPropagation();
+    const open = menu.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.theme-switcher__dropdown')) {
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+    if (!e.target.closest('.share-dropdown')) {
+      const sm = document.querySelector('.share-dropdown__menu');
+      const st = document.querySelector('.share-dropdown__trigger');
+      if (sm) sm.classList.remove('open');
+      if (st) st.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  trigger.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // === Share dropdown toggle ===
+  const shareTrigger = document.querySelector('.share-dropdown__trigger');
+  const shareMenu = document.querySelector('.share-dropdown__menu');
+  if (shareTrigger && shareMenu) {
+    shareTrigger.onclick = function(e) {
+      e.stopPropagation();
+      const open = shareMenu.classList.toggle('open');
+      shareTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+  }
+
+  // === Background Switcher ===
+  const bgTrigger = document.querySelector('.bg-dropdown__trigger');
+  const bgMenu = document.querySelector('.bg-dropdown__menu');
+  if (bgTrigger && bgMenu) {
+    bgTrigger.onclick = function(e) {
+      e.stopPropagation();
+      const open = bgMenu.classList.toggle('open');
+      bgTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.bg-dropdown')) {
+        bgMenu.classList.remove('open');
+        bgTrigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // === SharePage module ===
+  const SharePage = (function() {
+    function toast(msg) {
+      const el = document.getElementById('share-toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('visible');
+      setTimeout(() => el.classList.remove('visible'), 2500);
+    }
+
+    function getCleanHTML() {
+      // Clone the document
+      const clone = document.documentElement.cloneNode(true);
+
+      // Remove the theme switcher bar entirely
+      const switcher = clone.querySelector('.theme-switcher');
+      if (switcher) switcher.remove();
+
+      // Remove share toast
+      const toastEl = clone.querySelector('.share-toast');
+      if (toastEl) toastEl.remove();
+
+      // Bake current CSS variables into the :root style
+      const root = document.documentElement;
+      const computedVars = [
+        '--font-body', '--font-mono',
+        '--bg', '--surface', '--surface-elevated',
+        '--border', '--border-bright',
+        '--text', '--text-dim',
+        '--accent', '--accent-dim',
+        '--node-a', '--node-a-dim', '--node-b', '--node-b-dim', '--node-c', '--node-c-dim',
+        '--green', '--green-dim', '--red', '--red-dim', '--orange', '--orange-dim',
+      ];
+
+      let bakedCSS = ':root {\n';
+      computedVars.forEach(v => {
+        const val = root.style.getPropertyValue(v);
+        if (val) bakedCSS += '  ' + v + ': ' + val + ';\n';
+      });
+      bakedCSS += '}\n';
+
+      // Inject baked styles as first style element
+      const styleEl = clone.querySelector('style');
+      if (styleEl) {
+        styleEl.textContent = bakedCSS + '\n' + styleEl.textContent;
+      }
+
+      return '<!DOCTYPE html>\n' + clone.outerHTML;
+    }
+
+    function copyHTML() {
+      const html = getCleanHTML();
+      navigator.clipboard.writeText(html).then(() => {
+        toast('HTML copied to clipboard');
+      }).catch(() => {
+        toast('Copy failed — try download instead');
+      });
+      closeMenus();
+    }
+
+    function download() {
+      const html = getCleanHTML();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const title = document.title.replace(/[^a-zA-Z0-9-_ ]/g, '').trim().replace(/\s+/g, '-').toLowerCase();
+      a.download = (title || 'my-visual-explainer') + '.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Downloaded ' + a.download);
+      closeMenus();
+    }
+
+    function closeMenus() {
+      document.querySelectorAll('.share-dropdown__menu, .theme-switcher__menu, .bg-dropdown__menu').forEach(m => m.classList.remove('open'));
+    }
+
+    return { copyHTML, download };
+  })();
+
+  window.SharePage = SharePage;
+
+  // === BackgroundSwitcher module ===
+  // Populate background menu
+  const bgMenuEl = document.querySelector('.bg-dropdown__menu');
+  if (bgMenuEl) {
+    BG_PATTERNS.forEach(function(bg, i) {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'menuitem');
+      li.textContent = bg.name;
+      li.onclick = function() {
+        currentBgIndex = i;
+        bg.apply();
+        bgMenuEl.classList.remove('open');
+        const bgLabel = document.querySelector('.bg-dropdown__label');
+        if (bgLabel) bgLabel.textContent = bg.name;
+      };
+      bgMenuEl.appendChild(li);
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1633,68 +1633,603 @@ For warnings, tips, notes, and key takeaways.
 }
 ```
 
-### Theme Toggle
+### Theme Switcher
 
-Use `data-theme` attribute for user-controllable light/dark modes. Random initial theme adds variety.
+A dropdown that swaps the full visual identity at runtime: color palette, fonts, and light/dark mode. Every generated page should include this. The switcher uses `data-theme` attributes on `<html>` and hot-reloads Google Fonts via link element replacement.
 
-```css
-:root, [data-theme="light"] {
-  --bg: #fafaf9;
-  --surface: #ffffff;
-  --text: #1c1917;
-  --text-dim: #78716c;
-  --border: #e7e5e4;
-  --accent: #0d9488;
-}
+**How it works:** Each preset defines CSS custom properties (colors) and font families. Switching a preset updates `--font-body`, `--font-mono`, and all color variables via a `data-theme` attribute. Google Fonts are loaded on demand by swapping the `<link>` element's `href`. Mermaid diagrams are re-rendered with updated `themeVariables` so they stay in sync.
 
-[data-theme="dark"] {
-  --bg: #0c0a09;
-  --surface: #1c1917;
-  --text: #fafaf9;
-  --text-dim: #a8a29e;
-  --border: #292524;
-  --accent: #14b8a6;
-}
-```
+#### Preset Definitions (JavaScript)
+
+Each preset has a `name`, `fonts` (Google Fonts families), `vars` (CSS custom properties for both light and dark), and `fontFamily` values.
 
 ```javascript
-// Random initial theme
-const themes = ['light', 'dark'];
-document.documentElement.setAttribute('data-theme', themes[Math.floor(Math.random() * 2)]);
-
-// Toggle function
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  document.documentElement.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
-}
+const THEME_PRESETS = [
+  {
+    name: 'Teal Slate',
+    fonts: 'Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700',
+    fontBody: "'Outfit', system-ui, sans-serif",
+    fontMono: "'Space Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#f8f9fa', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+      '--text': '#1a1a2e', '--text-dim': '#6b7280',
+      '--accent': '#0891b2', '--accent-dim': 'rgba(8,145,178,0.1)',
+      '--node-a': '#0891b2', '--node-a-dim': 'rgba(8,145,178,0.1)',
+      '--node-b': '#059669', '--node-b-dim': 'rgba(5,150,105,0.1)',
+      '--node-c': '#d97706', '--node-c-dim': 'rgba(217,119,6,0.1)',
+      '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.1)',
+      '--red': '#ef4444', '--red-dim': 'rgba(239,68,68,0.1)',
+      '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.1)',
+    },
+    dark: {
+      '--bg': '#0d1117', '--surface': '#161b22', '--surface-elevated': '#1c2333',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.12)',
+      '--text': '#e6edf3', '--text-dim': '#8b949e',
+      '--accent': '#22d3ee', '--accent-dim': 'rgba(34,211,238,0.12)',
+      '--node-a': '#22d3ee', '--node-a-dim': 'rgba(34,211,238,0.12)',
+      '--node-b': '#34d399', '--node-b-dim': 'rgba(52,211,153,0.12)',
+      '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+      '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+      '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+      '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+    },
+  },
+  {
+    name: 'Terracotta Sage',
+    fonts: 'DM+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500',
+    fontBody: "'DM Sans', system-ui, sans-serif",
+    fontMono: "'Fira Code', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#faf7f5', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.07)', '--border-bright': 'rgba(0,0,0,0.12)',
+      '--text': '#292524', '--text-dim': '#78716c',
+      '--accent': '#c2410c', '--accent-dim': 'rgba(194,65,12,0.08)',
+      '--node-a': '#c2410c', '--node-a-dim': 'rgba(194,65,12,0.08)',
+      '--node-b': '#65a30d', '--node-b-dim': 'rgba(101,163,13,0.08)',
+      '--node-c': '#a16207', '--node-c-dim': 'rgba(161,98,7,0.08)',
+      '--green': '#65a30d', '--green-dim': 'rgba(101,163,13,0.08)',
+      '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+      '--orange': '#ea580c', '--orange-dim': 'rgba(234,88,12,0.08)',
+    },
+    dark: {
+      '--bg': '#1c1917', '--surface': '#292524', '--surface-elevated': '#44403c',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#fafaf9', '--text-dim': '#a8a29e',
+      '--accent': '#fb923c', '--accent-dim': 'rgba(251,146,60,0.12)',
+      '--node-a': '#fb923c', '--node-a-dim': 'rgba(251,146,60,0.12)',
+      '--node-b': '#a3e635', '--node-b-dim': 'rgba(163,230,53,0.12)',
+      '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+      '--green': '#a3e635', '--green-dim': 'rgba(163,230,53,0.12)',
+      '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+      '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+    },
+  },
+  {
+    name: 'Editorial Rose',
+    fonts: 'Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500',
+    fontBody: "'Instrument Serif', Georgia, serif",
+    fontMono: "'JetBrains Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#fafaf9', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.14)',
+      '--text': '#1c1917', '--text-dim': '#78716c',
+      '--accent': '#be123c', '--accent-dim': 'rgba(190,18,60,0.08)',
+      '--node-a': '#be123c', '--node-a-dim': 'rgba(190,18,60,0.08)',
+      '--node-b': '#0f766e', '--node-b-dim': 'rgba(15,118,110,0.08)',
+      '--node-c': '#92400e', '--node-c-dim': 'rgba(146,64,14,0.08)',
+      '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+      '--red': '#be123c', '--red-dim': 'rgba(190,18,60,0.08)',
+      '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.08)',
+    },
+    dark: {
+      '--bg': '#0f0d0d', '--surface': '#1a1717', '--surface-elevated': '#262121',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#f5f0ed', '--text-dim': '#a39e9b',
+      '--accent': '#fb7185', '--accent-dim': 'rgba(251,113,133,0.12)',
+      '--node-a': '#fb7185', '--node-a-dim': 'rgba(251,113,133,0.12)',
+      '--node-b': '#5eead4', '--node-b-dim': 'rgba(94,234,212,0.12)',
+      '--node-c': '#fbbf24', '--node-c-dim': 'rgba(251,191,36,0.12)',
+      '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+      '--red': '#fb7185', '--red-dim': 'rgba(251,113,133,0.12)',
+      '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+    },
+  },
+  {
+    name: 'Deep Navy Gold',
+    fonts: 'IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+    fontBody: "'IBM Plex Sans', system-ui, sans-serif",
+    fontMono: "'IBM Plex Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#f5f5f4', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.15)',
+      '--text': '#1e3a5f', '--text-dim': '#64748b',
+      '--accent': '#1e3a5f', '--accent-dim': 'rgba(30,58,95,0.08)',
+      '--node-a': '#1e3a5f', '--node-a-dim': 'rgba(30,58,95,0.08)',
+      '--node-b': '#d4a73a', '--node-b-dim': 'rgba(212,167,58,0.08)',
+      '--node-c': '#7c3aed', '--node-c-dim': 'rgba(124,58,237,0.08)',
+      '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+      '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+      '--orange': '#d4a73a', '--orange-dim': 'rgba(212,167,58,0.08)',
+    },
+    dark: {
+      '--bg': '#0a1628', '--surface': '#112240', '--surface-elevated': '#1a3050',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#ccd6f6', '--text-dim': '#8892b0',
+      '--accent': '#d4a73a', '--accent-dim': 'rgba(212,167,58,0.12)',
+      '--node-a': '#64b5f6', '--node-a-dim': 'rgba(100,181,246,0.12)',
+      '--node-b': '#d4a73a', '--node-b-dim': 'rgba(212,167,58,0.12)',
+      '--node-c': '#a78bfa', '--node-c-dim': 'rgba(167,139,250,0.12)',
+      '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+      '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+      '--orange': '#d4a73a', '--orange-dim': 'rgba(212,167,58,0.12)',
+    },
+  },
+  {
+    name: 'Amber Emerald',
+    fonts: 'Bricolage+Grotesque:wght@400;500;600;700&family=Fragment+Mono',
+    fontBody: "'Bricolage Grotesque', system-ui, sans-serif",
+    fontMono: "'Fragment Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#fafaf9', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.07)', '--border-bright': 'rgba(0,0,0,0.12)',
+      '--text': '#1c1917', '--text-dim': '#78716c',
+      '--accent': '#d97706', '--accent-dim': 'rgba(217,119,6,0.08)',
+      '--node-a': '#d97706', '--node-a-dim': 'rgba(217,119,6,0.08)',
+      '--node-b': '#059669', '--node-b-dim': 'rgba(5,150,105,0.08)',
+      '--node-c': '#0284c7', '--node-c-dim': 'rgba(2,132,199,0.08)',
+      '--green': '#059669', '--green-dim': 'rgba(5,150,105,0.08)',
+      '--red': '#dc2626', '--red-dim': 'rgba(220,38,38,0.08)',
+      '--orange': '#d97706', '--orange-dim': 'rgba(217,119,6,0.08)',
+    },
+    dark: {
+      '--bg': '#0c0a09', '--surface': '#1c1917', '--surface-elevated': '#292524',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#fafaf9', '--text-dim': '#a8a29e',
+      '--accent': '#fbbf24', '--accent-dim': 'rgba(251,191,36,0.12)',
+      '--node-a': '#fbbf24', '--node-a-dim': 'rgba(251,191,36,0.12)',
+      '--node-b': '#34d399', '--node-b-dim': 'rgba(52,211,153,0.12)',
+      '--node-c': '#38bdf8', '--node-c-dim': 'rgba(56,189,248,0.12)',
+      '--green': '#34d399', '--green-dim': 'rgba(52,211,153,0.12)',
+      '--red': '#f87171', '--red-dim': 'rgba(248,113,113,0.12)',
+      '--orange': '#fbbf24', '--orange-dim': 'rgba(251,191,36,0.12)',
+    },
+  },
+  {
+    name: 'Dracula',
+    fonts: 'Plus+Jakarta+Sans:wght@400;500;600;700&family=Azeret+Mono:wght@400;500',
+    fontBody: "'Plus Jakarta Sans', system-ui, sans-serif",
+    fontMono: "'Azeret Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#f8f8f2', '--surface': '#ffffff', '--surface-elevated': '#ffffff',
+      '--border': 'rgba(0,0,0,0.08)', '--border-bright': 'rgba(0,0,0,0.14)',
+      '--text': '#282a36', '--text-dim': '#6272a4',
+      '--accent': '#bd93f9', '--accent-dim': 'rgba(189,147,249,0.1)',
+      '--node-a': '#bd93f9', '--node-a-dim': 'rgba(189,147,249,0.1)',
+      '--node-b': '#50fa7b', '--node-b-dim': 'rgba(80,250,123,0.1)',
+      '--node-c': '#ffb86c', '--node-c-dim': 'rgba(255,184,108,0.1)',
+      '--green': '#50fa7b', '--green-dim': 'rgba(80,250,123,0.1)',
+      '--red': '#ff5555', '--red-dim': 'rgba(255,85,85,0.1)',
+      '--orange': '#ffb86c', '--orange-dim': 'rgba(255,184,108,0.1)',
+    },
+    dark: {
+      '--bg': '#282a36', '--surface': '#343746', '--surface-elevated': '#44475a',
+      '--border': 'rgba(255,255,255,0.08)', '--border-bright': 'rgba(255,255,255,0.14)',
+      '--text': '#f8f8f2', '--text-dim': '#6272a4',
+      '--accent': '#bd93f9', '--accent-dim': 'rgba(189,147,249,0.15)',
+      '--node-a': '#bd93f9', '--node-a-dim': 'rgba(189,147,249,0.15)',
+      '--node-b': '#50fa7b', '--node-b-dim': 'rgba(80,250,123,0.15)',
+      '--node-c': '#ffb86c', '--node-c-dim': 'rgba(255,184,108,0.15)',
+      '--green': '#50fa7b', '--green-dim': 'rgba(80,250,123,0.15)',
+      '--red': '#ff5555', '--red-dim': 'rgba(255,85,85,0.15)',
+      '--orange': '#ffb86c', '--orange-dim': 'rgba(255,184,108,0.15)',
+    },
+  },
+  {
+    name: 'Nord',
+    fonts: 'Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500',
+    fontBody: "'Sora', system-ui, sans-serif",
+    fontMono: "'IBM Plex Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#eceff4', '--surface': '#e5e9f0', '--surface-elevated': '#d8dee9',
+      '--border': 'rgba(0,0,0,0.06)', '--border-bright': 'rgba(0,0,0,0.1)',
+      '--text': '#2e3440', '--text-dim': '#4c566a',
+      '--accent': '#5e81ac', '--accent-dim': 'rgba(94,129,172,0.1)',
+      '--node-a': '#5e81ac', '--node-a-dim': 'rgba(94,129,172,0.1)',
+      '--node-b': '#a3be8c', '--node-b-dim': 'rgba(163,190,140,0.1)',
+      '--node-c': '#ebcb8b', '--node-c-dim': 'rgba(235,203,139,0.1)',
+      '--green': '#a3be8c', '--green-dim': 'rgba(163,190,140,0.1)',
+      '--red': '#bf616a', '--red-dim': 'rgba(191,97,106,0.1)',
+      '--orange': '#d08770', '--orange-dim': 'rgba(208,135,112,0.1)',
+    },
+    dark: {
+      '--bg': '#2e3440', '--surface': '#3b4252', '--surface-elevated': '#434c5e',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#eceff4', '--text-dim': '#d8dee9',
+      '--accent': '#88c0d0', '--accent-dim': 'rgba(136,192,208,0.12)',
+      '--node-a': '#88c0d0', '--node-a-dim': 'rgba(136,192,208,0.12)',
+      '--node-b': '#a3be8c', '--node-b-dim': 'rgba(163,190,140,0.12)',
+      '--node-c': '#ebcb8b', '--node-c-dim': 'rgba(235,203,139,0.12)',
+      '--green': '#a3be8c', '--green-dim': 'rgba(163,190,140,0.12)',
+      '--red': '#bf616a', '--red-dim': 'rgba(191,97,106,0.12)',
+      '--orange': '#d08770', '--orange-dim': 'rgba(208,135,112,0.12)',
+    },
+  },
+  {
+    name: 'Catppuccin Mocha',
+    fonts: 'Red+Hat+Display:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500',
+    fontBody: "'Red Hat Display', system-ui, sans-serif",
+    fontMono: "'Red Hat Mono', 'SF Mono', Consolas, monospace",
+    light: {
+      '--bg': '#eff1f5', '--surface': '#e6e9ef', '--surface-elevated': '#dce0e8',
+      '--border': 'rgba(0,0,0,0.06)', '--border-bright': 'rgba(0,0,0,0.1)',
+      '--text': '#4c4f69', '--text-dim': '#6c6f85',
+      '--accent': '#1e66f5', '--accent-dim': 'rgba(30,102,245,0.1)',
+      '--node-a': '#1e66f5', '--node-a-dim': 'rgba(30,102,245,0.1)',
+      '--node-b': '#40a02b', '--node-b-dim': 'rgba(64,160,43,0.1)',
+      '--node-c': '#df8e1d', '--node-c-dim': 'rgba(223,142,29,0.1)',
+      '--green': '#40a02b', '--green-dim': 'rgba(64,160,43,0.1)',
+      '--red': '#d20f39', '--red-dim': 'rgba(210,15,57,0.1)',
+      '--orange': '#fe640b', '--orange-dim': 'rgba(254,100,11,0.1)',
+    },
+    dark: {
+      '--bg': '#1e1e2e', '--surface': '#313244', '--surface-elevated': '#45475a',
+      '--border': 'rgba(255,255,255,0.06)', '--border-bright': 'rgba(255,255,255,0.1)',
+      '--text': '#cdd6f4', '--text-dim': '#a6adc8',
+      '--accent': '#89b4fa', '--accent-dim': 'rgba(137,180,250,0.12)',
+      '--node-a': '#89b4fa', '--node-a-dim': 'rgba(137,180,250,0.12)',
+      '--node-b': '#a6e3a1', '--node-b-dim': 'rgba(166,227,161,0.12)',
+      '--node-c': '#f9e2af', '--node-c-dim': 'rgba(249,226,175,0.12)',
+      '--green': '#a6e3a1', '--green-dim': 'rgba(166,227,161,0.12)',
+      '--red': '#f38ba8', '--red-dim': 'rgba(243,139,168,0.12)',
+      '--orange': '#fab387', '--orange-dim': 'rgba(250,179,135,0.12)',
+    },
+  },
+];
 ```
+
+#### Theme Engine (JavaScript)
+
+Place this after the preset definitions. Handles font loading, CSS variable application, mode toggling, and Mermaid re-rendering.
+
+```javascript
+const ThemeSwitcher = (function() {
+  let currentPresetIndex = 0;
+  let currentMode = 'dark';
+  let fontLink = null;
+
+  function init() {
+    // Pick a random preset on first load
+    currentPresetIndex = Math.floor(Math.random() * THEME_PRESETS.length);
+    currentMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    fontLink = document.getElementById('theme-fonts');
+    apply();
+  }
+
+  function apply() {
+    const preset = THEME_PRESETS[currentPresetIndex];
+    const vars = preset[currentMode];
+    const root = document.documentElement;
+
+    // Apply CSS custom properties
+    root.setAttribute('data-theme', currentMode);
+    Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+    root.style.setProperty('--font-body', preset.fontBody);
+    root.style.setProperty('--font-mono', preset.fontMono);
+
+    // Hot-reload Google Fonts
+    if (fontLink) {
+      const href = 'https://fonts.googleapis.com/css2?family='
+        + preset.fonts + '&display=swap';
+      if (fontLink.getAttribute('href') !== href) {
+        fontLink.setAttribute('href', href);
+      }
+    }
+
+    // Update dropdown display if it exists
+    const label = document.querySelector('.theme-switcher__label');
+    if (label) label.textContent = preset.name;
+    const modeBtn = document.querySelector('.theme-switcher__mode');
+    if (modeBtn) modeBtn.textContent = currentMode === 'dark' ? '\u2600' : '\u263E';
+
+    // Re-render Mermaid diagrams with updated theme colors
+    rerenderMermaid(vars);
+  }
+
+  function setPreset(index) {
+    currentPresetIndex = index;
+    apply();
+  }
+
+  function toggleMode() {
+    currentMode = currentMode === 'dark' ? 'light' : 'dark';
+    apply();
+  }
+
+  function rerenderMermaid(vars) {
+    if (typeof mermaid === 'undefined') return;
+    var shells = document.querySelectorAll('.diagram-shell');
+    if (!shells.length) return;
+
+    // Build themeVariables from current palette
+    var isDark = currentMode === 'dark';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: vars['--node-a-dim'] || vars['--accent-dim'],
+        primaryBorderColor: vars['--node-a'] || vars['--accent'],
+        primaryTextColor: vars['--text'],
+        secondaryColor: vars['--node-b-dim'] || vars['--surface'],
+        secondaryBorderColor: vars['--node-b'] || vars['--border-bright'],
+        secondaryTextColor: vars['--text'],
+        tertiaryColor: vars['--node-c-dim'] || vars['--surface-elevated'],
+        tertiaryBorderColor: vars['--node-c'] || vars['--border-bright'],
+        tertiaryTextColor: vars['--text'],
+        lineColor: vars['--text-dim'],
+        fontSize: '16px',
+        fontFamily: 'var(--font-body)',
+        noteBkgColor: vars['--surface-elevated'] || vars['--surface'],
+        noteTextColor: vars['--text'],
+        noteBorderColor: vars['--border-bright'],
+      },
+    });
+
+    // Re-render each diagram from its source
+    shells.forEach(function(shell) {
+      var source = shell.querySelector('.diagram-source');
+      var canvas = shell.querySelector('.mermaid-canvas');
+      if (!source || !canvas) return;
+      var code = source.textContent.trim();
+      if (!code) return;
+
+      var id = 'diagram-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+      mermaid.render(id, code).then(function(result) {
+        canvas.innerHTML = result.svg;
+        // Re-run the diagram's fit logic if initDiagram exposed it
+        if (typeof shell._fitDiagram === 'function') shell._fitDiagram();
+      }).catch(function(err) {
+        console.warn('Theme switch: Mermaid re-render failed', err);
+      });
+    });
+  }
+
+  return { init: init, setPreset: setPreset, toggleMode: toggleMode };
+})();
+```
+
+#### Dropdown HTML
+
+Place this in the page `<body>`, typically fixed in the top-right corner. The font `<link>` needs `id="theme-fonts"` so the engine can swap it.
 
 ```html
-<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-  <svg class="theme-toggle__sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-  </svg>
-  <svg class="theme-toggle__moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-  </svg>
-</button>
+<!-- In <head>: -->
+<link id="theme-fonts" rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+
+<!-- In <body>: -->
+<div class="theme-switcher">
+  <button class="theme-switcher__mode" onclick="ThemeSwitcher.toggleMode()"
+    title="Toggle light/dark" aria-label="Toggle light/dark mode">&#9790;</button>
+  <div class="theme-switcher__dropdown">
+    <button class="theme-switcher__trigger" aria-haspopup="listbox" aria-expanded="false">
+      <span class="theme-switcher__label">Teal Slate</span>
+      <span class="theme-switcher__caret">&#9662;</span>
+    </button>
+    <ul class="theme-switcher__menu" role="listbox"></ul>
+  </div>
+</div>
 ```
 
+Build the menu dynamically and wire the trigger:
+
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+  ThemeSwitcher.init();
+
+  // Populate dropdown menu
+  var menu = document.querySelector('.theme-switcher__menu');
+  var trigger = document.querySelector('.theme-switcher__trigger');
+  if (!menu || !trigger) return;
+
+  THEME_PRESETS.forEach(function(preset, i) {
+    var li = document.createElement('li');
+    li.setAttribute('role', 'option');
+    li.textContent = preset.name;
+    li.onclick = function() {
+      ThemeSwitcher.setPreset(i);
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    };
+    menu.appendChild(li);
+  });
+
+  // Toggle dropdown
+  trigger.onclick = function() {
+    var open = menu.classList.toggle('open');
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.theme-switcher__dropdown')) {
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Keyboard navigation
+  trigger.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      menu.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+});
+```
+
+#### Dropdown CSS
+
 ```css
-.theme-toggle {
+.theme-switcher {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 200;
+  font-family: var(--font-mono);
+}
+
+.theme-switcher__mode {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.theme-switcher__mode:hover {
+  background: var(--surface-elevated);
+  color: var(--text);
+}
+
+.theme-switcher__dropdown {
+  position: relative;
+}
+
+.theme-switcher__trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
   cursor: pointer;
-  z-index: 100;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
 }
-[data-theme="light"] .theme-toggle__moon { display: none; }
-[data-theme="dark"] .theme-toggle__sun { display: none; }
+
+.theme-switcher__trigger:hover {
+  background: var(--surface-elevated);
+  border-color: var(--border-bright);
+}
+
+.theme-switcher__caret {
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s;
+}
+
+.theme-switcher__menu.open + .theme-switcher__trigger .theme-switcher__caret,
+.theme-switcher__trigger[aria-expanded="true"] .theme-switcher__caret {
+  transform: rotate(180deg);
+}
+
+.theme-switcher__menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  margin: 0;
+  list-style: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.theme-switcher__menu.open {
+  display: block;
+}
+
+.theme-switcher__menu li {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.1s;
+}
+
+.theme-switcher__menu li:hover {
+  background: var(--accent-dim);
+}
+
+/* Responsive: collapse label on narrow viewports */
+@media (max-width: 600px) {
+  .theme-switcher__label { display: none; }
+  .theme-switcher__trigger { padding: 8px; }
+}
+
+@media print {
+  .theme-switcher { display: none; }
+}
 ```
+
+### Share Button
+
+Add a share button to the theme switcher bar. It provides three options: copy the page HTML to clipboard (with theme baked in, chrome stripped), download as .html file, or save as PDF via the browser's print dialog.
+
+The `SharePage.getCleanHTML()` function clones the document, removes the `.theme-switcher` element (which contains all interactive chrome: theme dropdown, background dropdown, share button, mode toggle), bakes the current CSS variable values into `:root`, and returns clean standalone HTML. Recipients see the exact theme the sharer chose, with no interactive controls.
+
+```html
+<!-- Inside .theme-switcher bar, after the theme dropdown: -->
+<div class="share-dropdown">
+  <button class="share-dropdown__trigger" title="Share this page">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+      <polyline points="16 6 12 2 8 6"/>
+      <line x1="12" y1="2" x2="12" y2="15"/>
+    </svg>
+  </button>
+  <ul class="share-dropdown__menu" role="menu">
+    <li role="menuitem" onclick="SharePage.copyHTML()">Copy HTML</li>
+    <li role="menuitem" onclick="SharePage.download()">Download .html</li>
+  </ul>
+</div>
+```
+
+See `templates/theme-switcher-demo.html` for the full CSS (identical to `.theme-switcher__menu` styling), JS module (`SharePage` IIFE), and toast notification pattern.
+
+### Background Switcher
+
+A dropdown for switching page background patterns at runtime. Lives in the `.theme-switcher` bar alongside the theme and share dropdowns.
+
+**Available patterns:** Dot Grid, Fine Dots, Diagonal Lines, Cross Hatch, Radial Glow, Dual Glow, Blueprint Grid, Noise Texture, None.
+
+Each pattern applies a `background-image` and `background-size` to `<body>`. Patterns use CSS custom properties (`var(--border)`, `var(--accent-dim)`, etc.) so they automatically adapt when the theme changes.
+
+```html
+<!-- Inside .theme-switcher bar: -->
+<div class="bg-dropdown">
+  <button class="bg-dropdown__trigger" title="Change background pattern">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+    </svg>
+  </button>
+  <ul class="bg-dropdown__menu" role="menu"><!-- populated by JS --></ul>
+</div>
+```
+
+The menu is populated dynamically from a `BG_PATTERNS` array. See `templates/theme-switcher-demo.html` for the full pattern definitions and CSS.
 
 ### Prose Anti-Patterns
 
@@ -1811,3 +2346,125 @@ Small image floated beside a section. Use when the illustration supports but doe
 ```html
 <img class="accent-img" src="data:image/png;base64,..." alt="Descriptive alt text">
 ```
+
+## Print Styles
+
+Include these rules in every page so diagrams print/PDF cleanly. The active theme is preserved — do NOT force light colors, because users may want to share a dark-themed PDF. The `@page { margin: 0 }` rule suppresses browser-injected headers and footers (date, URL, page title) that ruin presentation output.
+
+```css
+/* Suppress browser headers/footers (date, URL, title) */
+@page {
+  margin: 0;
+  size: auto;
+}
+
+@media print {
+  /* Preserve the active theme colors — do NOT override CSS variables.
+     The user chose a theme; the PDF should match it exactly. */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 40px !important;
+  }
+
+  /* Hide interactive elements */
+  .theme-switcher,
+  .zoom-controls,
+  .diagram-shell__hint,
+  .share-toast,
+  .toc,
+  .deck-dots,
+  .deck-progress,
+  .deck-counter,
+  .deck-hints {
+    display: none !important;
+  }
+
+  /* Remove animations */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Keep components together across page breaks */
+  .ve-card, .ve-card--elevated, .ve-card--hero,
+  .kpi-card, .table-wrap, .mermaid-wrap,
+  .code-block, .code-file, .kpi-row {
+    break-inside: avoid;
+  }
+
+  /* Expand all collapsible sections */
+  details.collapsible[open] > * {
+    display: block !important;
+  }
+
+  /* Mermaid diagrams: ensure visible without zoom */
+  .mermaid-wrap {
+    overflow: visible !important;
+    min-height: auto !important;
+  }
+  .mermaid-viewport {
+    overflow: visible !important;
+    position: static !important;
+  }
+  .mermaid-canvas {
+    position: static !important;
+  }
+}
+```
+
+**Note on browser print dialogs:** `@page { margin: 0 }` removes the header/footer area in most browsers (Chrome, Edge, Firefox). If a user still sees headers/footers, they need to uncheck "Headers and footers" in the print dialog — CSS can remove the margin but some browsers require that checkbox too.
+
+## Accessibility
+
+Minimum requirements for every generated page. These complement `prefers-reduced-motion` (already covered in Animations) and `aria-label` on interactive elements.
+
+### Color Contrast
+
+All text must meet WCAG 2.1 AA contrast ratios: 4.5:1 for body text, 3:1 for large text (18px+ or 14px+ bold). The curated palettes in the Theme Switcher presets are designed to pass these thresholds, but verify when creating custom palettes.
+
+**Common failures to watch:**
+- `--text-dim` on `--surface` in light mode (often too faint)
+- Status badge text on colored backgrounds (`.status--match`, `.status--gap`)
+- Edge labels in Mermaid diagrams (override via `.mermaid .edgeLabel` CSS)
+- Accent-colored text on accent-dim backgrounds
+
+### Keyboard Navigation
+
+```css
+/* Visible focus indicator for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Don't show focus ring on mouse clicks */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+```
+
+Interactive elements (buttons, links, dropdown triggers) must be reachable via Tab and activatable via Enter/Space. The theme switcher dropdown should close on Escape.
+
+### ARIA Landmarks
+
+Use semantic HTML to create an accessible document structure:
+
+```html
+<body>
+  <nav class="toc" aria-label="Table of contents">...</nav>
+  <main class="main">
+    <article>
+      <h1>Page Title</h1>
+      <!-- sections with heading hierarchy: h1 > h2 > h3 -->
+    </article>
+  </main>
+</body>
+```
+
+### Screen Reader Considerations
+
+- Every Mermaid diagram should have a text summary in a `<p>` or `<figcaption>` adjacent to the `.diagram-shell`. Screen readers can't parse SVG graph structures.
+- Status indicators (`.status--match`, `.status--gap`) should include text, not just color. The existing patterns already do this -- don't remove the text label.
+- Images must have descriptive `alt` text. Base64-embedded images from surf-cli should describe the concept, not "AI-generated illustration."
+- Data tables need proper `<thead>`/`<tbody>` structure and `scope="col"` on header cells for screen reader table navigation.

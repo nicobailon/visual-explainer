@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.7.1] - 2026-04-17
+
+### Bug Fixes
+- Fixed theme switcher, background selector, and share dropdowns becoming unclickable when the initial Mermaid render throws a parse error. Root cause: the module script used a bare top-level `await mermaid.render(...)`, so any parse failure (unsupported node shape, unescaped entity, malformed subgraph) rejected the promise and halted the rest of the module before the dropdown handlers were wired. All three interactive controls appeared but had no click handlers attached.
+- `templates/theme-switcher-demo.html`: wrapped the initial Mermaid render, `ThemeSwitcher.init()`, and `BG_PATTERNS[0].apply()` in try/catch blocks. If the diagram fails to render, the canvas now shows a small "render failed — check console" message and the toolbar still works.
+- `SKILL.md`: added guidance in the Interactive Controls section to always wrap the initial Mermaid render in try/catch and not rely on top-level await for UI wiring.
+
+## [0.7.0] - 2026-04-10
+
+### Theme Switcher
+- Runtime palette and font switching via dropdown — 11 curated presets: Teal Slate, Terracotta Sage, Editorial Rose, Deep Navy Gold, Amber Emerald, Dracula, Nord, Catppuccin Mocha, Solarized Light, Rose Pine Dawn, GitHub Light
+- Each preset defines full light and dark palettes with all CSS custom properties (bg, surface, border, text, accent, node colors, status colors)
+- Google Fonts hot-reload via `<link>` element swap — fonts change instantly without page refresh
+- Mermaid diagrams re-render automatically on theme change with updated `themeVariables`
+- Light/dark mode toggle button alongside preset dropdown
+- Random initial preset on page load for variety
+- New `theme-switcher-demo.html` template showcasing all components with live switching
+- Keyboard accessible: Escape closes dropdown, Tab navigation through options
+
+### Share Button
+- In-page share dropdown: Copy HTML, Download .html
+- Copy/download strips all interactive chrome (theme switcher, share button, background selector) and bakes current theme into the HTML — recipients see exactly what you see
+- Toast notification confirms each action
+
+### Background Switcher
+- Runtime background pattern selector with 15 options: Dot Grid, Hex Grid, Diagonal Lines, Cross Hatch, Radial Glow, Dual Glow, Blueprint Grid, Noise Texture, Honeycomb, Isometric, Topography, Parchment, Sketchbook, Graph Paper, Linen
+- Patterns use CSS custom properties and mode-aware opacity (stronger in light mode)
+- Background re-applies automatically on theme switch
+
+### Windows Support
+- Added Windows `start` command to browser-open instructions in SKILL.md
+
+### Accessibility
+- Color contrast guidance (WCAG 2.1 AA ratios)
+- Focus-visible keyboard indicators
+- ARIA landmarks guidance (nav, main, article)
+- Screen reader considerations for Mermaid diagrams, status indicators, images, tables
+
+### Removed
+- Print/PDF export (page breaks, PDF save, print preview) — CSS print layout was unreliable across browsers. May revisit with a different approach.
+
+### Bug Fixes
+- Synced `marketplace.json` version from 0.5.1 to 0.6.3 (was stale)
+- Added Claude Code skill paths to `share.sh` (previously only checked Pi paths)
+
 ## [0.6.3] - 2026-03-09
 
 ### Documentation

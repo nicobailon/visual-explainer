@@ -1,10 +1,10 @@
 {
-  "name": "visual-explainer",
+  "name": "my-visual-explainer",
   "description": "Generate beautiful HTML pages for diagrams, diff reviews, plan reviews, and data tables",
-  "version": "0.6.3",
+  "version": "0.7.1",
   "author": {
-    "name": "nicobailon"
+    "name": "jccidc"
   },
-  "repository": "https://github.com/nicobailon/visual-explainer",
+  "repository": "https://github.com/jccidc/my-visual-explainer",
   "license": "MIT"
 }

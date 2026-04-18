@@ -1,23 +1,23 @@
 {
-  "name": "visual-explainer-marketplace",
+  "name": "my-visual-explainer-marketplace",
   "owner": {
-    "name": "nicobailon"
+    "name": "jccidc"
   },
   "metadata": {
-    "description": "Plugin distribution for visual-explainer",
+    "description": "Plugin distribution for my-visual-explainer",
     "version": "1.0.0",
     "pluginRoot": "./plugins"
   },
   "plugins": [
     {
-      "name": "visual-explainer",
-      "source": "./plugins/visual-explainer",
+      "name": "my-visual-explainer",
+      "source": "./plugins/my-visual-explainer",
       "description": "Generate beautiful HTML pages for diagrams, diff reviews, plan reviews, slides, and data tables",
-      "version": "0.5.1",
+      "version": "0.7.1",
       "author": {
-        "name": "nicobailon"
+        "name": "jccidc"
       },
-      "repository": "https://github.com/nicobailon/visual-explainer",
+      "repository": "https://github.com/jccidc/my-visual-explainer",
       "license": "MIT",
       "keywords": ["diagrams", "html", "visualization", "diff-review", "slides"],
       "category": "visualization",
