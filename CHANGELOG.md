@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1] - 2026-04-17
+
+### Bug Fixes
+- Fixed theme switcher, background selector, and share dropdowns becoming unclickable when the initial Mermaid render throws a parse error. Root cause: the module script used a bare top-level `await mermaid.render(...)`, so any parse failure (unsupported node shape, unescaped entity, malformed subgraph) rejected the promise and halted the rest of the module before the dropdown handlers were wired. All three interactive controls appeared but had no click handlers attached.
+- `templates/theme-switcher-demo.html`: wrapped the initial Mermaid render, `ThemeSwitcher.init()`, and `BG_PATTERNS[0].apply()` in try/catch blocks. If the diagram fails to render, the canvas now shows a small "render failed — check console" message and the toolbar still works.
+- `SKILL.md`: added guidance in the Interactive Controls section to always wrap the initial Mermaid render in try/catch and not rely on top-level await for UI wiring.
+
 ## [0.7.0] - 2026-04-10
 
 ### Theme Switcher

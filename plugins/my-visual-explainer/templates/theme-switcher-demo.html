@@ -1539,20 +1539,28 @@ graph TD
   });
 
   // Render diagram from source
+  // Wrapped in try/catch so a Mermaid parse error does NOT halt the module
+  // script and leave dropdown/share/background buttons unwired.
   const shell = document.querySelector('.diagram-shell');
-  const source = shell.querySelector('.diagram-source');
-  const canvas = shell.querySelector('.mermaid-canvas');
-  const code = source.textContent.trim();
-  const id = 'diagram-init-' + Date.now();
-  const result = await mermaid.render(id, code);
-  canvas.innerHTML = result.svg;
+  const source = shell && shell.querySelector('.diagram-source');
+  const canvas = shell && shell.querySelector('.mermaid-canvas');
+  if (source && canvas) {
+    const code = source.textContent.trim();
+    const id = 'diagram-init-' + Date.now();
+    try {
+      const result = await mermaid.render(id, code);
+      canvas.innerHTML = result.svg;
+    } catch (err) {
+      console.warn('Initial Mermaid render failed:', err);
+      canvas.innerHTML = '<div style="color:var(--text-dim);font-family:var(--font-mono);font-size:12px;padding:20px;text-align:center;">Diagram render failed &mdash; check console. UI controls still work.</div>';
+    }
+  }
 
   // Init theme switcher (will re-render Mermaid with chosen preset)
-  ThemeSwitcher.init();
+  try { ThemeSwitcher.init(); } catch (err) { console.warn('ThemeSwitcher init failed:', err); }
 
   // Apply default background pattern (Dot Grid)
-  currentBgIndex = 0;
-  BG_PATTERNS[0].apply();
+  try { currentBgIndex = 0; BG_PATTERNS[0].apply(); } catch (err) { console.warn('Background apply failed:', err); }
 
   // Build dropdown menu
   const menu = document.querySelector('.theme-switcher__menu');

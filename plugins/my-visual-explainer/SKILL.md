@@ -211,6 +211,8 @@ The toolbar goes in `<body>` as the first element (fixed top-right) and includes
 
 **Do not abbreviate or subset the presets/patterns.** Copy them from the demo template. Missing presets or truncated pattern functions are bugs.
 
+**Wrap the initial Mermaid render in try/catch.** The theme/share/background dropdowns live inside the same `<script type="module">` as the Mermaid bootstrap. A bare top-level `await mermaid.render(...)` will reject on any parse error (unsupported node shape, unescaped entity, malformed subgraph) and halt the rest of the module — leaving every dropdown unwired. Follow the demo template: wrap the initial `await` in `try/catch`, and also wrap `ThemeSwitcher.init()` and `BG_PATTERNS[0].apply()` so one broken piece never breaks the whole toolbar.
+
 ### 5. Deliver
 
 **Output location:** Write to `~/.agent/diagrams/`. Use a descriptive filename based on content: `modem-architecture.html`, `pipeline-flow.html`, `schema-overview.html`. The directory persists across sessions.
