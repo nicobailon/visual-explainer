@@ -1,4 +1,5 @@
 ---
+name: generate-web-diagram
 description: Generate a beautiful standalone HTML diagram and open it in the browser
 ---
 Load the visual-explainer skill, then generate an HTML diagram for: $@
