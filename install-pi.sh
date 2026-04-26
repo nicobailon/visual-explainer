@@ -25,9 +25,9 @@ cp -r plugins/visual-explainer "$SKILL_DIR"
 # Replace {{skill_dir}} with actual path
 echo "Patching paths..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    find "$SKILL_DIR" -name "*.md" -exec sed -i '' "s|{{skill_dir}}|$SKILL_DIR|g" {} \;
+    find "$SKILL_DIR" -name "*.md" -exec sed -i '' "s#{{skill_dir}}#$SKILL_DIR#g" {} \;
 else
-    find "$SKILL_DIR" -name "*.md" -exec sed -i "s|{{skill_dir}}|$SKILL_DIR|g" {} \;
+    find "$SKILL_DIR" -name "*.md" -exec sed -i "s#{{skill_dir}}#$SKILL_DIR#g" {} \;
 fi
 
 # Copy prompts (slash commands)
