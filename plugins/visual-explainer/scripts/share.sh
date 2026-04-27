@@ -47,6 +47,7 @@ trap 'rm -rf "$TEMP_DIR"' EXIT
 cp "$HTML_FILE" "$TEMP_DIR/index.html"
 
 echo -e "${CYAN}Sharing $(basename "$HTML_FILE")...${NC}" >&2
+echo -e "⚠  Deployment is PUBLIC — anyone with the URL can view this file." >&2
 
 # Deploy via vercel-deploy skill
 # Temporarily disable errexit to capture deployment errors
