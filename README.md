@@ -33,7 +33,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill and prompts; `install-pi.sh` installs to `~/.pi/agent/skills/visual-explainer` and `~/.pi/agent/prompts/` |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
-| OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
+| OpenCode/opencode | Plugin (recommended) or manual copy | Add `"visual-explainer@git+https://github.com/nicobailon/visual-explainer.git"` to `opencode.json` plugins; or copy skill manually |
 | Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 
@@ -93,7 +93,20 @@ rm -rf /tmp/visual-explainer
 
 Invoke with `$visual-explainer` or ask Codex to use the `visual-explainer` skill. If prompts are installed and supported, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
 
-**OpenCode/opencode:**
+**OpenCode/opencode (plugin — recommended):**
+
+Add the plugin to your `opencode.json`:
+
+```json
+{ "plugin": ["visual-explainer@git+https://github.com/nicobailon/visual-explainer.git"] }
+```
+
+Restart OpenCode. The skill is auto-registered — no manual file copies needed. Ask OpenCode to use the `visual-explainer` skill.
+
+**OpenCode/opencode (manual install):**
+
+If you prefer a local copy instead of a plugin:
+
 ```bash
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
 
@@ -106,7 +119,7 @@ cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.config/openco
 rm -rf /tmp/visual-explainer
 ```
 
-Activate it by asking OpenCode to use the `visual-explainer` skill. Command-template behavior depends on the installed OpenCode/opencode build.
+Activate by asking OpenCode to use the `visual-explainer` skill. Command-template behavior depends on your build version.
 
 **Cursor:**
 
@@ -145,6 +158,9 @@ https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 ## How It Works
 
 ```
+.opencode/
+│ └── plugins/
+│     └── visual-explainer.js  ← opencode auto-register hook
 .claude-plugin/
 ├── plugin.json           ← marketplace identity
 └── marketplace.json      ← plugin catalog
