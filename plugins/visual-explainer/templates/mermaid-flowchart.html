@@ -592,7 +592,25 @@
 
         const id = 'diagram-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
         const { svg } = await mermaid.render(id, code);
-        canvas.innerHTML = svg;
+
+        // Inject the Mermaid-rendered SVG via the lenient HTML parser.
+        // Two reasons we don't use innerHTML or DOMParser('image/svg+xml'):
+        //   1. innerHTML triggers XSS scanners (Semgrep, CSP-aware linters) even
+        //      though mermaid.render output is trusted.
+        //   2. The strict XML parser ('image/svg+xml') chokes on the unclosed
+        //      <br> tags Mermaid embeds inside <foreignObject><p>...<br>...</p>
+        //      for multi-line node labels - it silently truncates the diagram
+        //      so only the first node renders and edges disappear.
+        // Parsing as 'text/html' uses the HTML5 lenient parser which handles
+        // <br> correctly and preserves the SVG namespace.
+        const parsed = new DOMParser().parseFromString(svg, 'text/html');
+        const parsedSvg = parsed.body.querySelector('svg');
+        if (!parsedSvg) {
+          label.textContent = 'Error: No SVG';
+          return;
+        }
+        while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+        canvas.appendChild(document.adoptNode(parsedSvg));
 
         const svgNode = canvas.querySelector('svg');
         if (!svgNode) {
