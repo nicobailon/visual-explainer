@@ -2,7 +2,7 @@
 name: visual-explainer
 description: Generate beautiful, self-contained HTML pages that visually explain systems, code changes, plans, and data. Use when the user asks for a diagram, architecture overview, diff review, plan review, project recap, comparison table, or any visual explanation of technical concepts. Also use proactively when you are about to render a complex ASCII table (4+ rows or 3+ columns) — present it as a styled HTML page instead.
 license: MIT
-compatibility: Requires a browser to view generated HTML files. Optional surf-cli for AI image generation.
+compatibility: Uses Pi's Glimpse native UI when available; falls back to opening generated HTML files in the browser. Optional surf-cli for AI image generation.
 metadata:
   author: nicobailon
   version: "0.6.3"
@@ -10,7 +10,7 @@ metadata:
 
 # Visual Explainer
 
-Generate self-contained HTML files for technical diagrams, visualizations, and data tables. Always open the result in the browser. Never fall back to ASCII art when this skill is loaded.
+Generate self-contained HTML files for technical diagrams, visualizations, and data tables. Always open the result with the provided opener: it uses Pi's Glimpse native UI when available and falls back to the system browser. Never fall back to ASCII art when this skill is loaded.
 
 **Proactive table rendering.** When you're about to present tabular data as an ASCII box-drawing table in the terminal (comparisons, audits, feature matrices, status reports, any structured rows/columns), generate an HTML page instead. The threshold: if the table has 4+ rows or 3+ columns, it belongs in the browser. Don't wait for the user to ask — render it as HTML automatically and tell them the file path. You can still include a brief text summary in the chat, but the table itself should be the HTML page.
 
@@ -193,9 +193,12 @@ Keep animations purposeful: entrance reveals, hover feedback, and user-initiated
 
 **Output location:** Write to `~/.agent/diagrams/`. Use a descriptive filename based on content: `modem-architecture.html`, `pipeline-flow.html`, `schema-overview.html`. The directory persists across sessions.
 
-**Open in browser:**
-- macOS: `open ~/.agent/diagrams/filename.html`
-- Linux: `xdg-open ~/.agent/diagrams/filename.html`
+**Open with Glimpse when available, browser otherwise:**
+```bash
+./plugins/visual-explainer/scripts/open.sh ~/.agent/diagrams/filename.html
+```
+
+If the skill is installed elsewhere, run `scripts/open.sh` from that installed skill directory. The opener detects Pi's Glimpse native UI from common Pi/package locations and uses it when present. If Glimpse is not available or fails to start, it falls back to the system browser (`open`, `xdg-open`, or `start`).
 
 **Tell the user** the file path so they can re-open or share it.
 

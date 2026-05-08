@@ -15,4 +15,4 @@ Follow the visual-explainer skill workflow. Read the reference template at `./te
 
 **Compositional variety:** Consecutive slides must vary their spatial approach. Alternate between centered, left-heavy, right-heavy, split, edge-aligned, and full-bleed. Three centered slides in a row means push one off-axis.
 
-Write to `~/.agent/diagrams/` and open the result in the browser.
+Write to `~/.agent/diagrams/` and open the result with `scripts/open.sh` so it uses Pi's Glimpse when available and browser fallback otherwise.
