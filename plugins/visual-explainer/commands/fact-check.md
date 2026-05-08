@@ -52,7 +52,7 @@ Include in the summary:
 - Corrections made (with brief list of what was fixed: "Changed `processCleanup` to `runCleanup` to match actual function name in `worker.ts:45`")
 - Unverifiable claims flagged (if any)
 
-**Phase 5: Report.** Tell the user what was checked, what was corrected, and open the file (HTML in browser, markdown path in chat). If nothing needed correction, say so — the verification still has value as confirmation.
+**Phase 5: Report.** Tell the user what was checked, what was corrected, and open the file (HTML via `scripts/open.sh` with Glimpse/browser fallback, markdown path in chat). If nothing needed correction, say so — the verification still has value as confirmation.
 
 This is not a re-review. It does not second-guess analysis, opinions, or design judgments. It does not change the document's structure or organization. It is a fact-checker — it verifies that the data presented matches reality, corrects what doesn't, and leaves everything else alone.
 

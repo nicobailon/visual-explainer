@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-Ask your agent to explain a system architecture, review a diff, or compare requirements against a plan. Instead of ASCII art and box-drawing tables, it generates a self-contained HTML page and opens it in your browser.
+Ask your agent to explain a system architecture, review a diff, or compare requirements against a plan. Instead of ASCII art and box-drawing tables, it generates a self-contained HTML page and opens it with Pi's Glimpse native UI when available, falling back to your browser.
 
 ```
 > draw a diagram of our authentication flow
@@ -168,13 +168,13 @@ plugins/
         └── share.sh       ← deploy HTML to Vercel for sharing
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser
+**Output:** `~/.agent/diagrams/filename.html` → opens with Glimpse when available, browser fallback
 
 The skill routes to the right approach automatically: Mermaid for flowcharts and diagrams, CSS Grid for architecture overviews, HTML tables for data, Chart.js for dashboards.
 
 ## Limitations
 
-- Generated HTML is portable and self-contained, but auto-opening depends on the harness, browser access, and sandbox rules.
+- Generated HTML is portable and self-contained. In Pi, `scripts/open.sh` uses Glimpse when available and falls back to the system browser; other harnesses still depend on browser access and sandbox rules.
 - All harnesses write visual output to `~/.agent/diagrams/` unless the user asks for a different path.
 - Switching OS theme requires a page refresh for Mermaid SVGs.
 - `/share-page` uses `plugins/visual-explainer/scripts/share.sh`, which expects a Pi-compatible `vercel-deploy` skill in a standard Pi skill location. Other harnesses can still generate and open pages, but sharing may need that dependency installed separately.
