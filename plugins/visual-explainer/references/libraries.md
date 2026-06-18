@@ -567,16 +567,18 @@ Always load with `display=swap` for fast rendering. Pick a distinctive pairing �
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
 
 Define as CSS variables for easy reference:
 ```css
 :root {
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
 }
 ```
+
+**Load every weight you render — for the mono font too.** The component CSS uses mono at `400`/`500`/`600`/`700` (labels, table headers, status pills, the `.opt` cell), so both families above carry `wght@400;500;600;700`. A weight used in CSS but missing from the `<link>` is synthesized as faux-bold by the browser — mangled, smeared glyphs, worst on monospace. Never load the mono with fewer weights than the body.
 
 **Font pairings** (rotate — never use the same pairing twice in a row):
 
@@ -597,6 +599,8 @@ Define as CSS variables for easy reference:
 | Playfair Display | Roboto Mono | Elegant contrast | Executive summaries |
 
 The first 5 pairings are recommended for most use cases. Vary across consecutive diagrams.
+
+**Weight-limited monos:** Fragment Mono ships `400` only; Space Mono only `400`/`700`. They have no `500`/`600`, so the browser fakes those weights — pick them only for pages whose mono text stays at the weights they offer, otherwise prefer a full-range mono (Fira Code, JetBrains Mono, IBM Plex Mono, Azeret Mono, Geist Mono, Roboto Mono).
 
 ### Typography by Content Voice
 

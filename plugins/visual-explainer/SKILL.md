@@ -149,6 +149,8 @@ Apply these principles to every diagram:
 
 Load via `<link>` in `<head>`. Include a system font fallback in the `font-family` stack for offline resilience.
 
+**Load every weight you use — mono included.** These patterns set the mono font at `400`/`500`/`600`/`700` (uppercase labels, table headers, status pills, the `.opt` cell), so request `wght@400;500;600;700` for the mono family too, not just the body. A weight the CSS uses but the `<link>` omits gets faux-bolded by the browser — smeared, mangled glyphs, ugliest on monospace. (Fragment Mono and Space Mono ship limited weights; pair them only with CSS that stays within what they offer.)
+
 **Color tells a story.** Use CSS custom properties for the full palette. Define at minimum: `--bg`, `--surface`, `--border`, `--text`, `--text-dim`, and 3-5 accent colors. Each accent should have a full and a dim variant (for backgrounds). Name variables semantically when possible (`--pipeline-step` not `--blue-3`). Support both themes.
 
 **Forbidden accent colors:** `#8b5cf6` `#7c3aed` `#a78bfa` (indigo/violet), `#d946ef` (fuchsia), the cyan-magenta-pink combination. These are Tailwind defaults that signal zero design intent.
