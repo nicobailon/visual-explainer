@@ -684,7 +684,12 @@ function initDiagram(shell) {
 
       const id = 'diagram-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
       const { svg } = await mermaid.render(id, code);
-      canvas.innerHTML = svg;
+      // Inject via the lenient HTML parser - see "Injecting Mermaid SVG" below
+      // for why innerHTML and DOMParser('image/svg+xml') both fail in practice.
+      const parsed = new DOMParser().parseFromString(svg, 'text/html');
+      const parsedSvg = parsed.body.querySelector('svg');
+      while (canvas.firstChild) canvas.removeChild(canvas.firstChild);
+      canvas.appendChild(document.adoptNode(parsedSvg));
 
       // readSvgNaturalSize(svgNode) + setAdaptiveHeight() + fitDiagram()
       // wire controls from data-action attributes
@@ -702,6 +707,50 @@ document.querySelectorAll('.diagram-shell').forEach(initDiagram);
 ```
 
 This pattern removes all hardcoded IDs and supports unlimited diagrams per page. For the full implementation (including smart fit, pinch zoom, and shared drag state), use `templates/mermaid-flowchart.html` as the canonical source.
+
+### Injecting Mermaid SVG: pick the right parser
+
+Mermaid 10+ embeds HTML inside `<foreignObject>` for multi-line node labels:
+
+```svg
+<foreignObject>
+  <p>line one<br>line two</p>
+</foreignObject>
+```
+
+That `<br>` is unclosed HTML - perfectly valid. But it is not valid XML, and
+that distinction silently breaks two seemingly-safe injection patterns:
+
+| Approach | XSS scanner / Semgrep | Renders Mermaid | Verdict |
+| --- | --- | --- | --- |
+| Setting `Element.innerHTML` to the SVG string | Flagged (potential sink) | Yes (HTML5 parser) | Works only in browsers without a scanner gate |
+| `parseFromString(svg, 'image/svg+xml')` + `adoptNode` | Passes | **No** - strict XML parser stops at the first unclosed `<br>` and silently truncates the SVG; only the first node renders and edges disappear | Looks like a "one-node diagram" bug |
+| `parseFromString(svg, 'text/html')` + `adoptNode` | Passes | **Yes** - HTML5 parser accepts `<br>` and preserves the SVG namespace via foreign-content rules | **Use this** |
+
+The failure mode of the XML approach is the dangerous one because it does not
+throw - it stops parsing at the first `<br>` and you get a partial SVG. You
+will not notice until you count nodes against the source diagram, or until the
+browser console surfaces the underlying error: `Opening and ending tag
+mismatch: br line 1 and p`.
+
+**Canonical helper:**
+
+```javascript
+function injectSvg(host, svgMarkup) {
+  // 'text/html' = lenient HTML5 parser; handles <br> and Mermaid's
+  // foreignObject content correctly. NEVER use 'image/svg+xml' here.
+  const parsed = new DOMParser().parseFromString(svgMarkup, 'text/html');
+  const svg = parsed.body.querySelector('svg');
+  if (!svg) throw new Error('Mermaid produced no SVG');
+  while (host.firstChild) host.removeChild(host.firstChild);
+  host.appendChild(document.adoptNode(svg));
+  return host.querySelector('svg');
+}
+```
+
+Use this any time you need to insert SVG produced by `mermaid.render()` into
+the DOM - including the `openInNewTab` / "expand" handler where the SVG is
+serialized and re-parsed for a popup window.
 
 ## Grid Layouts
 
