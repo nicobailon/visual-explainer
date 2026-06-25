@@ -1,6 +1,8 @@
 {
   "name": "visual-explainer",
   "version": "0.7.1",
+  "type": "module",
+  "main": ".opencode/plugins/visual-explainer.js",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, slide decks, and data tables",
   "license": "MIT",
   "homepage": "https://github.com/nicobailon/visual-explainer#readme",
@@ -29,6 +31,7 @@
     "mermaid"
   ],
   "files": [
+    ".opencode",
     "plugins/visual-explainer",
     ".claude-plugin",
     "configs",
