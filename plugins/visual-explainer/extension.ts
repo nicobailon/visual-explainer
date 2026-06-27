@@ -128,6 +128,17 @@ function outputFilename(input: string) {
   return /\.html?$/i.test(raw) ? raw : `${raw}.html`;
 }
 
+const STANDARD_FAVICON =
+  '<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzBmMTcyOSIvPjxjaXJjbGUgY3g9IjkiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjZDRhNzNhIi8+PGNpcmNsZSBjeD0iMjMiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjNjBhNWZhIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyMi41IiByPSIzIiBmaWxsPSIjNGFkZTgwIi8+PHBhdGggZD0iTTkgMTAuNSBMMTYgMjIuNSBMMjMgMTAuNSIgc3Ryb2tlPSIjZDRhNzNhIiBzdHJva2Utd2lkdGg9IjEuNyIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43NSIvPjwvc3ZnPg==">';
+
+// Guarantees the house-style favicon is present, regardless of what the agent emitted.
+function ensureFavicon(html: string): string {
+  if (/<link\b[^>]*rel\s*=\s*["']?(?:shortcut\s+)?icon/i.test(html)) return html;
+  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${STANDARD_FAVICON}`);
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => `${m}\n${STANDARD_FAVICON}`);
+  return html;
+}
+
 function assertHtmlDocument(html: string) {
   const trimmed = html.trim();
   if (!trimmed) throw new Error("html is required");
@@ -276,7 +287,8 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   }
 
   signal?.throwIfAborted();
-  writeFileSync(outputPath, params.html, "utf8");
+  const finalHtml = ensureFavicon(params.html);
+  writeFileSync(outputPath, finalHtml, "utf8");
 
   signal?.throwIfAborted();
 

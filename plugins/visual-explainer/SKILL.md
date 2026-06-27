@@ -19,6 +19,17 @@ Generate self-contained HTML pages that explain systems, code changes, plans, da
 - Write files to `~/.agent/diagrams/` or the explicit eval output path. Use descriptive filenames.
 - Open generated pages in the browser when running normally. In Pi package installs, use `visual_explainer` with `prepare` for planning/context and `render` only after the complete HTML document exists.
 - The final page must be a complete self-contained HTML document, including embedded CSS and any needed JS.
+- Always include the standard self-contained data-URI favicon immediately after `</title>` (see "Favicon" below). Never leave a page without a favicon.
+
+## Favicon
+
+Every generated page must include this exact self-contained data-URI favicon, placed immediately after the `</title>` tag. It needs no external file and is a small node-graph glyph that matches the dark/accent palette:
+
+```html
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzBmMTcyOSIvPjxjaXJjbGUgY3g9IjkiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjZDRhNzNhIi8+PGNpcmNsZSBjeD0iMjMiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjNjBhNWZhIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyMi41IiByPSIzIiBmaWxsPSIjNGFkZTgwIi8+PHBhdGggZD0iTTkgMTAuNSBMMTYgMjIuNSBMMjMgMTAuNSIgc3Ryb2tlPSIjZDRhNzNhIiBzdHJva2Utd2lkdGg9IjEuNyIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43NSIvPjwvc3ZnPg==">
+```
+
+If math is rendered with KaTeX, escape `<` as `&lt;` inside `$$...$$` (e.g. `y_{&lt;t}`); a bare `<` makes the HTML parser truncate the formula.
 
 ## Reference routing
 
@@ -92,6 +103,7 @@ If `surf` is available, generated images may be embedded as base64 for hero bann
 Before delivery, verify:
 
 - complete HTML document;
+- standard favicon `<link rel="icon">` present immediately after `</title>`;
 - output written to the requested path;
 - no console errors when opened;
 - no horizontal overflow at normal desktop width;
