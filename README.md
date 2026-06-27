@@ -30,10 +30,10 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 
 | Harness | Support | Install path / behavior |
 |---|---|---|
-| Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
-| Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
-| Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
-| OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
+| Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/`; bundled command workflows are also shipped as user-invoked, non-model-invokable skills |
+| Pi | Package metadata plus installer | `package.json` advertises the main skill, command wrapper skills, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
+| Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer` and copy command wrapper skills from `plugins/visual-explainer/skills/*`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
+| OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer` and copy command wrapper skills from `plugins/visual-explainer/skills/*`; optional commands go in `~/.config/opencode/command/` |
 | Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 
@@ -61,17 +61,20 @@ The package manifest advertises the canonical skill, command templates, and Pi t
 ```json
 "pi": {
   "extensions": ["./plugins/visual-explainer/extension.ts"],
-  "skills": ["./plugins/visual-explainer"],
+  "skills": [
+    "./plugins/visual-explainer",
+    "./plugins/visual-explainer/skills"
+  ],
   "prompts": ["./plugins/visual-explainer/commands"]
 }
 ```
 
-The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to write complete HTML pages to `~/.agent/diagrams/`. `/generate-web-diagram` remains the bundled prompt template command.
+The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to write complete HTML pages to `~/.agent/diagrams/`. The bundled command workflows are also exposed as user-invoked skills with `disable-model-invocation: true`, so harnesses without prompt/command primitives can still offer them without adding them to the model's automatic skill list. `/generate-web-diagram` remains a bundled prompt template command for harnesses that support prompts.
 
 If you previously used the old curl/manual installer, remove those copied files before using `pi install`; otherwise Pi will report skill and prompt conflicts because the user-level copies shadow the package resources:
 
 ```bash
-rm -rf ~/.pi/agent/skills/visual-explainer
+rm -rf ~/.pi/agent/skills/{visual-explainer,diff-review,fact-check,generate-slides,generate-visual-plan,generate-web-diagram,plan-review,project-recap}
 rm -f ~/.pi/agent/prompts/{diff-review,fact-check,generate-slides,generate-visual-plan,generate-web-diagram,plan-review,project-recap}.md
 rm -f ~/.pi/agent/prompts/s[h]are*.md
 ```
@@ -88,6 +91,7 @@ git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visu
 
 mkdir -p ~/.codex/skills ~/.codex/prompts
 cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.codex/skills/visual-explainer
+cp -R /tmp/visual-explainer/plugins/visual-explainer/skills/* ~/.codex/skills/
 
 # Optional, only if your Codex build supports prompt templates:
 cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.codex/prompts/
@@ -95,7 +99,7 @@ cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.codex/prompts
 rm -rf /tmp/visual-explainer
 ```
 
-Invoke with `$visual-explainer` or ask Codex to use the `visual-explainer` skill. If prompts are installed and supported, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
+Invoke with `$visual-explainer` or ask Codex to use the `visual-explainer` skill. Command workflows are available as user-invoked skills such as `$diff-review`, `$plan-review`, and `$generate-web-diagram`; they load the main visual-explainer skill and are marked `disable-model-invocation: true`. If prompts are installed and supported, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
 
 **OpenCode/opencode:**
 ```bash
@@ -103,6 +107,7 @@ git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visu
 
 mkdir -p ~/.config/opencode/skill ~/.config/opencode/command
 cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.config/opencode/skill/visual-explainer
+cp -R /tmp/visual-explainer/plugins/visual-explainer/skills/* ~/.config/opencode/skill/
 
 # Optional command templates:
 cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.config/opencode/command/
@@ -110,7 +115,7 @@ cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.config/openco
 rm -rf /tmp/visual-explainer
 ```
 
-Activate it by asking OpenCode to use the `visual-explainer` skill. Command-template behavior depends on the installed OpenCode/opencode build.
+Activate it by asking OpenCode to use the `visual-explainer` skill. Command workflows are available as user-invoked skills such as `diff-review`, `plan-review`, and `generate-web-diagram`; they load the main visual-explainer skill and are marked `disable-model-invocation: true`. Command-template behavior depends on the installed OpenCode/opencode build.
 
 **Cursor:**
 
@@ -120,17 +125,19 @@ Add `configs/cursor/visual-explainer.mdc` to your Cursor rules, or copy its cont
 
 Use `configs/openclaw/AGENTS.md` as lightweight project guidance and copy or reference `plugins/visual-explainer/` as the canonical skill source. No native OpenClaw plugin adapter is included.
 
-## Commands
+## Commands and command skills
 
-| Command | What it does |
+Each bundled workflow ships both as a prompt/command template for command-aware harnesses and as a user-invoked skill for harnesses that only support skills. The command skill names match the command names and are marked `disable-model-invocation: true`, so they do not appear in the model's automatic skill list.
+
+| Command / skill | What it does |
 |---------|-------------|
-| `/generate-web-diagram` | Generate an HTML diagram for any topic |
-| `/generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
-| `/generate-slides` | Generate a magazine-quality slide deck |
-| `/diff-review` | Visual diff review with architecture comparison and code review |
-| `/plan-review` | Compare a plan against the codebase with risk assessment |
-| `/project-recap` | Mental model snapshot for context-switching back to a project |
-| `/fact-check` | Verify accuracy of a document against actual code |
+| `/generate-web-diagram` / `generate-web-diagram` | Generate an HTML diagram for any topic |
+| `/generate-visual-plan` / `generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
+| `/generate-slides` / `generate-slides` | Generate a magazine-quality slide deck |
+| `/diff-review` / `diff-review` | Visual diff review with architecture comparison and code review |
+| `/plan-review` / `plan-review` | Compare a plan against the codebase with risk assessment |
+| `/project-recap` / `project-recap` | Mental model snapshot for context-switching back to a project |
+| `/fact-check` / `fact-check` | Verify accuracy of a document against actual code |
 
 The agent also kicks in automatically when it's about to dump a complex table in the terminal (4+ rows or 3+ columns) — it renders HTML instead.
 
@@ -157,7 +164,8 @@ plugins/
     │   └── plugin.json   ← plugin manifest
     ├── SKILL.md           ← workflow + design principles
     ├── extension.ts       ← Pi native tool
-    ├── commands/          ← slash commands
+    ├── commands/          ← prompt/slash command templates
+    ├── skills/            ← user-invoked, non-model-invokable command wrapper skills
     ├── references/        ← agent reads before generating
     │   ├── css-patterns.md   (layouts, animations, theming)
     │   ├── libraries.md      (Mermaid, Chart.js, fonts)

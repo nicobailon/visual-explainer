@@ -6,7 +6,7 @@ alwaysApply: false
 
 Use the canonical `visual-explainer` skill from `plugins/visual-explainer/`. Cursor support is rules-based guidance, not native Agent Skills support.
 
-When the user asks for a diagram, architecture overview, diff review, plan review, project recap, slide deck, or complex comparison table, read `plugins/visual-explainer/SKILL.md` and follow its workflow. Use the command markdown in `plugins/visual-explainer/commands/` as templates when helpful.
+When the user asks for a diagram, architecture overview, diff review, plan review, project recap, slide deck, or complex comparison table, read `plugins/visual-explainer/SKILL.md` and follow its workflow. User-invoked command wrapper skills live under `plugins/visual-explainer/skills/` and are marked `disable-model-invocation: true`; use those wrappers or the command markdown in `plugins/visual-explainer/commands/` as templates when helpful.
 
 Write generated HTML to `~/.agent/diagrams/` unless the user asks for another path, then open it in a browser if Cursor permits shell/browser access. If browser access is blocked, report the file path.
 

@@ -5,7 +5,9 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-Load the visual-explainer skill and fact-check the document named by `$@`. If no argument is given, use the most recently modified HTML file in `~/.agent/diagrams/`.
+# fact-check
+
+This is a user-invoked command wrapper skill. Load and follow the main visual-explainer skill before doing any work: `{baseDir}/../../SKILL.md`. Use the user's invocation arguments/request as the input; command-template harnesses may expose that input as `$@`.
 
 ## Claim extraction
 

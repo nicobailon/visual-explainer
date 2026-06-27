@@ -5,7 +5,9 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-Load the visual-explainer skill and generate a self-contained HTML plan review.
+# plan-review
+
+This is a user-invoked command wrapper skill. Load and follow the main visual-explainer skill before doing any work: `{baseDir}/../../SKILL.md`. Use the user's invocation arguments/request as the input; command-template harnesses may expose that input as `$@`.
 
 ## Inputs
 

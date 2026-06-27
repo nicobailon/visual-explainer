@@ -5,7 +5,9 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-Load the visual-explainer skill and generate an HTML visual explainer for: $@
+# generate-web-diagram
+
+This is a user-invoked command wrapper skill. Load and follow the main visual-explainer skill before doing any work: `{baseDir}/../../SKILL.md`. Use the user's invocation arguments/request as the input; command-template harnesses may expose that input as `$@`.
 
 Use the skill’s reference routing and final checklist. Pick a representation that fits the topic: Mermaid for connected flows/topologies; CSS cards for text-heavy explanations; tables for matrices; timelines for linear history.
 

@@ -46,7 +46,8 @@
       "./plugins/visual-explainer/extension.ts"
     ],
     "skills": [
-      "./plugins/visual-explainer"
+      "./plugins/visual-explainer",
+      "./plugins/visual-explainer/skills"
     ],
     "prompts": [
       "./plugins/visual-explainer/commands"

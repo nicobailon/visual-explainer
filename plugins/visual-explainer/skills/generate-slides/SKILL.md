@@ -5,7 +5,9 @@ disable-model-invocation: true
 user-invocable: true
 ---
 
-Load the visual-explainer skill and generate a slide deck for: $@
+# generate-slides
+
+This is a user-invoked command wrapper skill. Load and follow the main visual-explainer skill before doing any work: `{baseDir}/../../SKILL.md`. Use the user's invocation arguments/request as the input; command-template harnesses may expose that input as `$@`.
 
 Before writing HTML, read `./templates/slide-deck.html`, `./references/slide-patterns.md`, and only the shared CSS/library sections needed for the source.
 

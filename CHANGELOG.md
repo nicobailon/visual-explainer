@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Added user-invoked command wrapper skills for the bundled visual workflows (`diff-review`, `plan-review`, `project-recap`, `fact-check`, `generate-web-diagram`, `generate-visual-plan`, and `generate-slides`). The wrappers load the main `visual-explainer` skill and use `disable-model-invocation: true` for harnesses that expose skills but not prompt/command primitives.
+
 ## [0.8.1] - 2026-06-25
 
 ### Fixed
