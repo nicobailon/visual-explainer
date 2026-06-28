@@ -128,6 +128,41 @@ function outputFilename(input: string) {
   return /\.html?$/i.test(raw) ? raw : `${raw}.html`;
 }
 
+const STANDARD_FAVICON =
+  '<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNyIgZmlsbD0iIzBmMTcyOSIvPjxjaXJjbGUgY3g9IjkiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjZDRhNzNhIi8+PGNpcmNsZSBjeD0iMjMiIGN5PSIxMC41IiByPSIzIiBmaWxsPSIjNjBhNWZhIi8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyMi41IiByPSIzIiBmaWxsPSIjNGFkZTgwIi8+PHBhdGggZD0iTTkgMTAuNSBMMTYgMjIuNSBMMjMgMTAuNSIgc3Ryb2tlPSIjZDRhNzNhIiBzdHJva2Utd2lkdGg9IjEuNyIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC43NSIvPjwvc3ZnPg==">';
+
+// Guarantees the house-style favicon is present, regardless of what the agent emitted.
+function ensureFavicon(html: string): string {
+  if (/<link\b[^>]*rel\s*=\s*["']?(?:shortcut\s+)?icon/i.test(html)) return html;
+  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${STANDARD_FAVICON}`);
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => `${m}\n${STANDARD_FAVICON}`);
+  return html;
+}
+
+// Reader-safety: inside $$...$$ display math, escape < and > so the HTML
+// parser doesn't treat e.g. y_{<t} as a tag and silently truncate the formula.
+// KaTeX decodes entities, so this is semantically lossless. Scoped to $$ (very
+// unlikely to false-match) and skips already-escaped content.
+function fixDisplayMath(html: string): string {
+  return html.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner: string) => {
+    const fixed = inner.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `$$${fixed}$$`;
+  });
+}
+
+// Reader-safety: a complete, well-formed document for any browser/offline read.
+function ensureDocMeta(html: string): string {
+  let out = html;
+  if (!/<html[^>]*\blang=/i.test(out)) out = out.replace(/<html\b/i, '<html lang="en"');
+  if (/<head[^>]*>/i.test(out)) {
+    if (!/<meta[^>]+name=["']viewport/i.test(out))
+      out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
+    if (!/<meta[^>]+name=["']theme-color/i.test(out))
+      out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<meta name="theme-color" content="#0f1729">`);
+  }
+  return out;
+}
+
 function assertHtmlDocument(html: string) {
   const trimmed = html.trim();
   if (!trimmed) throw new Error("html is required");
@@ -276,7 +311,9 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   }
 
   signal?.throwIfAborted();
-  writeFileSync(outputPath, params.html, "utf8");
+  // Reader-safety pipeline: fix truncating math, complete the doc head, guarantee favicon.
+  const finalHtml = ensureFavicon(ensureDocMeta(fixDisplayMath(params.html)));
+  writeFileSync(outputPath, finalHtml, "utf8");
 
   signal?.throwIfAborted();
 
