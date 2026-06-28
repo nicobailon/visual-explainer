@@ -139,6 +139,30 @@ function ensureFavicon(html: string): string {
   return html;
 }
 
+// Reader-safety: inside $$...$$ display math, escape < and > so the HTML
+// parser doesn't treat e.g. y_{<t} as a tag and silently truncate the formula.
+// KaTeX decodes entities, so this is semantically lossless. Scoped to $$ (very
+// unlikely to false-match) and skips already-escaped content.
+function fixDisplayMath(html: string): string {
+  return html.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner: string) => {
+    const fixed = inner.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `$$${fixed}$$`;
+  });
+}
+
+// Reader-safety: a complete, well-formed document for any browser/offline read.
+function ensureDocMeta(html: string): string {
+  let out = html;
+  if (!/<html[^>]*\blang=/i.test(out)) out = out.replace(/<html\b/i, '<html lang="en"');
+  if (/<head[^>]*>/i.test(out)) {
+    if (!/<meta[^>]+name=["']viewport/i.test(out))
+      out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
+    if (!/<meta[^>]+name=["']theme-color/i.test(out))
+      out = out.replace(/<head[^>]*>/i, (m) => `${m}\n<meta name="theme-color" content="#0f1729">`);
+  }
+  return out;
+}
+
 function assertHtmlDocument(html: string) {
   const trimmed = html.trim();
   if (!trimmed) throw new Error("html is required");
@@ -287,7 +311,8 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   }
 
   signal?.throwIfAborted();
-  const finalHtml = ensureFavicon(params.html);
+  // Reader-safety pipeline: fix truncating math, complete the doc head, guarantee favicon.
+  const finalHtml = ensureFavicon(ensureDocMeta(fixDisplayMath(params.html)));
   writeFileSync(outputPath, finalHtml, "utf8");
 
   signal?.throwIfAborted();

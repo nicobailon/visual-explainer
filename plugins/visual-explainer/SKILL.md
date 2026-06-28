@@ -94,6 +94,16 @@ Use slides only when explicitly requested or when a command asks for slides. Sli
 - Do not drop content to fit a fixed slide count. Add slides instead.
 - Use the 10 slide types from `slide-patterns.md`: Title, Section Divider, Content, Split, Diagram, Dashboard, Table, Code, Quote, Full-Bleed.
 
+## Reader-first defaults (pages are made to be read and re-read)
+
+The primary use is a reader consuming the page, often over multiple sittings. Build for that:
+
+- **Navigation**: ship the upgraded `SlideEngine` from `slide-deck.html` — it adds deep-link hashes (`#slide-7`), resume-where-you-left-off (localStorage), reading percent in the counter, an outline overlay (press `O`), and a keyboard help panel (press `?`). Don't ship a stripped engine.
+- **Comprehension**: open each section with its one-line takeaway, then expand (TL;DR-first). End a multi-section page with a short "what to remember" recap.
+- **Glossary**: wrap domain jargon in `<abbr title="one-line definition">term</abbr>` so a reader can hover/tap for meaning without leaving the page.
+- **Don't gate content on motion**: every slide must be fully readable even if its animation never plays; animations enhance, never reveal essential text.
+- **Accessibility**: don't rely on color alone (pair with shape/label); respect `prefers-reduced-motion`; keep body text ≥ 16px with generous line-height; ensure keyboard nav reaches everything.
+
 ## Optional generated images
 
 If `surf` is available, generated images may be embedded as base64 for hero banners, conceptual illustrations, or educational visuals. Skip images for data-heavy, structural, or Mermaid/CSS-suitable content. Pages must stand on CSS, typography, and diagrams without images.
@@ -104,6 +114,8 @@ Before delivery, verify:
 
 - complete HTML document;
 - standard favicon `<link rel="icon">` present immediately after `</title>`;
+- decks use the upgraded SlideEngine (outline `O`, help `?`, deep-link + resume, reading %);
+- each slide readable with animations disabled; no content depends on motion;
 - output written to the requested path;
 - no console errors when opened;
 - no horizontal overflow at normal desktop width;
