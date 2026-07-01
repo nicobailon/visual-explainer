@@ -269,8 +269,12 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
 
   const outputDir = join(homedir(), ".agent", "diagrams");
   const outputPath = join(outputDir, filename);
+  try {
+    if (lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
+  } catch (e: any) {
+    if (e.code !== "ENOENT") throw e;
+  }
   mkdirSync(outputDir, { recursive: true });
-  if (lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
   if (existsSync(outputPath) && lstatSync(outputPath).isSymbolicLink()) {
     throw new Error(`${outputPath} must not be a symlink`);
   }
