@@ -105,6 +105,16 @@ The primary use is a reader consuming the page, often over multiple sittings. Bu
 - **Don't gate content on motion**: every slide must be fully readable even if its animation never plays; animations enhance, never reveal essential text.
 - **Accessibility**: don't rely on color alone (pair with shape/label); respect `prefers-reduced-motion`; keep body text ≥ 16px with generous line-height; ensure keyboard nav reaches everything.
 
+## Learning-first rules (for teaching/explainer decks)
+
+When the deck's purpose is to teach (concepts, math, papers, systems):
+
+- **Honest evidence tags**: label every claim's status with a small pill — `real` (measured, from actual runs/files), `building` (in progress), `planned`, `polluted/void` (known-bad measurement). Never present illustrative numbers as real.
+- **Code + concept travel together**: a formula or concept slide either includes the minimal code it corresponds to, or explicitly signposts "next slide: the code".
+- **Retrieval practice**: end substantial teaching decks with a "Test yourself" slide before the final bleed — 2–3 questions answered earlier in the deck, answers hidden in `<details><summary>` toggles. Recall beats re-reading.
+- **Series wiring**: when 3+ decks cover one topic, create/refresh an index page (card grid, reading order, one-line summaries) and wire each deck with `data-series-prev/next/index` attributes on `<body>` — the template's series-nav script renders prev/series/next links (keys `N`/`P`). The last deck's `next` points at the index.
+- **Resume never lands on the end**: the engine must not restore a saved position equal to the final slide (start fresh instead); mid-deck resume stays.
+
 ## Optional generated images
 
 If `surf` is available, generated images may be embedded as base64 for hero banners, conceptual illustrations, or educational visuals. Skip images for data-heavy, structural, or Mermaid/CSS-suitable content. Pages must stand on CSS, typography, and diagrams without images.
