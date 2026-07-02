@@ -119,6 +119,11 @@ When the deck's purpose is to teach (concepts, math, papers, systems):
 
 If `surf` is available, generated images may be embedded as base64 for hero banners, conceptual illustrations, or educational visuals. Skip images for data-heavy, structural, or Mermaid/CSS-suitable content. Pages must stand on CSS, typography, and diagrams without images.
 
+## Deck build discipline (agent workflow)
+
+- **Engine source of truth**: inject the SlideEngine from `templates/engine.js` in this skill's directory (resolve relative to SKILL.md). Never depend on `/tmp` copies or retype it.
+- **One validation gate**: after writing any deck, run `python3 <repo>/scripts/check-deck.py <file>.html` (managed clone: `~/Code/Zereraz/visual-explainer`). Fix every FAIL before delivering. Do not hand-roll per-deck validation snippets.
+
 ## Final checklist
 
 Before delivery, verify:
