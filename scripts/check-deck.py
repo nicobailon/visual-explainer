@@ -46,6 +46,9 @@ def check(path: str) -> bool:
         # 8. code blocks: badge labels need overflow:visible container
         if '<div class="code' in s or "class=\"code\"" in s:
             r("code badge overflow", "overflow:visible" in s.replace(" ", ""))
+    # 8b. display math present => overflow guard required
+    if "$$" in s:
+        r("math overflow guard", "overflow-x:auto" in s.replace(" ", ""), "katex-display needs overflow-x:auto")
     # 9. no /*ENGINE*/ placeholder left behind
     r("no leftover placeholder", "/*ENGINE*/" not in s)
     return ok
