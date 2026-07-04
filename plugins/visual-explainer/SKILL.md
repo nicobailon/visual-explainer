@@ -105,6 +105,17 @@ The primary use is a reader consuming the page, often over multiple sittings. Bu
 - **Don't gate content on motion**: every slide must be fully readable even if its animation never plays; animations enhance, never reveal essential text.
 - **Accessibility**: don't rely on color alone (pair with shape/label); respect `prefers-reduced-motion`; keep body text ≥ 16px with generous line-height; ensure keyboard nav reaches everything.
 
+## House design language v2 (make it beautiful)
+
+Default look for decks (reference implementation: any deck styled like `the-gradient-view`):
+
+- **Type system**: `Space Grotesk` for display (titles/heads, tight tracking), `Inter` body, `JetBrains Mono` for code/kickers, and `Instrument Serif` *italic* as the accent voice — `<i>` inside leads/heads renders serif-italic in gold. Title = gradient text (ink → gold → peach).
+- **Depth, not flatness**: body gets two fixed layers — aurora radial glows (gold top-left, sky bottom-right, mint accent) + an SVG-noise grain at ~3% opacity. Surfaces are **glass**: `rgba(255,255,255,.035)` + `backdrop-filter: blur(12-14px)` + 1px `rgba(255,255,255,.09)` border + deep soft shadow + inset top highlight.
+- **Editorial details**: huge **ghost slide numerals** (Space Grotesk, ~4% opacity) top-right of every slide; kickers flanked by gradient hairlines; progress bar is a glowing gold→peach gradient.
+- **Motion**: reveals rise with slight scale + **blur-in** (`blur(6px)→0`), staggered ~90ms; MCQ options nudge right + glow on hover; correct answers get a soft green glow. All gated by `prefers-reduced-motion`.
+- **Color voice**: gold = emphasis/labels, mint = "in english"/success, sky = structure/where, rose = errors/failures, dim slate for prose. Light scheme maps to warm paper (#f7f3ea).
+- Callout grammar: `.eng` (mint glass, ◍ prefix) for English readings; `.trace` (dark glass, ⌁ prefix) for numeric traces; `.ww` chips (sky/gold left-border) for where/why.
+
 ## Learning-first rules (for teaching/explainer decks)
 
 When the deck's purpose is to teach (concepts, math, papers, systems):
