@@ -115,7 +115,7 @@ Default look for decks (reference implementation: any deck styled like `the-grad
 - **Editorial details**: huge **ghost slide numerals** (Space Grotesk, ~4% opacity) top-right of every slide; kickers flanked by gradient hairlines; progress bar is a glowing gold→peach gradient.
 - **Motion**: reveals rise with slight scale + **blur-in** (`blur(6px)→0`), staggered ~90ms; MCQ options nudge right + glow on hover; correct answers get a soft green glow. All gated by `prefers-reduced-motion`.
 - **Color voice**: gold = emphasis/labels, mint = "in english"/success, sky = structure/where, rose = errors/failures, dim slate for prose. Light scheme maps to warm paper (#f7f3ea).
-- Callout grammar: `.eng` (mint glass, ◍ prefix) for English readings; `.trace` (dark glass, ⌁ prefix) for numeric traces; `.ww` chips (sky/gold left-border) for where/why.
+- Callout grammar: `.eng` (mint glass, ◍ prefix) for English readings; `.trace` (dark glass, ⌁ prefix) for numeric traces; `.ww` chips for where/why. **Blocks size to their content** (`width:fit-content`, capped by the column, sensible min-widths) — never full-width slabs around two words. **No colored left-border accents** on callouts; differentiate by the small-caps label color and surface tint only.
 
 ## Learning-first rules (for teaching/explainer decks)
 
