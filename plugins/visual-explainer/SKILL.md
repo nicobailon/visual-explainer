@@ -32,6 +32,7 @@ Read only the references needed for the current output:
 | Slide decks | `./templates/slide-deck.html`, `./references/slide-patterns.md` |
 | CSS layout, overflow, depth, collapsibles, SVG connectors, generated images | `./references/css-patterns.md` |
 | Pages with 4+ major sections | `./references/responsive-nav.md` |
+| Switchable themes or fonts, or a named palette (Dracula, Nord, Gruvbox…) | `./references/themes.md` |
 | Prose-heavy pages | “Prose Page Elements” in `css-patterns.md`, typography sections in `libraries.md` |
 
 ## Choose the representation
@@ -63,6 +64,7 @@ Read only the references needed for the current output:
 
 - Use semantic HTML where it helps accessibility and copy/paste: `<table>`, headings, lists, `<details>`, captions.
 - Use CSS custom properties for palette: `--bg`, `--surface`, `--border`, `--text`, `--text-dim`, and 3–5 accents.
+- Commit to one palette and one font pair. Add a runtime picker only when the user asks to switch themes or fonts, or names a prebuilt palette; see `./references/themes.md`.
 - Pick a clear aesthetic direction before writing: blueprint, editorial, paper/ink, terminal, IDE-inspired, or data-dense.
 - Avoid generic defaults: no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs.
 - Good font pair families: DM Sans + Fira Code; Instrument Serif + JetBrains Mono; IBM Plex Sans + IBM Plex Mono; Bricolage Grotesque + JetBrains Mono; Plus Jakarta Sans + Azeret Mono.
@@ -100,6 +102,7 @@ Before delivery, verify:
 - page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
+- a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
 - slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage;
 - visual hierarchy makes the main idea obvious in the first viewport;
 - styling would still be recognizable if compared against a generic dark/violet template.

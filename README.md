@@ -173,6 +173,19 @@ Any command that produces a scrollable page supports `--slides` to generate a sl
 
 https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 
+## Themes
+
+Ask for switchable themes, or name a palette, and the page gets a picker — colored dots for the palette and `Aa` chips for the font pair, both swapping live and re-rendering every Mermaid diagram:
+
+```
+"explain this pipeline, use Gruvbox"
+"diagram the auth flow, let me switch themes"
+```
+
+Eleven palettes ship with it: Dracula, Nord, One Dark, Catppuccin Mocha, Tokyo Night, Gruvbox Dark, Synthwave '84 (dark) and Solarized Light, GitHub Light, Catppuccin Latte, Gruvbox Light. The font chips offer the pairs the skill already recommends. Mermaid colors and label fonts are derived from the active selection, so diagrams always match the page around them. Set `theme:` or `font:` in `visual-explainer.config.md` to choose what loads first. Claude Code users can keep personal overrides in `.claude/visual-explainer.local.md`; shared project defaults should use the harness-neutral file.
+
+The picker is opt-in. Pages that don't ask for one still get a single palette and font pair chosen to fit the content.
+
 ## How It Works
 
 ```
@@ -190,7 +203,8 @@ plugins/
     │   ├── css-patterns.md   (layouts, animations, theming)
     │   ├── libraries.md      (Mermaid, Chart.js, fonts)
     │   ├── responsive-nav.md (sticky TOC for multi-section pages)
-    │   └── slide-patterns.md (slide engine, transitions, presets)
+    │   ├── slide-patterns.md (slide engine, transitions, presets)
+    │   └── themes.md          (11 palettes + runtime theme/font picker)
     └── templates/         ← reference templates with different palettes
         ├── architecture.html
         ├── mermaid-flowchart.html

@@ -412,6 +412,8 @@
     }
   });
 
+  const rerenderers = [];
+
   function initDiagram(shell) {
     const wrap = shell.querySelector('.mermaid-wrap');
     const viewport = shell.querySelector('.mermaid-viewport');
@@ -568,9 +570,10 @@
       clone.style.width = '';
       clone.style.height = '';
 
-      // Use the same isDark value that was used to render the Mermaid theme
-      // This ensures the background matches the baked-in SVG colors
-      const bg = isDark ? '#042f2e' : '#f0fdfa';
+      // Mermaid derives clusterBkg and tertiaryColor from --bg, so the export
+      // has to read it live to sit on the same ground as the diagram.
+      const bg = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg').trim() || (isDark ? '#042f2e' : '#f0fdfa');
 
       const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -721,10 +724,15 @@
       }
     }).observe(wrap);
 
+    rerenderers.push(render);
     render();
   }
 
   document.querySelectorAll('.diagram-shell').forEach(initDiagram);
+
+  // Mermaid bakes colors into the SVG at render time, so a page that swaps the
+  // palette at runtime must re-render every diagram to follow it.
+  window.rerenderDiagrams = () => Promise.all(rerenderers.map((render) => render()));
 </script>
 
 </body>
