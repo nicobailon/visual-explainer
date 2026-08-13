@@ -37,6 +37,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
 | Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
+| VS Code Copilot / Copilot CLI | Custom instructions or rules guidance | Add the supplied AGENTS guidance to your supported workspace instruction or rules setup |
 
 **Claude Code (marketplace):**
 ```shell
@@ -147,6 +148,10 @@ Add `configs/cursor/visual-explainer.mdc` to your Cursor rules, or copy its cont
 **OpenClaw:**
 
 Use `configs/openclaw/AGENTS.md` as lightweight project guidance and copy or reference `plugins/visual-explainer/` as the canonical skill source. No native OpenClaw plugin adapter is included.
+
+**VS Code Copilot / Copilot CLI:**
+
+Use `configs/copilot/AGENTS.md` as custom instructions or rules guidance. For VS Code, copy it into a supported workspace custom-instructions file, such as `.github/copilot-instructions.md`. For Copilot CLI, add it through the workspace instruction or rules setup supported by your installed version. Both read the canonical skill from `plugins/visual-explainer/`; this repository does not provide native Agent Skills support, a Copilot package, or a tested Copilot plugin adapter.
 
 ## Commands
 

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added VS Code Copilot and Copilot CLI custom-instruction guidance that points to the canonical skill without claiming native Copilot support. Reported in #8 by @Tal94NICE, with ideas from @davida26 and @jcespinoza.
 - Added Antigravity CLI install guidance using its native Agent Skills paths, replacing the blocked consumer Gemini CLI support path. Reported by @chadbr in #6.
 - Added an optional Glimpse viewer for Pi renders through `visual_explainer` with `viewer: "glimpse"` or `viewer: "auto"`. Requested by @bjesuiter in #55 and prototyped in PR #56.
 - Added a standard self-contained favicon to rendered pages and reference templates. Based on PR #62 by @zereraz.
