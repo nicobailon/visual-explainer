@@ -3,9 +3,10 @@ import { spawn } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { renderQuickSpec } from "./quick/render.mjs";
 
 type VisualExplainerParams = {
-  action: "prepare" | "render";
+  action: "prepare" | "render" | "render_quick";
   topic?: string;
   goal?: string;
   files?: string[];
@@ -13,6 +14,7 @@ type VisualExplainerParams = {
   preferSubagent?: boolean;
   filename?: string;
   html?: string;
+  spec?: unknown;
   open?: boolean;
   viewer?: Viewer;
 };
@@ -50,7 +52,7 @@ type PrepareDetails = {
 };
 
 type RenderDetails = OpenResult & {
-  action: "render";
+  action: "render" | "render_quick";
   path: string;
   viewer: Viewer;
 };
@@ -62,8 +64,8 @@ const visualExplainerParameters = {
   properties: {
     action: {
       type: "string",
-      enum: ["prepare", "render"],
-      description: "Choose prepare to plan a visual explanation, or render to write complete HTML to ~/.agent/diagrams/.",
+      enum: ["prepare", "render", "render_quick"],
+      description: "Choose prepare to plan, render to write complete HTML, or render_quick to validate a compact spec and render it locally.",
     },
     topic: {
       type: "string",
@@ -94,14 +96,19 @@ const visualExplainerParameters = {
       type: "string",
       description: "For action=render: complete self-contained HTML document to write.",
     },
+    spec: {
+      type: "object",
+      description: "For action=render_quick: compact JSON spec that follows quick/schema.json.",
+      additionalProperties: true,
+    },
     open: {
       type: "boolean",
-      description: "For action=render: open the written HTML file in the selected viewer. Defaults to true.",
+      description: "For action=render or render_quick: open the written HTML file in the selected viewer. Defaults to true.",
     },
     viewer: {
       type: "string",
       enum: ["browser", "glimpse", "auto"],
-      description: "For action=render: choose browser, glimpse, or auto. Auto tries glimpseui first, then falls back to the browser. Defaults to browser.",
+      description: "For action=render or render_quick: choose browser, glimpse, or auto. Auto tries glimpseui first, then falls back to the browser. Defaults to browser.",
     },
   },
   required: ["action"],
@@ -308,21 +315,19 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
   };
 }
 
-async function renderVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
-  if (typeof params.filename !== "string") throw new Error("filename must be a string for action=render");
-  if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
-  if (params.open !== undefined && typeof params.open !== "boolean") throw new Error("open must be a boolean when provided");
-  if (params.viewer !== undefined && params.viewer !== "browser" && params.viewer !== "glimpse" && params.viewer !== "auto") {
-    throw new Error("viewer must be browser, glimpse, or auto when provided");
-  }
-
+async function writeRenderedHtml(
+  action: "render" | "render_quick",
+  filenameInput: string,
+  htmlInput: string,
+  open: boolean | undefined,
+  viewer: Viewer,
+  signal?: AbortSignal,
+): Promise<AgentToolResult<VisualExplainerDetails>> {
   signal?.throwIfAborted();
 
-  const filename = outputFilename(params.filename);
-  const viewer = params.viewer ?? "browser";
-  assertHtmlDocument(params.html);
-  const html = prepareRenderedHtml(params.html);
-
+  const filename = outputFilename(filenameInput);
+  assertHtmlDocument(htmlInput);
+  const html = prepareRenderedHtml(htmlInput);
   const outputDir = join(homedir(), ".agent", "diagrams");
   const outputPath = join(outputDir, filename);
   if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
@@ -336,7 +341,7 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
 
   signal?.throwIfAborted();
 
-  const openResult = params.open === false
+  const openResult = open === false
     ? { openAttempted: false, openStatus: "disabled" as const }
     : await openRenderedPage(outputPath, viewer);
 
@@ -354,30 +359,54 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action: "render", path: outputPath, viewer, ...openResult },
+    details: { action, path: outputPath, viewer, ...openResult },
   };
+}
+
+function validateRenderOptions(params: VisualExplainerParams): asserts params is VisualExplainerParams & { filename: string } {
+  if (typeof params.filename !== "string") throw new Error(`filename must be a string for action=${params.action}`);
+  if (params.open !== undefined && typeof params.open !== "boolean") throw new Error("open must be a boolean when provided");
+  if (params.viewer !== undefined && params.viewer !== "browser" && params.viewer !== "glimpse" && params.viewer !== "auto") {
+    throw new Error("viewer must be browser, glimpse, or auto when provided");
+  }
+}
+
+async function renderVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+  validateRenderOptions(params);
+  if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
+  return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal);
+}
+
+async function renderQuickVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+  validateRenderOptions(params);
+  if (params.spec === undefined) throw new Error("spec is required for action=render_quick");
+  signal?.throwIfAborted();
+  const html = await renderQuickSpec(params.spec);
+  return await writeRenderedHtml("render_quick", params.filename, html, params.open, params.viewer ?? "browser", signal);
 }
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Use with action=prepare after generating or reviewing a plan, architecture, diff, or substantial implementation when a visual explanation would help; use action=render after the complete HTML is ready to write it to ~/.agent/diagrams/ and optionally open it.",
-    promptSnippet: "Plan or render visual-explainer HTML. Ask before action=prepare unless visuals were explicitly requested; use action=render as the final write/open step with complete HTML.",
+    description: "Plan visual explanations, write complete HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/.",
+    promptSnippet: "Plan or render visual-explainer HTML. Use render for complete HTML and render_quick only for an explicit supported --quick prompt.",
     promptGuidelines: [
       "After generating or reviewing a plan, architecture, diff, or substantial implementation, consider offering a visual explanation if it would clarify the work for the user.",
       "Because visual explanations can consume many tokens, ask before calling visual_explainer with action=prepare unless the user explicitly requested a diagram, visual review, recap, or visual plan.",
       "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then synthesize complete HTML and finish with visual_explainer action=render.",
       "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/. Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
+      "Use action=render_quick only when --quick is explicit on generate-web-diagram, diff-review, plan-review, or project-recap. Pass the compact schema spec. If it fails or does not fit, use the full HTML workflow and action=render.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",
     async execute(_toolCallId: string, params: VisualExplainerParams, signal?: AbortSignal) {
-      if (params.action !== "prepare" && params.action !== "render") {
-        throw new Error("action must be either 'prepare' or 'render'");
+      if (params.action !== "prepare" && params.action !== "render" && params.action !== "render_quick") {
+        throw new Error("action must be 'prepare', 'render', or 'render_quick'");
       }
 
       if (params.action === "prepare") return prepareVisualExplanation(pi, params);
+      if (params.action === "render_quick") return await renderQuickVisualExplanation(params, signal);
       return await renderVisualExplanation(params, signal);
     },
   });

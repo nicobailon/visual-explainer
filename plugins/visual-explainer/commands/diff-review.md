@@ -5,6 +5,10 @@ description: Generate a visual diff review for code changes
 
 Load the visual-explainer skill and generate a self-contained HTML diff review.
 
+## Quick mode
+
+Only use quick mode when `$@` contains the literal `--quick` flag. Remove the flag before scope detection. Complete the same evidence gathering and verification below, then read `./quick/README.md` and `./quick/schema.json` and express the review as a compact spec. In Pi, call `visual_explainer` with `action: "render_quick"`. In other harnesses, run the local `./quick/render.mjs` fallback. If the review does not fit the schema, validation fails, or rendering errors, generate complete HTML and use the normal render flow. Without `--quick`, preserve full HTML behavior.
+
 ## Scope detection
 
 Interpret `$@` as a branch, commit, range, PR, or `HEAD`. If no argument is given, compare the working tree against `main`/`master`.
