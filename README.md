@@ -24,7 +24,7 @@ Every coding agent defaults to ASCII art when you ask for a diagram. Box-drawing
 
 Tables are worse. Ask the agent to compare 15 requirements against a plan and you get a wall of pipes and dashes that wraps and breaks in the terminal. The data is there but it's painful to read.
 
-This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. Normal skill use has no build step and no dependency beyond a browser; the optional MCP server uses the official MCP SDK.
+This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
 
 ## Install
 
@@ -33,6 +33,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
 | MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes render tools, prompt templates, and read-only skill resources without starting an HTTP server |
+| PPTX export | Best-effort static utility | `visual-explainer-pptx` converts simple HTML slide decks to `.pptx`; HTML remains the source of truth |
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
@@ -219,6 +220,14 @@ Any command that produces a scrollable page supports `--slides` to generate a sl
 /project-recap --slides 2w
 ```
 
+For a portable presentation file, add `--pptx` to `/generate-slides` or run the exporter after generating an HTML deck:
+
+```bash
+visual-explainer-pptx ~/.agent/diagrams/my-deck.html ~/.agent/diagrams/my-deck.pptx
+```
+
+PPTX export is best-effort and static. It extracts titles, text, bullets, simple tables, code blocks, and Mermaid source placeholders from `<section class="slide">` elements. It does not preserve animations, reader navigation, responsive layout, custom fonts, live Mermaid/Chart.js/SVG/canvas rendering, or JavaScript behavior. Use the HTML deck for final fidelity.
+
 https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 
 ## Themes
@@ -249,6 +258,7 @@ plugins/
     ├── commands/          ← slash commands
     ├── quick/             ← JSON schema + deterministic local renderer
     ├── mcp/               ← local stdio MCP server
+    ├── pptx/              ← best-effort static PPTX exporter
     ├── references/        ← agent reads before generating
     │   ├── css-patterns.md   (layouts, animations, theming)
     │   ├── libraries.md      (Mermaid, Chart.js, fonts)
@@ -269,6 +279,7 @@ The skill routes to the right approach automatically: Mermaid for flowcharts and
 ## Limitations
 
 - Generated HTML is portable and self-contained, but auto-opening depends on the harness, browser access, and sandbox rules.
+- PPTX export is a static best-effort handoff. The HTML deck remains the source of truth for full visual fidelity.
 - All harnesses write visual output to `~/.agent/diagrams/` unless the user asks for a different path.
 - Switching OS theme requires a page refresh for Mermaid SVGs.
 - Results vary by model capability.

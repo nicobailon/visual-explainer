@@ -86,7 +86,9 @@ Read only the references needed for the current output:
 
 ## Slide deck mode
 
-Use slides only when explicitly requested or when a command asks for slides. Slides are a different medium, not a paginated article:
+Use slides only when explicitly requested or when a command asks for slides. Slides are a different medium, not a paginated article. If the user explicitly asks for PPTX or passes `--pptx` to `/generate-slides`, generate the HTML deck first, then use the best-effort static exporter in `./pptx/export.mjs` or the `visual-explainer-pptx` binary when package or checkout dependencies are available. If they are not available, deliver the HTML deck and explain the missing export dependency path. State that HTML remains the source of truth and PPTX does not preserve animations, reader navigation, responsive layout, custom fonts, live Mermaid/Chart.js/SVG/canvas rendering, or JavaScript behavior.
+
+Slides rules:
 
 - Each slide is one viewport (`100dvh`) with no page-level scrolling.
 - Use larger type, fewer objects per slide, varied compositions, and visible navigation.
@@ -112,7 +114,7 @@ Before delivery, verify:
 - tables preserve rows/columns and wrap long text;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
-- slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage;
+- slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage; if PPTX was requested, the static `.pptx` was generated after the HTML deck and its fidelity limits were stated;
 - visual hierarchy makes the main idea obvious in the first viewport;
 - styling would still be recognizable if compared against a generic dark/violet template;
 - if requested, the Markdown companion is a concise source brief that matches the delivered HTML without becoming its source of truth.
