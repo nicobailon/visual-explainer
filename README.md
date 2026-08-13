@@ -62,7 +62,8 @@ The package manifest advertises the canonical skill, command templates, and Pi t
 "pi": {
   "extensions": ["./plugins/visual-explainer/extension.ts"],
   "skills": ["./plugins/visual-explainer"],
-  "prompts": ["./plugins/visual-explainer/commands"]
+  "prompts": ["./plugins/visual-explainer/commands"],
+  "image": "./banner.png"
 }
 ```
 

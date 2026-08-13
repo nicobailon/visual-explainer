@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Plugin distribution for visual-explainer",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "pluginRoot": "./plugins"
   },
   "plugins": [
@@ -13,7 +13,7 @@
       "name": "visual-explainer",
       "source": "./plugins/visual-explainer",
       "description": "Generate beautiful HTML pages for diagrams, diff reviews, plan reviews, slides, and data tables",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "author": {
         "name": "nicobailon"
       },

@@ -1,6 +1,6 @@
 {
   "name": "visual-explainer",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, slide decks, and data tables",
   "license": "MIT",
   "homepage": "https://github.com/nicobailon/visual-explainer#readme",
@@ -50,6 +50,7 @@
     ],
     "prompts": [
       "./plugins/visual-explainer/commands"
-    ]
+    ],
+    "image": "./banner.png"
   }
 }

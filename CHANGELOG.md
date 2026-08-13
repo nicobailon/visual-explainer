@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-08-13
+
+### Added
+- Added Pi package gallery image metadata using `banner.png`.
+
 ## [0.8.1] - 2026-06-25
 
 ### Fixed
