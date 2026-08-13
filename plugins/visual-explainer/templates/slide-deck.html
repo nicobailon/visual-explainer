@@ -24,6 +24,7 @@
   - Event delegation: Mermaid zoom and table scroll don't trigger slide nav
   - prefers-reduced-motion respected
 -->
+<script>document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -103,11 +104,14 @@
     justify-content: center;
     padding: clamp(40px, 6vh, 80px) clamp(40px, 8vw, 120px);
     isolation: isolate;
-    opacity: 0;
-    transform: translateY(40px) scale(0.98);
     transition:
       opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
       transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .js .slide {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
   }
 
   .slide.visible {
@@ -115,7 +119,7 @@
     transform: none;
   }
 
-  .slide .reveal {
+  .js .slide .reveal {
     opacity: 0;
     transform: translateY(20px);
     transition:

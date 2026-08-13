@@ -122,16 +122,23 @@ Slide typography is 2–3× larger than scrollable pages. Page-sized text on a v
 
 ## Cinematic Transitions
 
-IntersectionObserver adds `.visible` when a slide enters the viewport. Slides animate in once and stay visible when scrolling back.
+IntersectionObserver adds `.visible` when a slide enters the viewport. Slides animate in once and stay visible when scrolling back. Gate hidden states on a `.js` class so decks stay readable in no-JS previews such as QuickLook.
+
+```html
+<script>document.documentElement.classList.add('js');</script>
+```
 
 ```css
 /* Slide entrance — fade + lift + subtle scale */
 .slide {
-  opacity: 0;
-  transform: translateY(40px) scale(0.98);
   transition:
     opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.js .slide {
+  opacity: 0;
+  transform: translateY(40px) scale(0.98);
 }
 
 .slide.visible {
@@ -140,7 +147,7 @@ IntersectionObserver adds `.visible` when a slide enters the viewport. Slides an
 }
 
 /* Staggered child reveals — add .reveal to each content element */
-.slide .reveal {
+.js .slide .reveal {
   opacity: 0;
   transform: translateY(20px);
   transition:

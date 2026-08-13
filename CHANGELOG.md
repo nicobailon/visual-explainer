@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Kept slide-deck content visible in no-JS previews such as QuickLook by gating entrance-hidden states on JavaScript availability. Reported by @bradleyy in #68.
+
 ## [0.8.2] - 2026-08-13
 
 ### Added
