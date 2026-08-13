@@ -567,14 +567,14 @@ Always load with `display=swap` for fast rendering. Pick a distinctive pairing â
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
 
 Define as CSS variables for easy reference:
 ```css
 :root {
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', Consolas, monospace;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
 }
 ```
 
@@ -596,7 +596,7 @@ Define as CSS variables for easy reference:
 | Libre Franklin | Inconsolata | Classic, reliable | Data-dense tables |
 | Playfair Display | Roboto Mono | Elegant contrast | Executive summaries |
 
-The first 5 pairings are recommended for most use cases. Vary across consecutive diagrams.
+The first 5 pairings are recommended for most use cases. Vary across consecutive diagrams. Load every weight the CSS renders. Fragment Mono ships only `400`, and Space Mono ships `400` and `700`; use those only when your mono CSS uses those weights.
 
 ### Typography by Content Voice
 

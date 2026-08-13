@@ -4,6 +4,8 @@
 
 ### Fixed
 - Kept slide-deck content visible in no-JS previews such as QuickLook by gating entrance-hidden states on JavaScript availability. Reported by @bradleyy in #68.
+- Added font-weight guidance so copied Google Fonts examples load each rendered weight, including mono labels. Based on PR #60 by @jowcy.
+- Added small maintenance fixes for `node_modules/` ignores, slide-deck button types, output-directory symlink checks, and older changelog ordering. Based on PR #66 by @fix2015.
 
 ## [0.8.2] - 2026-08-13
 
@@ -148,6 +150,14 @@ Based on PR #25 by [@peak-flow](https://github.com/peak-flow), with additional m
 - Updated `SKILL.md` to explicitly mention the click-to-expand feature and expand button so agents include it when generating pages
 - Updated all prompt templates (`diff-review.md`, `plan-review.md`, `project-recap.md`, `generate-visual-plan.md`) to specify the expand button and click-to-expand functionality for Mermaid diagrams
 
+## [0.4.4] - 2026-03-02
+
+### Hybrid Architecture Pattern
+- New pattern for complex architectures (15+ elements): simple Mermaid overview (5-8 nodes) + CSS Grid cards for details
+- Updated "Architecture / System Diagrams" section in SKILL.md with three-tier approach based on complexity
+- Reduced max Mermaid node count from 15-20 to 10-12 in `libraries.md`
+- Updated Mermaid scaling guidance to recommend hybrid pattern over scaling tricks for complex diagrams
+
 ## [0.4.3] - 2026-03-01
 
 ### Mermaid Zoom and Positioning Fixes
@@ -158,14 +168,6 @@ Based on PR #25 by [@peak-flow](https://github.com/peak-flow), with additional m
 - Removed unnecessary `.mermaid-inner` wrapper — no longer needed with zoom-based approach.
 - Updated JavaScript to use `INITIAL_ZOOM` constant for consistent reset behavior.
 - Updated "Scaling Small Diagrams" section to use `zoom` instead of `transform: scale()` for consistency.
-
-## [0.4.4] - 2026-03-02
-
-### Hybrid Architecture Pattern
-- New pattern for complex architectures (15+ elements): simple Mermaid overview (5-8 nodes) + CSS Grid cards for details
-- Updated "Architecture / System Diagrams" section in SKILL.md with three-tier approach based on complexity
-- Reduced max Mermaid node count from 15-20 to 10-12 in `libraries.md`
-- Updated Mermaid scaling guidance to recommend hybrid pattern over scaling tricks for complex diagrams
 
 ## [0.4.2] - 2026-03-01
 
