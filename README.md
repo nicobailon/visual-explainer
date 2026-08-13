@@ -24,7 +24,7 @@ Every coding agent defaults to ASCII art when you ask for a diagram. Box-drawing
 
 Tables are worse. Ask the agent to compare 15 requirements against a plan and you get a wall of pipes and dashes that wraps and breaks in the terminal. The data is there but it's painful to read.
 
-This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. No build step, no dependencies beyond a browser.
+This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. Normal skill use has no build step and no dependency beyond a browser; the optional MCP server uses the official MCP SDK.
 
 ## Install
 
@@ -32,6 +32,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 |---|---|---|
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
+| MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes render tools, prompt templates, and read-only skill resources without starting an HTTP server |
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
@@ -84,6 +85,37 @@ The legacy installer still works if you prefer copied skill and prompt files ove
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nicobailon/visual-explainer/main/install-pi.sh | bash
 ```
+
+**MCP:**
+
+Use `visual-explainer-mcp` from a package install, or run `npm install --no-package-lock` before pointing your host at `plugins/visual-explainer/mcp/server.mjs` from a checkout. Some hosts need an absolute path to the binary. The MCP server is local stdio only. It does not call an LLM, start an HTTP listener, handle credentials, or write outside `~/.agent/diagrams/`.
+
+Example package configuration:
+
+```json
+{
+  "mcpServers": {
+    "visual-explainer": {
+      "command": "visual-explainer-mcp"
+    }
+  }
+}
+```
+
+Example checkout configuration:
+
+```json
+{
+  "mcpServers": {
+    "visual-explainer": {
+      "command": "node",
+      "args": ["/absolute/path/to/visual-explainer/plugins/visual-explainer/mcp/server.mjs"]
+    }
+  }
+}
+```
+
+The server exposes three tools: `visual_explainer_prepare`, `visual_explainer_render_html`, and `visual_explainer_render_quick`. Render tools default to `open: false`; set `open: true` only when you want the server to request a browser or Glimpse window. It also exposes the bundled command templates as MCP prompts and the canonical `SKILL.md`, command markdown, quick README, and quick schema as read-only resources.
 
 **Antigravity CLI:**
 
@@ -216,6 +248,7 @@ plugins/
     ├── extension.ts       ← Pi native tool
     ├── commands/          ← slash commands
     ├── quick/             ← JSON schema + deterministic local renderer
+    ├── mcp/               ← local stdio MCP server
     ├── references/        ← agent reads before generating
     │   ├── css-patterns.md   (layouts, animations, theming)
     │   ├── libraries.md      (Mermaid, Chart.js, fonts)
@@ -229,7 +262,7 @@ plugins/
         └── slide-deck.html
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser. When you explicitly request AI-readable output or a source brief, the agent can also write `~/.agent/diagrams/filename.md` as a concise companion. It asks before replacing an existing companion. HTML remains the final visual output; the Markdown companion is not its source. In Pi package installs, agents can offer `visual_explainer` with `action: "prepare"` after generating or reviewing a substantial plan, architecture, diff, or implementation when a visual explanation would help, then call it with `action: "render"` as the final write/open step.
+**Output:** `~/.agent/diagrams/filename.html` → opens in browser. When you explicitly request AI-readable output or a source brief, the agent can also write `~/.agent/diagrams/filename.md` as a concise companion. It asks before replacing an existing companion. HTML remains the final visual output; the Markdown companion is not its source. In Pi package installs, agents can offer `visual_explainer` with `action: "prepare"` after generating or reviewing a substantial plan, architecture, diff, or implementation when a visual explanation would help, then call it with `action: "render"` as the final write/open step. MCP hosts use the separate `visual-explainer-mcp` stdio server and default render tools to `open: false`.
 
 The skill routes to the right approach automatically: Mermaid for flowcharts and diagrams, CSS Grid for architecture overviews, HTML tables for data, Chart.js for dashboards.
 

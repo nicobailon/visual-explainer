@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added a local stdio MCP server that exposes render tools, bundled prompt templates, and read-only skill resources without HTTP, auth, remote storage, or LLM calls. Requested by @luketych in #33.
 - Added VS Code Copilot and Copilot CLI custom-instruction guidance that points to the canonical skill without claiming native Copilot support. Reported in #8 by @Tal94NICE, with ideas from @davida26 and @jcespinoza.
 - Added optional Markdown companion guidance for explicitly requested AI-readable output or source briefs. Companions sit beside HTML output and never become its source. Requested by @mrns in #34.
 - Added opt-in `--quick` rendering for web diagrams, diff reviews, plan reviews, and project recaps. Agents emit a compact validated JSON spec, and the bundled renderer creates complete HTML through the existing Pi tool or a local script fallback. Based on the original RFC idea and PR #12 by @mikeyobrien.
