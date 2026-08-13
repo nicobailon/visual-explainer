@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added Antigravity CLI install guidance using its native Agent Skills paths, replacing the blocked consumer Gemini CLI support path. Reported by @chadbr in #6.
 - Added an optional Glimpse viewer for Pi renders through `visual_explainer` with `viewer: "glimpse"` or `viewer: "auto"`. Requested by @bjesuiter in #55 and prototyped in PR #56.
 - Added a standard self-contained favicon to rendered pages and reference templates. Based on PR #62 by @zereraz.
 - Added reader-first slide deck navigation with an expandable side rail, outline/help overlays, deep links, reading percent, and resume state. Based on PR #65 and PR #67 by @zereraz.

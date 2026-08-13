@@ -32,6 +32,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 |---|---|---|
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
+| Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
 | Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
@@ -82,6 +83,32 @@ The legacy installer still works if you prefer copied skill and prompt files ove
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nicobailon/visual-explainer/main/install-pi.sh | bash
 ```
+
+**Antigravity CLI:**
+
+Antigravity CLI is the supported Google successor path for consumer Gemini CLI workflows. It loads Agent Skills from `.agents/skills/` at the workspace level or `~/.gemini/antigravity-cli/skills/` globally.
+
+Global install:
+```bash
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+
+mkdir -p ~/.gemini/antigravity-cli/skills
+cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.gemini/antigravity-cli/skills/visual-explainer
+
+rm -rf /tmp/visual-explainer
+```
+
+Workspace install:
+```bash
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+
+mkdir -p .agents/skills
+cp -R /tmp/visual-explainer/plugins/visual-explainer .agents/skills/visual-explainer
+
+rm -rf /tmp/visual-explainer
+```
+
+Launch `agy` in the project and use `/skills` to confirm `visual-explainer` is discovered. Ask Antigravity to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables. Antigravity SDK projects can reuse the same `SKILL.md` content as an Agent Skill resource, but this repo does not ship a separate SDK wrapper. The bundled prompt templates remain reference markdown under `plugins/visual-explainer/commands/`; no separate Antigravity plugin adapter is included.
 
 **Codex CLI:**
 ```bash
