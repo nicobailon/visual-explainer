@@ -5,9 +5,11 @@
 ### Added
 - Added an optional Glimpse viewer for Pi renders through `visual_explainer` with `viewer: "glimpse"` or `viewer: "auto"`. Requested by @bjesuiter in #55 and prototyped in PR #56.
 - Added a standard self-contained favicon to rendered pages and reference templates. Based on PR #62 by @zereraz.
+- Added reader-first slide deck navigation with an expandable side rail, outline/help overlays, deep links, reading percent, and resume state. Based on PR #65 and PR #67 by @zereraz.
 
 ### Fixed
 - Kept slide-deck content visible in no-JS previews such as QuickLook by gating entrance-hidden states on JavaScript availability. Reported by @bradleyy in #68.
+- Hardened Pi render output with missing `html lang`, missing viewport metadata, and display-math escaping for raw `<` / `>` inside `$$...$$`. Based on PR #65 and PR #67 by @zereraz.
 - Added font-weight guidance so copied Google Fonts examples load each rendered weight, including mono labels. Based on PR #60 by @jowcy.
 - Added small maintenance fixes for `node_modules/` ignores, slide-deck button types, output-directory symlink checks, and older changelog ordering. Based on PR #66 by @fix2015.
 

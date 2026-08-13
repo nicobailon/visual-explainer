@@ -18,7 +18,7 @@ Generate self-contained HTML pages that explain systems, code changes, plans, da
 - If a table would have 4+ rows or 3+ columns, render it as HTML and give only a short chat summary.
 - Write files to `~/.agent/diagrams/` or the explicit eval output path. Use descriptive filenames.
 - Open generated pages in the browser when running normally. In Pi package installs, use `visual_explainer` with `prepare` for planning/context and `render` only after the complete HTML document exists. Use `viewer: "glimpse"` only when the user wants a native Glimpse window and `glimpseui` is installed; `viewer: "auto"` may fall back to the browser.
-- The final page must be a complete self-contained HTML document, including embedded CSS, a self-contained favicon, and any needed JS.
+- The final page must be a complete self-contained HTML document, including embedded CSS, a self-contained favicon, and any needed JS. In Pi, `visual_explainer.render` also adds missing `html lang`, missing viewport metadata, and display-math escaping for raw `<` / `>` inside `$$...$$`.
 
 ## Reference routing
 
@@ -79,7 +79,7 @@ Use slides only when explicitly requested or when a command asks for slides. Sli
 
 - Each slide is one viewport (`100dvh`) with no page-level scrolling.
 - Use larger type, fewer objects per slide, varied compositions, and visible navigation.
-- Include slide nav chrome from `slide-deck.html`: prev/next controls, slide count, keyboard navigation, and carousel dots/indicators.
+- Include slide nav chrome from `slide-deck.html`: prev/next controls, slide count with reading percent, keyboard navigation, expandable reader rail, outline/help overlays, `#slide-N` deep links, and resume state.
 - Before writing HTML, inventory the source and map every source item to slides.
 - Do not drop content to fit a fixed slide count. Add slides instead.
 - Use the 10 slide types from `slide-patterns.md`: Title, Section Divider, Content, Split, Diagram, Dashboard, Table, Code, Quote, Full-Bleed.
@@ -100,6 +100,6 @@ Before delivery, verify:
 - page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
-- slides fit one viewport, include carousel dots, and preserve source coverage;
+- slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage;
 - visual hierarchy makes the main idea obvious in the first viewport;
 - styling would still be recognizable if compared against a generic dark/violet template.

@@ -152,11 +152,29 @@ function assertHtmlDocument(html: string) {
 
 const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
+function escapeDisplayMath(html: string) {
+  return html.replace(/\$\$([\s\S]*?)\$\$/g, (_match, math: string) => `$$${math.replace(/</g, "&lt;").replace(/>/g, "&gt;")}$$`);
+}
+
 function ensureFavicon(html: string) {
   if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
   if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
   if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
   return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
+}
+
+function ensureDocumentMetadata(html: string) {
+  let output = html;
+  if (!/<html\b[^>]*\blang\s*=/i.test(output)) output = output.replace(/<html\b/i, '<html lang="en"');
+  if (!/<head[^>]*>/i.test(output)) output = output.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head></head>`);
+  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(output)) {
+    output = output.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
+  }
+  return output;
+}
+
+function prepareRenderedHtml(html: string) {
+  return ensureDocumentMetadata(ensureFavicon(escapeDisplayMath(html)));
 }
 
 function runOpener(command: string, args: string[], openTarget: OpenTarget): Promise<OpenResult> {
@@ -303,7 +321,7 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   const filename = outputFilename(params.filename);
   const viewer = params.viewer ?? "browser";
   assertHtmlDocument(params.html);
-  const html = ensureFavicon(params.html);
+  const html = prepareRenderedHtml(params.html);
 
   const outputDir = join(homedir(), ".agent", "diagrams");
   const outputPath = join(outputDir, filename);

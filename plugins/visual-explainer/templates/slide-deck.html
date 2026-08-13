@@ -12,7 +12,7 @@
   and rose (data-table) templates so agents absorb variety.
   Key patterns demonstrated:
   - All 10 slide types in a cohesive narrative
-  - SlideEngine JS: keyboard/touch/wheel nav, progress bar, dots, counter, hints
+  - SlideEngine JS: keyboard/touch/wheel nav, expanding reader rail, outline/help, deep links, resume, progress, counter, hints
   - Cinematic transitions: fade + translateY + scale, staggered child reveals
   - Per-slide background variation (gradient direction, accent glow position)
   - Decorative SVG accents (corner marks, quote mark, divider)
@@ -154,19 +154,50 @@
   .deck-dots {
     position: fixed; right: clamp(12px, 2vw, 24px); top: 50%;
     transform: translateY(-50%); display: flex; flex-direction: column;
-    gap: 8px; z-index: 100; padding: 8px;
+    align-items: flex-end; gap: 6px; z-index: 100; padding: 8px;
+    width: 36px; max-height: min(70dvh, 560px); overflow-y: auto;
     background: color-mix(in srgb, var(--bg) 60%, transparent 40%);
     border-radius: 20px;
     backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    transition: width 0.2s ease, border-radius 0.2s ease;
+  }
+  .deck-dots:hover,
+  .deck-dots:focus-within {
+    align-items: stretch;
+    width: min(240px, calc(100vw - 32px));
+    border-radius: 18px;
   }
 
   .deck-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--text-dim); opacity: 0.3; border: none; padding: 0;
-    cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease;
+    display: grid; grid-template-columns: 8px minmax(0, 1fr); align-items: center;
+    gap: 0; width: 20px; min-height: 24px; padding: 7px 6px;
+    border: none; border-radius: 999px; background: transparent; color: var(--text-dim);
+    cursor: pointer; font: 500 11px/1.2 var(--font-mono); text-align: left;
+    opacity: 0.72; transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, width 0.2s ease, gap 0.2s ease;
   }
-  .deck-dot:hover { opacity: 0.6; }
-  .deck-dot.active { opacity: 1; transform: scale(1.5); background: var(--accent); }
+  .deck-dot::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor; opacity: 0.5; transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .deck-dot-label {
+    min-width: 0; max-width: 0; overflow: hidden; opacity: 0;
+    white-space: nowrap; text-overflow: ellipsis;
+    transition: max-width 0.2s ease, opacity 0.2s ease;
+  }
+  .deck-dots:hover .deck-dot,
+  .deck-dots:focus-within .deck-dot {
+    gap: 10px; width: 100%;
+  }
+  .deck-dots:hover .deck-dot-label,
+  .deck-dots:focus-within .deck-dot-label {
+    max-width: 180px; opacity: 0.9;
+  }
+  .deck-dot:hover { opacity: 1; }
+  .deck-dot.active,
+  .deck-dot[aria-current="true"] { background: var(--accent-dim); color: var(--accent); opacity: 1; }
+  .deck-dot.active::before,
+  .deck-dot[aria-current="true"]::before { opacity: 1; transform: scale(1.35); }
+  .deck-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .deck-counter {
     position: fixed; bottom: clamp(12px, 2vh, 24px); right: clamp(12px, 2vw, 24px);
@@ -183,6 +214,42 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
   .deck-hints.faded { opacity: 0; pointer-events: none; }
+
+  .deck-overlay {
+    position: fixed; inset: 0; z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  }
+  .deck-overlay.open { display: flex; }
+  .deck-panel {
+    width: min(560px, 86vw); max-height: 80dvh; overflow: auto;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border-bright); border-radius: 14px;
+    padding: 18px 14px; font-family: var(--font-mono);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  }
+  .deck-panel:focus { outline: none; }
+  .deck-panel__header {
+    margin: 2px 8px 12px; font-size: 12px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+  .deck-panel__button {
+    display: flex; gap: 10px; width: 100%; padding: 8px 10px; border: none;
+    border-radius: 8px; background: transparent; color: inherit; cursor: pointer;
+    font: inherit; font-size: 13px; line-height: 1.3; text-align: left;
+  }
+  .deck-panel__button:hover,
+  .deck-panel__button[aria-current="true"] { background: var(--accent-dim); color: var(--accent); }
+  .deck-panel__number { min-width: 22px; opacity: 0.5; }
+  .deck-help-row {
+    display: flex; justify-content: space-between; gap: 24px;
+    padding: 7px 10px; font-size: 13px;
+  }
+  .deck-help-row span { opacity: 0.7; }
+  .deck-help-row kbd {
+    background: var(--surface2); border-radius: 5px; padding: 2px 8px;
+    font: inherit; color: var(--text);
+  }
 
   /* ============ SHARED SLIDE ELEMENTS ============ */
   .slide__display {
@@ -854,7 +921,8 @@ graph LR
 
   mermaid.run().then(function() {
     autoFit();
-    new SlideEngine();
+  }).catch(function(error) {
+    console.error(error);
   });
 </script>
 
@@ -873,48 +941,112 @@ graph LR
     this.slides=[].slice.call(document.querySelectorAll('.slide'));
     this.current=0;
     this.total=this.slides.length;
+    this.storeKey=['visual-explainer:slide-deck',location.pathname,document.title,this.total].join(':');
     this.buildChrome();
     this.bindEvents();
     this.observe();
+    this.restore();
     this.update();
   }
-  SlideEngine.prototype.buildChrome=function(){
-    var bar=document.createElement('div');bar.className='deck-progress';document.body.appendChild(bar);this.bar=bar;
-    var dots=document.createElement('div');dots.className='deck-dots';var self=this;
-    this.slides.forEach(function(_,i){var d=document.createElement('button');d.className='deck-dot';d.title='Slide '+(i+1);d.onclick=function(){self.goTo(i);};dots.appendChild(d);});
-    document.body.appendChild(dots);this.dots=[].slice.call(dots.children);
-    var ctr=document.createElement('div');ctr.className='deck-counter';document.body.appendChild(ctr);this.counter=ctr;
-    var hints=document.createElement('div');hints.className='deck-hints';hints.textContent='\u2190 \u2192 or scroll to navigate';document.body.appendChild(hints);this.hints=hints;
-    this.hintTimer=setTimeout(function(){hints.classList.add('faded');},4000);
+  SlideEngine.prototype.titleOf=function(i){
+    var s=this.slides[i];
+    var el=s.querySelector('.slide__display,.slide__heading,blockquote,.slide__kpi-label');
+    var title=el?el.textContent.trim().replace(/\s+/g,' '):'';
+    if(!title){var n=s.querySelector('.slide__number');title=n?'Section '+n.textContent.trim():'Slide '+(i+1);}
+    return title.length>58?title.slice(0,56)+'\u2026':title;
   };
+  SlideEngine.prototype.buildChrome=function(){
+    var self=this;
+    var bar=document.createElement('div');bar.className='deck-progress';document.body.appendChild(bar);this.bar=bar;
+    var dots=document.createElement('nav');dots.className='deck-dots';dots.setAttribute('aria-label','Slide navigation');
+    this.slides.forEach(function(_,i){
+      var title=self.titleOf(i);
+      var d=document.createElement('button');d.type='button';d.className='deck-dot';d.title=title;d.setAttribute('aria-label','Go to slide '+(i+1)+': '+title);
+      var label=document.createElement('span');label.className='deck-dot-label';label.textContent=title;d.appendChild(label);
+      d.onclick=function(){self.goTo(i);};dots.appendChild(d);
+    });
+    document.body.appendChild(dots);this.dots=[].slice.call(dots.children);
+    var ctr=document.createElement('div');ctr.className='deck-counter';ctr.setAttribute('aria-live','polite');document.body.appendChild(ctr);this.counter=ctr;
+    var hints=document.createElement('div');hints.className='deck-hints';hints.textContent='\u2190 \u2192 \u00b7 O outline \u00b7 ? help';document.body.appendChild(hints);this.hints=hints;
+    this.hintTimer=setTimeout(function(){hints.classList.add('faded');},4500);
+    var overlay=document.createElement('div');overlay.className='deck-overlay';overlay.setAttribute('aria-hidden','true');
+    var panel=document.createElement('div');panel.className='deck-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Slide deck panel');panel.tabIndex=-1;
+    overlay.appendChild(panel);document.body.appendChild(overlay);this.overlay=overlay;this.panel=panel;
+    overlay.addEventListener('click',function(e){if(e.target===overlay)self.closeOverlay();});
+  };
+  SlideEngine.prototype.clearPanel=function(){while(this.panel.firstChild)this.panel.removeChild(this.panel.firstChild);};
+  SlideEngine.prototype.addPanelHeader=function(text){var h=document.createElement('div');h.className='deck-panel__header';h.textContent=text;this.panel.appendChild(h);};
+  SlideEngine.prototype.renderOutline=function(){
+    var self=this;this.clearPanel();this.addPanelHeader('Outline');
+    this.slides.forEach(function(_,i){
+      var b=document.createElement('button');b.type='button';b.className='deck-panel__button';b.setAttribute('data-i',String(i));
+      if(i===self.current)b.setAttribute('aria-current','true');
+      var n=document.createElement('span');n.className='deck-panel__number';n.textContent=String(i+1);
+      var t=document.createElement('span');t.textContent=self.titleOf(i);
+      b.appendChild(n);b.appendChild(t);b.onclick=function(){self.goTo(i);self.closeOverlay();};self.panel.appendChild(b);
+    });
+  };
+  SlideEngine.prototype.renderHelp=function(){
+    var rows=[['\u2192 / \u2193 / Space','next'],['\u2190 / \u2191','previous'],['Home / End','first / last'],['O','outline'],['?','help'],['Esc','close']];
+    this.clearPanel();this.addPanelHeader('Keyboard');
+    rows.forEach(function(row){
+      var item=document.createElement('div');item.className='deck-help-row';
+      var label=document.createElement('span');label.textContent=row[1];
+      var key=document.createElement('kbd');key.textContent=row[0];
+      item.appendChild(label);item.appendChild(key);this.panel.appendChild(item);
+    },this);
+  };
+  SlideEngine.prototype.openOverlay=function(mode){
+    this.lastFocus=document.activeElement;this.overlay.classList.add('open');this.overlay.setAttribute('aria-hidden','false');
+    mode==='help'?this.renderHelp():this.renderOutline();this.panel.focus();this.fadeHints();
+  };
+  SlideEngine.prototype.closeOverlay=function(){
+    this.overlay.classList.remove('open');this.overlay.setAttribute('aria-hidden','true');
+    if(this.lastFocus&&typeof this.lastFocus.focus==='function')this.lastFocus.focus();
+  };
+  SlideEngine.prototype.overlayOpen=function(){return this.overlay.classList.contains('open');};
   SlideEngine.prototype.bindEvents=function(){
     var self=this;
     document.addEventListener('keydown',function(e){
       if(e.target.closest('.mermaid-wrap,.table-scroll,.code-scroll,input,textarea,[contenteditable]'))return;
+      if(e.key==='Escape'&&self.overlayOpen()){e.preventDefault();self.closeOverlay();return;}
+      if(e.key==='o'||e.key==='O'){e.preventDefault();self.overlayOpen()?self.closeOverlay():self.openOverlay('outline');return;}
+      if(e.key==='?'){e.preventDefault();self.overlayOpen()?self.closeOverlay():self.openOverlay('help');return;}
+      if(self.overlayOpen())return;
       if(['ArrowDown','ArrowRight',' ','PageDown'].indexOf(e.key)>-1){e.preventDefault();self.next();}
       else if(['ArrowUp','ArrowLeft','PageUp'].indexOf(e.key)>-1){e.preventDefault();self.prev();}
       else if(e.key==='Home'){e.preventDefault();self.goTo(0);}
       else if(e.key==='End'){e.preventDefault();self.goTo(self.total-1);}
       self.fadeHints();
     });
+    window.addEventListener('hashchange',function(){var i=self.fromHash();if(i!==null&&i!==self.current)self.goTo(i);});
     var tY;
     this.deck.addEventListener('touchstart',function(e){tY=e.touches[0].clientY;},{passive:true});
     this.deck.addEventListener('touchend',function(e){var dy=tY-e.changedTouches[0].clientY;if(Math.abs(dy)>50){dy>0?self.next():self.prev();}});
+  };
+  SlideEngine.prototype.fromHash=function(){var m=/^#(?:slide-)?(\d+)$/.exec(location.hash);if(!m)return null;var i=(+m[1])-1;return i>=0&&i<this.total?i:null;};
+  SlideEngine.prototype.restore=function(){
+    var i=this.fromHash();
+    if(i===null){try{var saved=localStorage.getItem(this.storeKey);if(saved!==null){var j=parseInt(saved,10);if(j>0&&j<this.total)i=j;}}catch(e){}}
+    if(i!==null&&i>0){var self=this;this.current=i;setTimeout(function(){self.slides[i].scrollIntoView({block:'start'});},60);}
   };
   SlideEngine.prototype.observe=function(){
     var self=this;
     var obs=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('visible');self.current=self.slides.indexOf(entry.target);self.update();}});},{threshold:0.5});
     this.slides.forEach(function(s){obs.observe(s);});
   };
-  SlideEngine.prototype.goTo=function(i){this.slides[Math.max(0,Math.min(i,this.total-1))].scrollIntoView({behavior:'smooth'});};
+  SlideEngine.prototype.goTo=function(i){i=Math.max(0,Math.min(i,this.total-1));this.slides[i].scrollIntoView({behavior:'smooth'});};
   SlideEngine.prototype.next=function(){if(this.current<this.total-1)this.goTo(this.current+1);};
   SlideEngine.prototype.prev=function(){if(this.current>0)this.goTo(this.current-1);};
   SlideEngine.prototype.update=function(){
-    this.bar.style.width=((this.current+1)/this.total*100)+'%';
-    var c=this.current;this.dots.forEach(function(d,i){d.classList.toggle('active',i===c);});
-    this.counter.textContent=(this.current+1)+' / '+this.total;
+    var c=this.current,pct=Math.round((c+1)/this.total*100);
+    this.bar.style.width=pct+'%';
+    this.dots.forEach(function(d,i){d.classList.toggle('active',i===c);i===c?d.setAttribute('aria-current','true'):d.removeAttribute('aria-current');});
+    this.counter.textContent=(c+1)+' / '+this.total+' \u00b7 '+pct+'%';
+    try{history.replaceState(null,'','#slide-'+(c+1));localStorage.setItem(this.storeKey,String(c));}catch(e){}
   };
   SlideEngine.prototype.fadeHints=function(){clearTimeout(this.hintTimer);this.hints.classList.add('faded');};
+  new SlideEngine();
 </script>
 
 </body>
