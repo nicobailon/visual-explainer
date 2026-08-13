@@ -14,14 +14,20 @@ type VisualExplainerParams = {
   filename?: string;
   html?: string;
   open?: boolean;
+  viewer?: Viewer;
 };
 
+type Viewer = "browser" | "glimpse" | "auto";
+type OpenTarget = "browser" | "glimpse";
 type OpenStatus = "disabled" | "unsupported" | "dispatched" | "failed";
 
 type OpenResult = {
   openAttempted: boolean;
   openStatus: OpenStatus;
+  openTarget?: OpenTarget;
   openError?: string;
+  fallbackFrom?: OpenTarget;
+  fallbackError?: string;
 };
 
 type SubagentDetection = {
@@ -46,6 +52,7 @@ type PrepareDetails = {
 type RenderDetails = OpenResult & {
   action: "render";
   path: string;
+  viewer: Viewer;
 };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
@@ -89,7 +96,12 @@ const visualExplainerParameters = {
     },
     open: {
       type: "boolean",
-      description: "For action=render: open the written HTML file in the browser. Defaults to true.",
+      description: "For action=render: open the written HTML file in the selected viewer. Defaults to true.",
+    },
+    viewer: {
+      type: "string",
+      enum: ["browser", "glimpse", "auto"],
+      description: "For action=render: choose browser, glimpse, or auto. Auto tries glimpseui first, then falls back to the browser. Defaults to browser.",
     },
   },
   required: ["action"],
@@ -138,24 +150,17 @@ function assertHtmlDocument(html: string) {
   }
 }
 
-async function openInBrowser(path: string): Promise<OpenResult> {
-  let command: string;
-  let args: string[];
+const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
-  if (process.platform === "darwin") {
-    command = "open";
-    args = [path];
-  } else if (process.platform === "linux") {
-    command = "xdg-open";
-    args = [path];
-  } else if (process.platform === "win32") {
-    command = "cmd";
-    args = ["/c", "start", "", path];
-  } else {
-    return { openAttempted: false, openStatus: "unsupported" };
-  }
+function ensureFavicon(html: string) {
+  if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
+  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
+  return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
+}
 
-  return await new Promise<OpenResult>((resolve) => {
+function runOpener(command: string, args: string[], openTarget: OpenTarget): Promise<OpenResult> {
+  return new Promise<OpenResult>((resolve) => {
     const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
     let settled = false;
 
@@ -170,6 +175,7 @@ async function openInBrowser(path: string): Promise<OpenResult> {
       settle({
         openAttempted: true,
         openStatus: "failed",
+        openTarget,
         openError: error.message,
       });
     });
@@ -179,17 +185,44 @@ async function openInBrowser(path: string): Promise<OpenResult> {
         settle({
           openAttempted: true,
           openStatus: "failed",
+          openTarget,
           openError: code === null ? `opener exited with signal ${signal ?? "unknown"}` : `opener exited with code ${code}`,
         });
       }
     });
 
     const timer = setTimeout(() => {
-      settle({ openAttempted: true, openStatus: "dispatched" });
+      settle({ openAttempted: true, openStatus: "dispatched", openTarget });
     }, 250);
 
     child.unref();
   });
+}
+
+async function openInBrowser(path: string): Promise<OpenResult> {
+  if (process.platform === "darwin") return await runOpener("open", [path], "browser");
+  if (process.platform === "linux") return await runOpener("xdg-open", [path], "browser");
+  if (process.platform === "win32") return await runOpener("cmd", ["/c", "start", "", path], "browser");
+  return { openAttempted: false, openStatus: "unsupported", openTarget: "browser" };
+}
+
+async function openInGlimpse(path: string): Promise<OpenResult> {
+  return await runOpener("glimpseui", ["--width", "1200", "--height", "900", "--title", "Visual Explainer", "--open-links", path], "glimpse");
+}
+
+async function openRenderedPage(path: string, viewer: Viewer): Promise<OpenResult> {
+  if (viewer === "browser") return await openInBrowser(path);
+  if (viewer === "glimpse") return await openInGlimpse(path);
+
+  const glimpseResult = await openInGlimpse(path);
+  if (glimpseResult.openStatus !== "failed") return glimpseResult;
+
+  const browserResult = await openInBrowser(path);
+  return {
+    ...browserResult,
+    fallbackFrom: "glimpse",
+    fallbackError: glimpseResult.openError ?? "glimpseui failed",
+  };
 }
 
 function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParams): AgentToolResult<VisualExplainerDetails> {
@@ -220,14 +253,14 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
         "Synthesize the findings into a concise visual outline for the target audience.",
         "Read the relevant visual-explainer references or templates before generating the page.",
         "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, and optional open.",
+        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
       ]
     : [
         "Gather the needed context directly in the main agent.",
         "Create a concise visual outline for the target audience.",
         "Read the relevant visual-explainer references or templates before generating the page.",
         "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, and optional open.",
+        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
       ];
 
   const summaryLines = [
@@ -261,11 +294,16 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   if (typeof params.filename !== "string") throw new Error("filename must be a string for action=render");
   if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
   if (params.open !== undefined && typeof params.open !== "boolean") throw new Error("open must be a boolean when provided");
+  if (params.viewer !== undefined && params.viewer !== "browser" && params.viewer !== "glimpse" && params.viewer !== "auto") {
+    throw new Error("viewer must be browser, glimpse, or auto when provided");
+  }
 
   signal?.throwIfAborted();
 
   const filename = outputFilename(params.filename);
+  const viewer = params.viewer ?? "browser";
   assertHtmlDocument(params.html);
+  const html = ensureFavicon(params.html);
 
   const outputDir = join(homedir(), ".agent", "diagrams");
   const outputPath = join(outputDir, filename);
@@ -276,26 +314,29 @@ async function renderVisualExplanation(params: VisualExplainerParams, signal?: A
   }
 
   signal?.throwIfAborted();
-  writeFileSync(outputPath, params.html, "utf8");
+  writeFileSync(outputPath, html, "utf8");
 
   signal?.throwIfAborted();
 
   const openResult = params.open === false
     ? { openAttempted: false, openStatus: "disabled" as const }
-    : await openInBrowser(outputPath);
+    : await openRenderedPage(outputPath, viewer);
 
   let message = `Wrote ${outputPath}.`;
   if (openResult.openStatus === "dispatched") {
-    message += " Browser open requested.";
+    message += ` ${openResult.openTarget === "glimpse" ? "Glimpse" : "Browser"} open requested.`;
   } else if (openResult.openStatus === "failed") {
-    message += ` Browser open failed: ${openResult.openError ?? "unknown error"}.`;
+    message += ` ${openResult.openTarget === "glimpse" ? "Glimpse" : "Browser"} open failed: ${openResult.openError ?? "unknown error"}.`;
   } else if (openResult.openStatus === "unsupported") {
     message += " Browser opening is unsupported on this platform.";
+  }
+  if (openResult.fallbackFrom === "glimpse") {
+    message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action: "render", path: outputPath, ...openResult },
+    details: { action: "render", path: outputPath, viewer, ...openResult },
   };
 }
 
@@ -309,7 +350,7 @@ export default function (pi: ExtensionAPI) {
       "After generating or reviewing a plan, architecture, diff, or substantial implementation, consider offering a visual explanation if it would clarify the work for the user.",
       "Because visual explanations can consume many tokens, ask before calling visual_explainer with action=prepare unless the user explicitly requested a diagram, visual review, recap, or visual plan.",
       "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then synthesize complete HTML and finish with visual_explainer action=render.",
-      "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/.",
+      "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/. Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",

@@ -17,8 +17,8 @@ Generate self-contained HTML pages that explain systems, code changes, plans, da
 - Prefer an HTML page over terminal ASCII when the output is inherently visual.
 - If a table would have 4+ rows or 3+ columns, render it as HTML and give only a short chat summary.
 - Write files to `~/.agent/diagrams/` or the explicit eval output path. Use descriptive filenames.
-- Open generated pages in the browser when running normally. In Pi package installs, use `visual_explainer` with `prepare` for planning/context and `render` only after the complete HTML document exists.
-- The final page must be a complete self-contained HTML document, including embedded CSS and any needed JS.
+- Open generated pages in the browser when running normally. In Pi package installs, use `visual_explainer` with `prepare` for planning/context and `render` only after the complete HTML document exists. Use `viewer: "glimpse"` only when the user wants a native Glimpse window and `glimpseui` is installed; `viewer: "auto"` may fall back to the browser.
+- The final page must be a complete self-contained HTML document, including embedded CSS, a self-contained favicon, and any needed JS.
 
 ## Reference routing
 
@@ -97,6 +97,7 @@ Before delivery, verify:
 - no console errors when opened;
 - no horizontal overflow at normal desktop width;
 - fonts load with fallbacks;
+- page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - slides fit one viewport, include carousel dots, and preserve source coverage;

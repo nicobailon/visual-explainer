@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- Added an optional Glimpse viewer for Pi renders through `visual_explainer` with `viewer: "glimpse"` or `viewer: "auto"`. Requested by @bjesuiter in #55 and prototyped in PR #56.
+- Added a standard self-contained favicon to rendered pages and reference templates. Based on PR #62 by @zereraz.
+
 ### Fixed
 - Kept slide-deck content visible in no-JS previews such as QuickLook by gating entrance-hidden states on JavaScript availability. Reported by @bradleyy in #68.
 - Added font-weight guidance so copied Google Fonts examples load each rendered weight, including mono labels. Based on PR #60 by @jowcy.
