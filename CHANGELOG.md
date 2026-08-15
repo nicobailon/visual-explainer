@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Synchronized Claude Code marketplace and skill metadata versions to `0.9.0` after the mismatch reported by @romkazor in #83.
+
 ## [0.9.0] - 2026-08-13
 
 ### Added
