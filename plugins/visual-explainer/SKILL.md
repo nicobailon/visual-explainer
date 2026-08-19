@@ -29,6 +29,15 @@ For quick mode, read `./quick/README.md` and `./quick/schema.json`. Gather and v
 
 Quick mode is not suitable for custom visual composition, slides, Mermaid-rich topology, or content that the schema cannot express. If it is not a fit, schema validation fails, or rendering errors, fall back to the normal full HTML workflow and render action. Do not use quick mode for slides, fact-check, visual plans, PPTX, themes, or updates.
 
+## Design judgment
+
+Before writing any HTML:
+
+- Calibrate the treatment to the request. A diff review, memo, audit, or recap gets a polished-utilitarian treatment: real hierarchy, considered spacing, a proper palette, no flashy hero. A landing page, showcase, or narrative deck gets the editorial treatment. Over-design is a failure mode: a well-composed page is never the wrong answer; an over-designed one sometimes is.
+- Honor existing design systems. Precedence: the user's words, then the project's existing system (theme/token files, component styles, design docs), then this skill's own choices. For repo-anchored pages such as diff and plan reviews, check for project design tokens before choosing a palette.
+- Write a compact design plan first: 4–6 named hex values, type roles, and a one-sentence layout concept. Then audit it once: "would I produce this exact plan for any similar page?" Revise the generic parts before writing code.
+- Structure must encode something true about the content. Use 01/02/03 markers only when order carries meaning, eyebrow labels only when they classify, dividers only at real seams.
+
 ## Reference routing
 
 Read only the references needed for the current output:
@@ -59,6 +68,16 @@ Read only the references needed for the current output:
 
 ## Mermaid invariants
 
+What to draw, before how:
+
+- Depict the mechanism, not its name: the path a request takes through a cache says more than a box labeled "cache".
+- Label every arrow: `writes`, `invalidates`, `polls every 30s`. An unlabeled arrow only says "related somehow".
+- To compare options, draw the difference: the edge each option adds or removes, not disconnected labeled boxes per option.
+- Match diagram complexity to what the decision turns on. No forced minimalism, no full-system inventory.
+- One figure, one claim; the caption states it.
+
+How to render:
+
 - Use `theme: 'base'` with custom `themeVariables` matching the page palette.
 - For complex diagrams use ELK layout when available.
 - Never use bare `<pre class="mermaid">`.
@@ -73,9 +92,15 @@ Read only the references needed for the current output:
 
 - Use semantic HTML where it helps accessibility and copy/paste: `<table>`, headings, lists, `<details>`, captions.
 - Use CSS custom properties for palette: `--bg`, `--surface`, `--border`, `--text`, `--text-dim`, and 3–5 accents.
-- Commit to one palette and one font pair. Add a runtime picker only when the user asks to switch themes or fonts, or names a prebuilt palette; see `./references/themes.md`.
-- Pick a clear aesthetic direction before writing: blueprint, editorial, paper/ink, terminal, IDE-inspired, or data-dense.
-- Avoid generic defaults: no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs.
+- Ship both color schemes: define palette tokens on `:root`, redefine only tokens inside the `prefers-color-scheme` media query, and style components through tokens only. Give the second theme equal care — pick its values, never naively invert. Single-theme output is allowed only as an explicit choice; a runtime picker from `themes.md` counts as that choice.
+- Commit to one palette (with its light and dark scheme variants) and one font pair. Add a runtime picker only when the user asks to switch themes or fonts, or names a prebuilt palette; see `./references/themes.md`.
+- Pick a clear aesthetic direction before writing: blueprint, editorial, paper/ink, terminal, IDE-inspired, or data-dense. Rotate directions across outputs; no single direction is the house default. Warm cream + serif + terracotta is itself a recognizable generated-page cliché when it appears every time.
+- Avoid generic defaults: no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes; no emoji section markers; no centering everything; no uniform large border-radius on every element; no accent bars on rounded cards as the default card treatment.
+- Set type deliberately: running text near 65ch, a committed type scale, `text-wrap: balance` on headings, letter-spacing on uppercase labels.
+- Choose neutrals: greys hue-biased toward the accent read as chosen; pure mid-grey reads as unconsidered.
+- Space sibling groups with flex/grid `gap`, not per-element margins that collapse. Use `font-variant-numeric: tabular-nums` wherever digits align in columns. Watch selector specificity so type-based and element-based classes do not silently cancel each other's spacing.
+- Treat microcopy as design material: name things by what readers recognize, not internal structure; active voice; controls say exactly what happens; errors explain what went wrong and how to fix it; specific beats clever.
+- Dashboards are scanned and operated, not read: surface the summary before the detail; encode state in form (pills, chips, severity stripes) so attention-worthy items read at a glance; keep semantic color (good/warning/critical) separate from the accent hue; make interactive things look interactive.
 - Good font pair families: DM Sans + Fira Code; Instrument Serif + JetBrains Mono; IBM Plex Sans + IBM Plex Mono; Bricolage Grotesque + JetBrains Mono; Plus Jakarta Sans + Azeret Mono.
 - Load every font weight the CSS uses, including mono labels. Do not rely on faux-bold for 500, 600, or 700 weights.
 - Good accent directions: terracotta+sage, teal+slate, rose+cranberry, amber+emerald, deep blue+gold.
@@ -112,6 +137,9 @@ Before delivery, verify:
 - fonts load with fallbacks;
 - page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
+- interactive elements have visible keyboard focus states;
+- diagrams sit in a `<figure>` with a `figcaption` stating the claim, plus `role="img"` and a matching `aria-label` on the SVG;
+- both color schemes hold up, or single-theme was an explicit choice;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
 - slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage; if PPTX was requested, the static `.pptx` was generated after the HTML deck and its fidelity limits were stated;
