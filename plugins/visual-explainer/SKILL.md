@@ -36,6 +36,7 @@ Before writing any HTML:
 - Calibrate the treatment to the request. A diff review, memo, audit, or recap gets a polished-utilitarian treatment: real hierarchy, considered spacing, a proper palette, no flashy hero. A landing page, showcase, or narrative deck gets the editorial treatment. Over-design is a failure mode: a well-composed page is never the wrong answer; an over-designed one sometimes is.
 - Honor existing design systems. Precedence: the user's words, then the project's existing system (theme/token files, component styles, design docs), then this skill's own choices. For repo-anchored pages such as diff and plan reviews, check for project design tokens before choosing a palette.
 - Write a compact design plan first: 4–6 named hex values, type roles, and a one-sentence layout concept. Then audit it once: "would I produce this exact plan for any similar page?" Revise the generic parts before writing code.
+  - Example audit: "dark slate `#0f172a`, indigo accent `#6366f1`, Inter, hero plus three feature cards" fits any page — generic. Revised for a CLI release recap: near-black green `#10140f`, phosphor text `#d6e2c8`, amber accent `#e0a458`, JetBrains Mono display — terminal direction because the subject lives in a terminal, and the layout follows the release timeline instead of a card grid.
 - Structure must encode something true about the content. Use 01/02/03 markers only when order carries meaning, eyebrow labels only when they classify, dividers only at real seams.
 
 ## Reference routing
@@ -92,9 +93,9 @@ How to render:
 
 - Use semantic HTML where it helps accessibility and copy/paste: `<table>`, headings, lists, `<details>`, captions.
 - Use CSS custom properties for palette: `--bg`, `--surface`, `--border`, `--text`, `--text-dim`, and 3–5 accents.
-- Ship both color schemes: define palette tokens on `:root`, redefine only tokens inside the `prefers-color-scheme` media query, and style components through tokens only. Give the second theme equal care — pick its values, never naively invert. Single-theme output is allowed only as an explicit choice; a runtime picker from `themes.md` counts as that choice.
+- Ship both color schemes for pages meant to persist or be shared: define palette tokens on `:root`, redefine only tokens inside the `prefers-color-scheme` media query, and style components through tokens only. Give the second theme equal care — pick its values, never naively invert. Utilitarian one-shot pages may stay single-theme when the choice suits the content and is deliberate; quick-mode output and a runtime picker from `themes.md` count as deliberate single-theme choices.
 - Commit to one palette (with its light and dark scheme variants) and one font pair. Add a runtime picker only when the user asks to switch themes or fonts, or names a prebuilt palette; see `./references/themes.md`.
-- Pick a clear aesthetic direction before writing: blueprint, editorial, paper/ink, terminal, IDE-inspired, or data-dense. Rotate directions across outputs; no single direction is the house default. Warm cream + serif + terracotta is itself a recognizable generated-page cliché when it appears every time.
+- Pick a clear aesthetic direction before writing, anchored to the content's domain: CLI and infra subjects suggest terminal or IDE-inspired; metrics and audits suggest data-dense; plans and architecture suggest blueprint; narrative recaps suggest editorial; prose-heavy documents suggest paper/ink. A direction chosen for a reason cannot become a house default; warm cream + serif + terracotta applied to everything is itself a recognizable generated-page cliché.
 - Avoid generic defaults: no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes; no emoji section markers; no centering everything; no uniform large border-radius on every element; no accent bars on rounded cards as the default card treatment.
 - Set type deliberately: running text near 65ch, a committed type scale, `text-wrap: balance` on headings, letter-spacing on uppercase labels.
 - Choose neutrals: greys hue-biased toward the accent read as chosen; pure mid-grey reads as unconsidered.
@@ -139,7 +140,7 @@ Before delivery, verify:
 - tables preserve rows/columns and wrap long text;
 - interactive elements have visible keyboard focus states;
 - diagrams sit in a `<figure>` with a `figcaption` stating the claim, plus `role="img"` and a matching `aria-label` on the SVG;
-- both color schemes hold up, or single-theme was an explicit choice;
+- both color schemes hold up, or single-theme was a deliberate choice (quick mode and picker pages count);
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
 - slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage; if PPTX was requested, the static `.pptx` was generated after the HTML deck and its fidelity limits were stated;
