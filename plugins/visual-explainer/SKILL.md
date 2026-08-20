@@ -94,7 +94,7 @@ How to render:
 - Pages meant to persist ship both color schemes: tokens on `:root`, the `prefers-color-scheme` media query redefines tokens only, components styled through tokens. Pick the second theme's values; never invert. Single-theme is fine when deliberate (one-shot pages, quick mode, `themes.md` picker).
 - Commit to one palette (with its light and dark scheme variants) and one font pair. Add a runtime picker only when the user asks to switch themes or fonts, or names a prebuilt palette; see `./references/themes.md`.
 - Anchor the aesthetic direction to the content's domain: CLI/infra → terminal or IDE-inspired; metrics/audits → data-dense; plans/architecture → blueprint; recaps → editorial; prose → paper/ink. Warm cream + serif + terracotta on everything is itself a cliché.
-- Avoid generic defaults: no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes, emoji section markers, centered-everything layouts, uniform large border-radius, or default accent bars on rounded cards.
+- Avoid generic defaults when choosing freely (a project's existing design system overrides this list): no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes, emoji section markers, centered-everything layouts, uniform large border-radius, or default accent bars on rounded cards.
 - Set type deliberately: running text near 65ch, a committed type scale, `text-wrap: balance` on headings, letter-spacing on uppercase labels.
 - Bias neutrals toward the accent hue; pure mid-grey reads as unconsidered. Space siblings with flex/grid `gap`, not collapsing margins; `tabular-nums` where digits align in columns; watch specificity so classes do not silently cancel each other's spacing.
 - Microcopy is design material: name things by what readers recognize, not internal structure; controls say exactly what happens; specific beats clever.
@@ -136,7 +136,7 @@ Before delivery, verify:
 - page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
 - interactive elements have visible keyboard focus states;
-- diagrams sit in `<figure>` with a claim-stating `figcaption`, plus `role="img"` and a matching `aria-label` on the SVG;
+- diagrams sit in `<figure>` with a claim-stating `figcaption`, plus `role="img"` and a matching `aria-label` on the shell wrapper, not the Mermaid SVG (re-renders replace it);
 - both color schemes hold up, or single-theme was deliberate;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
