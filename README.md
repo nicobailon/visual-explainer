@@ -134,12 +134,16 @@ rm -rf /tmp/visual-explainer
 
 PowerShell (global):
 ```powershell
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$env:TEMP\visual-explainer"
-
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.gemini\antigravity-cli\skills" | Out-Null
-Copy-Item -Recurse -Force "$env:TEMP\visual-explainer\plugins\visual-explainer" "$env:USERPROFILE\.gemini\antigravity-cli\skills\visual-explainer"
-
-Remove-Item -Recurse -Force "$env:TEMP\visual-explainer"
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.gemini\antigravity-cli\skills" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.gemini\antigravity-cli\skills\visual-explainer"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Workspace install:
@@ -154,12 +158,16 @@ rm -rf /tmp/visual-explainer
 
 PowerShell (workspace):
 ```powershell
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$env:TEMP\visual-explainer"
-
-New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
-Copy-Item -Recurse -Force "$env:TEMP\visual-explainer\plugins\visual-explainer" ".agents\skills\visual-explainer"
-
-Remove-Item -Recurse -Force "$env:TEMP\visual-explainer"
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".agents\skills\visual-explainer"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Launch `agy` in the project and use `/skills` to confirm `visual-explainer` is discovered. Ask Antigravity to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables. Antigravity SDK projects can reuse the same `SKILL.md` content as an Agent Skill resource, but this repo does not ship a separate SDK wrapper. The bundled prompt templates remain reference markdown under `plugins/visual-explainer/commands/`; no separate Antigravity plugin adapter is included.
@@ -179,15 +187,19 @@ rm -rf /tmp/visual-explainer
 
 PowerShell:
 ```powershell
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$env:TEMP\visual-explainer"
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills", "$env:USERPROFILE\.codex\prompts" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.codex\skills\visual-explainer"
 
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills", "$env:USERPROFILE\.codex\prompts" | Out-Null
-Copy-Item -Recurse -Force "$env:TEMP\visual-explainer\plugins\visual-explainer" "$env:USERPROFILE\.codex\skills\visual-explainer"
-
-# Optional, only if your Codex build supports prompt templates:
-Copy-Item -Force "$env:TEMP\visual-explainer\plugins\visual-explainer\commands\*.md" "$env:USERPROFILE\.codex\prompts\"
-
-Remove-Item -Recurse -Force "$env:TEMP\visual-explainer"
+  # Optional, only if your Codex build supports prompt templates:
+  Copy-Item -Force (Join-Path $tmp "plugins\visual-explainer\commands\*.md") "$env:USERPROFILE\.codex\prompts\"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Invoke with `$visual-explainer` or ask Codex to use the `visual-explainer` skill. If prompts are installed and supported, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
@@ -207,15 +219,19 @@ rm -rf /tmp/visual-explainer
 
 PowerShell:
 ```powershell
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$env:TEMP\visual-explainer"
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode\skill", "$env:USERPROFILE\.config\opencode\command" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.config\opencode\skill\visual-explainer"
 
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode\skill", "$env:USERPROFILE\.config\opencode\command" | Out-Null
-Copy-Item -Recurse -Force "$env:TEMP\visual-explainer\plugins\visual-explainer" "$env:USERPROFILE\.config\opencode\skill\visual-explainer"
-
-# Optional command templates:
-Copy-Item -Force "$env:TEMP\visual-explainer\plugins\visual-explainer\commands\*.md" "$env:USERPROFILE\.config\opencode\command\"
-
-Remove-Item -Recurse -Force "$env:TEMP\visual-explainer"
+  # Optional command templates:
+  Copy-Item -Force (Join-Path $tmp "plugins\visual-explainer\commands\*.md") "$env:USERPROFILE\.config\opencode\command\"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Activate it by asking OpenCode to use the `visual-explainer` skill. Command-template behavior depends on the installed OpenCode/opencode build.
