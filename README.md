@@ -185,6 +185,7 @@ trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p ~/.cursor/skills
+rm -rf ~/.cursor/skills/visual-explainer
 cp -R "$TMP/plugins/visual-explainer" ~/.cursor/skills/visual-explainer
 ```
 
@@ -196,6 +197,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills" | Out-Null
+  Remove-Item -Recurse -Force "$env:USERPROFILE\.cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.cursor\skills\visual-explainer"
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
@@ -209,6 +211,7 @@ trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p .cursor/skills
+rm -rf .cursor/skills/visual-explainer
 cp -R "$TMP/plugins/visual-explainer" .cursor/skills/visual-explainer
 ```
 
@@ -220,6 +223,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
+  Remove-Item -Recurse -Force ".cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".cursor\skills\visual-explainer"
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
