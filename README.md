@@ -37,7 +37,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
-| Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
+| Cursor | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.cursor/skills/visual-explainer` globally or `.cursor/skills/visual-explainer` per workspace; optional legacy rule in `configs/cursor/` |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 | VS Code Copilot / Copilot CLI | Custom instructions or rules guidance | Add the supplied AGENTS guidance to your supported workspace instruction or rules setup |
 
@@ -176,7 +176,123 @@ Activate it by asking OpenCode to use the `visual-explainer` skill. Command-temp
 
 **Cursor:**
 
-Add `configs/cursor/visual-explainer.mdc` to your Cursor rules, or copy its contents into the project rules UI. This is rules-based guidance that points Cursor at the canonical skill; it does not claim native Agent Skills support.
+Cursor loads Agent Skills from `~/.cursor/skills/` globally and `.cursor/skills/` at the workspace level. Copy the canonical skill directory there and Cursor discovers it from the `name:` field in `SKILL.md`.
+
+Global install:
+```bash
+set -e
+TMP="$(mktemp -d)" || exit 1
+DEST="$HOME/.cursor/skills/visual-explainer"
+STAGING="$DEST.staging"
+BACKUP="$DEST.backup"
+cleanup() {
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then cp -R "$BACKUP" "$DEST" || mv "$BACKUP" "$DEST" || true; fi
+  if [ ! -e "$DEST" ] && [ -e "$STAGING" ]; then cp -R "$STAGING" "$DEST" || mv "$STAGING" "$DEST" || true; fi
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
+
+mkdir -p "$HOME/.cursor/skills"
+rm -rf "$STAGING"
+cp -R "$TMP/plugins/visual-explainer" "$STAGING"
+if [ -e "$DEST" ]; then rm -rf "$BACKUP"; mv "$DEST" "$BACKUP"; fi
+mv "$STAGING" "$DEST"
+rm -rf "$BACKUP"
+```
+
+PowerShell (global):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = Join-Path $env:USERPROFILE ".cursor\skills\visual-explainer"
+$staging = "$dest.staging"
+$backup = "$dest.backup"
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
+  if (Test-Path $dest) {
+    if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+    Move-Item $dest $backup
+  }
+  Move-Item $staging $dest
+  if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+} finally {
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) {
+    Copy-Item -Recurse -Force $backup $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $backup $dest -ErrorAction SilentlyContinue }
+  }
+  if (-not (Test-Path $dest) -and (Test-Path $staging)) {
+    Copy-Item -Recurse -Force $staging $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $staging $dest -ErrorAction SilentlyContinue }
+  }
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
+```
+
+Workspace install:
+```bash
+set -e
+TMP="$(mktemp -d)" || exit 1
+DEST=".cursor/skills/visual-explainer"
+STAGING="$DEST.staging"
+BACKUP="$DEST.backup"
+cleanup() {
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then cp -R "$BACKUP" "$DEST" || mv "$BACKUP" "$DEST" || true; fi
+  if [ ! -e "$DEST" ] && [ -e "$STAGING" ]; then cp -R "$STAGING" "$DEST" || mv "$STAGING" "$DEST" || true; fi
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
+
+mkdir -p .cursor/skills
+rm -rf "$STAGING"
+cp -R "$TMP/plugins/visual-explainer" "$STAGING"
+if [ -e "$DEST" ]; then rm -rf "$BACKUP"; mv "$DEST" "$BACKUP"; fi
+mv "$STAGING" "$DEST"
+rm -rf "$BACKUP"
+```
+
+PowerShell (workspace):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = ".cursor\skills\visual-explainer"
+$staging = "$dest.staging"
+$backup = "$dest.backup"
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
+  if (Test-Path $dest) {
+    if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+    Move-Item $dest $backup
+  }
+  Move-Item $staging $dest
+  if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+} finally {
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) {
+    Copy-Item -Recurse -Force $backup $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $backup $dest -ErrorAction SilentlyContinue }
+  }
+  if (-not (Test-Path $dest) -and (Test-Path $staging)) {
+    Copy-Item -Recurse -Force $staging $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $staging $dest -ErrorAction SilentlyContinue }
+  }
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
+```
+
+Cursor also scans `.agents/skills/` in a workspace, so the Antigravity workspace install path works there too. Ask Cursor to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables.
+
+Optional legacy rule: add `configs/cursor/visual-explainer.mdc` to your Cursor rules if you prefer rules-based guidance over relying on skill discovery alone.
 
 **OpenClaw:**
 
