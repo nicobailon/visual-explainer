@@ -180,22 +180,50 @@ Cursor loads Agent Skills from `~/.cursor/skills/` globally and `.cursor/skills/
 
 Global install:
 ```bash
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+TMP="$(mktemp -d)" || exit 1
+trap 'rm -rf "$TMP"' EXIT
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p ~/.cursor/skills
-cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.cursor/skills/visual-explainer
+cp -R "$TMP/plugins/visual-explainer" ~/.cursor/skills/visual-explainer
+```
 
-rm -rf /tmp/visual-explainer
+PowerShell (global):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.cursor\skills\visual-explainer"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Workspace install:
 ```bash
-git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+TMP="$(mktemp -d)" || exit 1
+trap 'rm -rf "$TMP"' EXIT
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p .cursor/skills
-cp -R /tmp/visual-explainer/plugins/visual-explainer .cursor/skills/visual-explainer
+cp -R "$TMP/plugins/visual-explainer" .cursor/skills/visual-explainer
+```
 
-rm -rf /tmp/visual-explainer
+PowerShell (workspace):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".cursor\skills\visual-explainer"
+} finally {
+  Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+}
 ```
 
 Cursor also scans `.agents/skills/` in a workspace, so the Antigravity workspace install path works there too. Ask Cursor to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables.

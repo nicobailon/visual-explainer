@@ -6,7 +6,7 @@ alwaysApply: false
 
 Use the canonical `visual-explainer` skill from `plugins/visual-explainer/` or from `~/.cursor/skills/visual-explainer` / `.cursor/skills/visual-explainer` after copying the skill directory there. Cursor discovers Agent Skills natively from those paths; this rule is optional for users who want explicit rules-based guidance.
 
-When the user asks for a diagram, architecture overview, diff review, plan review, project recap, slide deck, or complex comparison table, read the installed `visual-explainer` skill's `SKILL.md` and follow its workflow. Use the command markdown in `commands/` as templates when helpful.
+When the user asks for a diagram, architecture overview, diff review, plan review, project recap, slide deck, or complex comparison table, read the installed `visual-explainer` skill's `SKILL.md` and follow its workflow. Use the command markdown in that skill directory's `commands/` subdirectory as templates when helpful.
 
 Write generated HTML to `~/.agent/diagrams/` unless the user asks for another path, then open it in a browser if Cursor permits shell/browser access. If browser access is blocked, report the file path.
 
