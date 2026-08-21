@@ -37,7 +37,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
-| Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
+| Cursor | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.cursor/skills/visual-explainer` globally or `.cursor/skills/visual-explainer` per workspace; optional legacy rule in `configs/cursor/` |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 | VS Code Copilot / Copilot CLI | Custom instructions or rules guidance | Add the supplied AGENTS guidance to your supported workspace instruction or rules setup |
 
@@ -176,7 +176,31 @@ Activate it by asking OpenCode to use the `visual-explainer` skill. Command-temp
 
 **Cursor:**
 
-Add `configs/cursor/visual-explainer.mdc` to your Cursor rules, or copy its contents into the project rules UI. This is rules-based guidance that points Cursor at the canonical skill; it does not claim native Agent Skills support.
+Cursor loads Agent Skills from `~/.cursor/skills/` globally and `.cursor/skills/` at the workspace level. Copy the canonical skill directory there and Cursor discovers it from the `name:` field in `SKILL.md`.
+
+Global install:
+```bash
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+
+mkdir -p ~/.cursor/skills
+cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.cursor/skills/visual-explainer
+
+rm -rf /tmp/visual-explainer
+```
+
+Workspace install:
+```bash
+git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
+
+mkdir -p .cursor/skills
+cp -R /tmp/visual-explainer/plugins/visual-explainer .cursor/skills/visual-explainer
+
+rm -rf /tmp/visual-explainer
+```
+
+Cursor also scans `.agents/skills/` in a workspace, so the Antigravity workspace install path works there too. Ask Cursor to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables.
+
+Optional legacy rule: add `configs/cursor/visual-explainer.mdc` to your Cursor rules if you prefer rules-based guidance over relying on skill discovery alone.
 
 **OpenClaw:**
 
