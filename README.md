@@ -140,6 +140,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.gemini\antigravity-cli\skills" | Out-Null
+  Remove-Item -Recurse -Force "$env:USERPROFILE\.gemini\antigravity-cli\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.gemini\antigravity-cli\skills\visual-explainer"
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
@@ -164,6 +165,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path ".agents\skills" | Out-Null
+  Remove-Item -Recurse -Force ".agents\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".agents\skills\visual-explainer"
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
@@ -193,6 +195,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.codex\skills", "$env:USERPROFILE\.codex\prompts" | Out-Null
+  Remove-Item -Recurse -Force "$env:USERPROFILE\.codex\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.codex\skills\visual-explainer"
 
   # Optional, only if your Codex build supports prompt templates:
@@ -225,6 +228,7 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode\skill", "$env:USERPROFILE\.config\opencode\command" | Out-Null
+  Remove-Item -Recurse -Force "$env:USERPROFILE\.config\opencode\skill\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.config\opencode\skill\visual-explainer"
 
   # Optional command templates:
