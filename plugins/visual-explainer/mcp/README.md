@@ -7,7 +7,7 @@ This directory contains the local Model Context Protocol server for visual-expla
 The server is stdio-only. It is meant for MCP hosts that launch a local child process.
 It does not start an HTTP listener, handle credentials, call an LLM, or store output outside the local machine.
 
-Rendered files are written only to `~/.agent/diagrams/`. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
+Rendered files are written only inside the configured output directory. The default is `~/.agent/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. Choose a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
 
 ## Run from a package install
 
@@ -45,8 +45,8 @@ Then point the host at the server entry:
 ## Exposed tools
 
 - `visual_explainer_prepare`: returns a recommended visual explanation flow. It does not write files.
-- `visual_explainer_render_html`: validates a complete HTML document and writes it to `~/.agent/diagrams/`.
-- `visual_explainer_render_quick`: validates a quick-mode JSON spec and writes rendered HTML to `~/.agent/diagrams/`.
+- `visual_explainer_render_html`: validates a complete HTML document and writes it to the configured output directory (default `~/.agent/diagrams/`).
+- `visual_explainer_render_quick`: validates a quick-mode JSON spec and writes rendered HTML to the configured output directory (default `~/.agent/diagrams/`).
 
 Render tools default to `open: false`. Set `open: true` only when you want the server to request a browser or Glimpse window.
 
