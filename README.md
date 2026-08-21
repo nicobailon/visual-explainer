@@ -186,7 +186,8 @@ DEST="$HOME/.cursor/skills/visual-explainer"
 STAGING="$DEST.staging"
 BACKUP="$DEST.backup"
 cleanup() {
-  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then mv "$BACKUP" "$DEST"; fi
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then cp -R "$BACKUP" "$DEST" || mv "$BACKUP" "$DEST" || true; fi
+  if [ ! -e "$DEST" ] && [ -e "$STAGING" ]; then cp -R "$STAGING" "$DEST" || mv "$STAGING" "$DEST" || true; fi
   rm -rf "$TMP"
 }
 trap cleanup EXIT
@@ -221,7 +222,14 @@ try {
   Move-Item $staging $dest
   if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
 } finally {
-  if (-not (Test-Path $dest) -and (Test-Path $backup)) { Move-Item $backup $dest }
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) {
+    Copy-Item -Recurse -Force $backup $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $backup $dest -ErrorAction SilentlyContinue }
+  }
+  if (-not (Test-Path $dest) -and (Test-Path $staging)) {
+    Copy-Item -Recurse -Force $staging $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $staging $dest -ErrorAction SilentlyContinue }
+  }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 }
 ```
@@ -234,7 +242,8 @@ DEST=".cursor/skills/visual-explainer"
 STAGING="$DEST.staging"
 BACKUP="$DEST.backup"
 cleanup() {
-  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then mv "$BACKUP" "$DEST"; fi
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then cp -R "$BACKUP" "$DEST" || mv "$BACKUP" "$DEST" || true; fi
+  if [ ! -e "$DEST" ] && [ -e "$STAGING" ]; then cp -R "$STAGING" "$DEST" || mv "$STAGING" "$DEST" || true; fi
   rm -rf "$TMP"
 }
 trap cleanup EXIT
@@ -269,7 +278,14 @@ try {
   Move-Item $staging $dest
   if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
 } finally {
-  if (-not (Test-Path $dest) -and (Test-Path $backup)) { Move-Item $backup $dest }
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) {
+    Copy-Item -Recurse -Force $backup $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $backup $dest -ErrorAction SilentlyContinue }
+  }
+  if (-not (Test-Path $dest) -and (Test-Path $staging)) {
+    Copy-Item -Recurse -Force $staging $dest -ErrorAction SilentlyContinue
+    if (-not (Test-Path $dest)) { Move-Item $staging $dest -ErrorAction SilentlyContinue }
+  }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 }
 ```
