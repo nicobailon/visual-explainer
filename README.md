@@ -186,23 +186,30 @@ trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p ~/.cursor/skills
+rm -rf ~/.cursor/skills/visual-explainer.staging
+cp -R "$TMP/plugins/visual-explainer" ~/.cursor/skills/visual-explainer.staging
 rm -rf ~/.cursor/skills/visual-explainer
-cp -R "$TMP/plugins/visual-explainer" ~/.cursor/skills/visual-explainer
+mv ~/.cursor/skills/visual-explainer.staging ~/.cursor/skills/visual-explainer
 ```
 
 PowerShell (global):
 ```powershell
 $ErrorActionPreference = 'Stop'
 $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = Join-Path $env:USERPROFILE ".cursor\skills\visual-explainer"
+$staging = Join-Path $env:USERPROFILE ".cursor\skills\visual-explainer.staging"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
-  New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills" | Out-Null
-  Remove-Item -Recurse -Force "$env:USERPROFILE\.cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
-  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.cursor\skills\visual-explainer"
+  New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
+  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+  Move-Item -Force $staging $dest
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue }
 }
 ```
 
@@ -214,23 +221,30 @@ trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p .cursor/skills
+rm -rf .cursor/skills/visual-explainer.staging
+cp -R "$TMP/plugins/visual-explainer" .cursor/skills/visual-explainer.staging
 rm -rf .cursor/skills/visual-explainer
-cp -R "$TMP/plugins/visual-explainer" .cursor/skills/visual-explainer
+mv .cursor/skills/visual-explainer.staging .cursor/skills/visual-explainer
 ```
 
 PowerShell (workspace):
 ```powershell
 $ErrorActionPreference = 'Stop'
 $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = ".cursor\skills\visual-explainer"
+$staging = ".cursor\skills\visual-explainer.staging"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
   if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
   New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
-  Remove-Item -Recurse -Force ".cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
-  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".cursor\skills\visual-explainer"
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
+  Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
+  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+  Move-Item -Force $staging $dest
 } finally {
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
+  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue }
 }
 ```
 
