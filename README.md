@@ -197,6 +197,7 @@ $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills" | Out-Null
   Remove-Item -Recurse -Force "$env:USERPROFILE\.cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") "$env:USERPROFILE\.cursor\skills\visual-explainer"
@@ -224,6 +225,7 @@ $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
   New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
   Remove-Item -Recurse -Force ".cursor\skills\visual-explainer" -ErrorAction SilentlyContinue
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") ".cursor\skills\visual-explainer"
