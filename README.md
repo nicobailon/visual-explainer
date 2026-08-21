@@ -180,6 +180,7 @@ Cursor loads Agent Skills from `~/.cursor/skills/` globally and `.cursor/skills/
 
 Global install:
 ```bash
+set -e
 TMP="$(mktemp -d)" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
@@ -206,6 +207,7 @@ try {
 
 Workspace install:
 ```bash
+set -e
 TMP="$(mktemp -d)" || exit 1
 trap 'rm -rf "$TMP"' EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
