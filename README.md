@@ -182,14 +182,22 @@ Global install:
 ```bash
 set -e
 TMP="$(mktemp -d)" || exit 1
-trap 'rm -rf "$TMP"' EXIT
+DEST="$HOME/.cursor/skills/visual-explainer"
+STAGING="$DEST.staging"
+BACKUP="$DEST.backup"
+cleanup() {
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then mv "$BACKUP" "$DEST"; fi
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
-mkdir -p ~/.cursor/skills
-rm -rf ~/.cursor/skills/visual-explainer.staging
-cp -R "$TMP/plugins/visual-explainer" ~/.cursor/skills/visual-explainer.staging
-rm -rf ~/.cursor/skills/visual-explainer
-mv ~/.cursor/skills/visual-explainer.staging ~/.cursor/skills/visual-explainer
+mkdir -p "$HOME/.cursor/skills"
+rm -rf "$STAGING"
+cp -R "$TMP/plugins/visual-explainer" "$STAGING"
+if [ -e "$DEST" ]; then rm -rf "$BACKUP"; mv "$DEST" "$BACKUP"; fi
+mv "$STAGING" "$DEST"
+rm -rf "$BACKUP"
 ```
 
 PowerShell (global):
@@ -197,7 +205,8 @@ PowerShell (global):
 $ErrorActionPreference = 'Stop'
 $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
 $dest = Join-Path $env:USERPROFILE ".cursor\skills\visual-explainer"
-$staging = Join-Path $env:USERPROFILE ".cursor\skills\visual-explainer.staging"
+$staging = "$dest.staging"
+$backup = "$dest.backup"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
@@ -205,11 +214,15 @@ try {
   New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
   if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
-  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
-  Move-Item -Force $staging $dest
+  if (Test-Path $dest) {
+    if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+    Move-Item $dest $backup
+  }
+  Move-Item $staging $dest
+  if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
 } finally {
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) { Move-Item $backup $dest }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue }
 }
 ```
 
@@ -217,14 +230,22 @@ Workspace install:
 ```bash
 set -e
 TMP="$(mktemp -d)" || exit 1
-trap 'rm -rf "$TMP"' EXIT
+DEST=".cursor/skills/visual-explainer"
+STAGING="$DEST.staging"
+BACKUP="$DEST.backup"
+cleanup() {
+  if [ ! -e "$DEST" ] && [ -e "$BACKUP" ]; then mv "$BACKUP" "$DEST"; fi
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$TMP"
 
 mkdir -p .cursor/skills
-rm -rf .cursor/skills/visual-explainer.staging
-cp -R "$TMP/plugins/visual-explainer" .cursor/skills/visual-explainer.staging
-rm -rf .cursor/skills/visual-explainer
-mv .cursor/skills/visual-explainer.staging .cursor/skills/visual-explainer
+rm -rf "$STAGING"
+cp -R "$TMP/plugins/visual-explainer" "$STAGING"
+if [ -e "$DEST" ]; then rm -rf "$BACKUP"; mv "$DEST" "$BACKUP"; fi
+mv "$STAGING" "$DEST"
+rm -rf "$BACKUP"
 ```
 
 PowerShell (workspace):
@@ -232,7 +253,8 @@ PowerShell (workspace):
 $ErrorActionPreference = 'Stop'
 $tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
 $dest = ".cursor\skills\visual-explainer"
-$staging = ".cursor\skills\visual-explainer.staging"
+$staging = "$dest.staging"
+$backup = "$dest.backup"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
   git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $tmp
@@ -240,11 +262,15 @@ try {
   New-Item -ItemType Directory -Force -Path ".cursor\skills" | Out-Null
   if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
   Copy-Item -Recurse -Force (Join-Path $tmp "plugins\visual-explainer") $staging
-  if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
-  Move-Item -Force $staging $dest
+  if (Test-Path $dest) {
+    if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
+    Move-Item $dest $backup
+  }
+  Move-Item $staging $dest
+  if (Test-Path $backup) { Remove-Item -Recurse -Force $backup }
 } finally {
+  if (-not (Test-Path $dest) -and (Test-Path $backup)) { Move-Item $backup $dest }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  if (Test-Path $staging) { Remove-Item -Recurse -Force $staging -ErrorAction SilentlyContinue }
 }
 ```
 
