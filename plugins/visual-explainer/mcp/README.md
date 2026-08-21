@@ -7,7 +7,7 @@ This directory contains the local Model Context Protocol server for visual-expla
 The server is stdio-only. It is meant for MCP hosts that launch a local child process.
 It does not start an HTTP listener, handle credentials, call an LLM, or store output outside the local machine.
 
-Rendered files are written only inside the configured output directory. The default is `~/.agent/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
+Rendered files are written only inside the configured output directory. The default is `~/.agent/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. Choose a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
 
 ## Run from a package install
 
