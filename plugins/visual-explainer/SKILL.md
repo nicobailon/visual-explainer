@@ -48,7 +48,7 @@ Read only the references needed for the current output:
 | Mermaid flowcharts, sequence, ER, state, class, C4, data flow | `./templates/mermaid-flowchart.html`, Mermaid sections in `./references/libraries.md` |
 | Data tables, comparisons, audits | `./templates/data-table.html` |
 | Slide decks | `./templates/slide-deck.html`, `./references/slide-patterns.md` |
-| CSS layout, overflow, depth, collapsibles, SVG connectors, generated images | `./references/css-patterns.md` |
+| CSS layout, type scale, overflow, depth, collapsibles, SVG connectors, generated images | `./references/css-patterns.md` |
 | Pages with 4+ major sections | `./references/responsive-nav.md` |
 | Switchable themes or fonts, or a named palette (Dracula, Nord, Gruvbox…) | `./references/themes.md` |
 | Prose-heavy pages | “Prose Page Elements” in `css-patterns.md`, typography sections in `libraries.md` |
@@ -96,6 +96,7 @@ How to render:
 - Anchor the aesthetic direction to the content's domain: CLI/infra → terminal or IDE-inspired; metrics/audits → data-dense; plans/architecture → blueprint; recaps → editorial; prose → paper/ink. Warm cream + serif + terracotta on everything is itself a cliché.
 - Avoid generic defaults when choosing freely (a project's existing design system overrides this list): no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes, emoji section markers, centered-everything layouts, uniform large border-radius, or default accent bars on rounded cards.
 - Set type deliberately: running text near 65ch, a committed type scale, `text-wrap: balance` on headings, letter-spacing on uppercase labels.
+- Type scale is rem-based with one root knob: set `html { font-size: 17px }` (16–18px range) and express every `font-size` in `rem`, so a single line rescales the page. Minimum effective sizes at the chosen root: body/reading text ≥ 14px, secondary text and labels ≥ 11px, code/mono ≥ 12px. Never hard-code reading text below 14px in px — dense all-px scales render as unreadable dashboards. Mermaid SVG labels stay in px (config-driven). Reference templates demonstrate structure; re-scale their px values to this rule when copying.
 - Bias neutrals toward the accent hue; pure mid-grey reads as unconsidered. Space siblings with flex/grid `gap`, not collapsing margins; `tabular-nums` where digits align in columns; watch specificity so classes do not silently cancel each other's spacing.
 - Microcopy is design material: name things by what readers recognize, not internal structure; controls say exactly what happens; specific beats clever.
 - Dashboards are scanned, not read: summary before detail; encode state in form (pills, chips, severity stripes); keep semantic color separate from the accent hue; interactive things look interactive.
@@ -133,6 +134,7 @@ Before delivery, verify:
 - no console errors when opened;
 - no horizontal overflow at normal desktop width;
 - fonts load with fallbacks;
+- type is rem-based with one root knob and meets the minimum effective sizes (body ≥ 14px, labels ≥ 11px, mono ≥ 12px);
 - page has a self-contained favicon;
 - tables preserve rows/columns and wrap long text;
 - interactive elements have visible keyboard focus states;

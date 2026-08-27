@@ -50,6 +50,26 @@ Always define both light and dark palettes via custom properties. Start with whi
 }
 ```
 
+## Type Scale (rem, one knob)
+
+All page text is sized in `rem` against a single root value, so one line rescales everything and nothing ships unreadably small. Never scatter hard-coded px font sizes.
+
+```css
+/* ── ONE TYPE KNOB: change this single value to rescale ALL text ── */
+html { font-size: 17px; }   /* stay in the 16–18px range */
+
+/* Then size by role (effective px at a 17px root shown in comments) */
+h1              { font-size: 2rem;     }  /* 34px page title */
+h2 / .sec-head  { font-size: 1.25rem;  }  /* ~21px section heads */
+h3 / card title { font-size: 0.95rem;  }  /* ~16px card titles */
+body text       { font-size: 0.85rem;  }  /* ~14.5px reading text — never below 14px effective */
+secondary text  { font-size: 0.78rem;  }  /* ~13px card paragraphs, list items */
+code / mono     { font-size: 0.74rem;  }  /* ~12.5px code blocks — never below 12px effective */
+labels / tags   { font-size: 0.65rem;  }  /* ~11px uppercase labels — never below 11px effective */
+```
+
+Minimum effective sizes (root × rem), enforced by the SKILL.md checklist: reading text ≥ 14px, secondary text/labels ≥ 11px, code/mono ≥ 12px. Mermaid SVG labels are the one exception — they stay in px because Mermaid's config sizes them (`fontSize: '16px'` in `mermaid.initialize`). When copying type sizes from the reference templates, convert their px values to this rem scale instead of copying them verbatim.
+
 ## Background Atmosphere
 
 Flat backgrounds feel dead. Use subtle gradients or patterns.
