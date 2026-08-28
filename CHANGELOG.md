@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+- Added optional `VISUAL_EXPLAINER_OUTPUT_DIR` support for local MCP render output while retaining `~/.agent/diagrams/` by default, with canonical jail and final-target symlink guards. Requested by [@bertheto](https://github.com/bertheto) in #88.
+- Added rem-based type-scale guidance for non-slide, scrollable pages, including copyable role selectors and readable minimums while preserving Mermaid and slide deck fitting contracts. Based on PR #95 by [@ZanziPanzi](https://github.com/ZanziPanzi).
+
+### Compatibility
+- Replaced the install documentation proposed in PRs #87 and #91 for issues #86 and #90 with native Cursor global/workspace skill paths and staged PowerShell skill replacements with rollback for Antigravity, Codex, and OpenCode. Credit: [@bertheto](https://github.com/bertheto) for #86/#90.
+
+### Fixed
+- Synchronized package, Claude Code marketplace, and plugin manifest versions to `0.10.0` after the mismatch reported by [@proxet-p35](https://github.com/proxet-p35) in #93.
+- Added a reduced-motion slide budget check that marks vertical overflow and `autoFit()` fallbacks instead of silently clipping or shrinking over-budget content, and aligned quote guidance at 150 characters. Reported by [@bertheto](https://github.com/bertheto) in #92.
+- Guarded the responsive-nav TOC history update for `file://` pages so scrolling still works without console errors. Based on PR #94 by [@ZanziPanzi](https://github.com/ZanziPanzi).
+
 ## [0.10.0] - 2026-08-20
 
 ### Highlights
