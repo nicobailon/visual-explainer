@@ -50,6 +50,26 @@ Always define both light and dark palettes via custom properties. Start with whi
 }
 ```
 
+## Type Scale (rem, one knob for scrollable pages)
+
+For non-slide, scrollable pages, size ordinary page text in `rem` against one root value so one line rescales the page without making reading text too small. The concrete selectors below are copyable CSS and meet the minimum effective sizes at a 16px root. Mermaid SVG labels remain in px because Mermaid sizes them through configuration. Slide decks are a separate contract: preserve their viewport-responsive `clamp(...px, ...vw, ...px)` typography and required `autoFit()` runtime fitting from `slide-patterns.md` and `slide-deck.html` instead of converting slide styles to rem.
+
+```css
+/* ONE TYPE KNOB: change this single value to rescale ordinary page text. */
+html { font-size: 16px; } /* choose a value in the 16–18px range */
+
+/* Role selectors below meet the minimums at a 16px root. */
+h1              { font-size: 2rem;      } /* 32px page title */
+h2, .sec-head   { font-size: 1.25rem;   } /* 20px section heads */
+h3, .card-title { font-size: 0.95rem;   } /* 15.2px card titles */
+body            { font-size: 0.875rem;  } /* 14px reading text */
+.secondary      { font-size: 0.75rem;   } /* 12px secondary text */
+code, pre       { font-size: 0.75rem;   } /* 12px code/mono */
+.label, .tag    { font-size: 0.6875rem; } /* 11px labels/tags */
+```
+
+When copying older reference snippets, convert ordinary page px values to this scale rather than copying them verbatim. Keep px where a rendering engine or the slide contract requires it.
+
 ## Background Atmosphere
 
 Flat backgrounds feel dead. Use subtle gradients or patterns.
