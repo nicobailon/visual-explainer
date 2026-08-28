@@ -1,6 +1,6 @@
 {
   "name": "visual-explainer",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, slide decks, and data tables",
   "scripts": {
     "check:versions": "node scripts/check-versions.mjs"

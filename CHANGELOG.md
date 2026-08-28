@@ -2,17 +2,26 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-28
+
+### Highlights
+- MCP users can choose where local HTML renders are saved without losing the default safe output directory.
+- Install instructions are clearer across Cursor, Antigravity, Codex, and OpenCode, including safer Windows copy commands.
+- Release metadata now has a guardrail so package and plugin versions stay in sync.
+- Slide decks make over-budget content easier to spot during reduced-motion review.
+- Local `file://` previews are quieter and more reliable when using the responsive table of contents.
+
 ### Added
-- Added optional `VISUAL_EXPLAINER_OUTPUT_DIR` support for local MCP render output while retaining `~/.agent/diagrams/` by default, with canonical jail and final-target symlink guards. Requested by [@bertheto](https://github.com/bertheto) in #88.
-- Added rem-based type-scale guidance for non-slide, scrollable pages, including copyable role selectors and readable minimums while preserving Mermaid and slide deck fitting contracts. Based on PR #95 by [@ZanziPanzi](https://github.com/ZanziPanzi).
+- Added optional `VISUAL_EXPLAINER_OUTPUT_DIR` support for MCP renders. The default remains `~/.agent/diagrams/`, and custom directories still stay inside a local output jail. Requested by [@bertheto](https://github.com/bertheto) in #88.
+- Added rem-based type-scale guidance for non-slide, scrollable pages, with copyable role selectors and readable minimums. Based on PR #95 by [@ZanziPanzi](https://github.com/ZanziPanzi).
 
 ### Compatibility
-- Replaced the install documentation proposed in PRs #87 and #91 for issues #86 and #90 with native Cursor global/workspace skill paths and staged PowerShell skill replacements with rollback for Antigravity, Codex, and OpenCode. Credit: [@bertheto](https://github.com/bertheto) for #86/#90.
+- Documented native Cursor global and workspace skill paths, plus staged PowerShell install commands with rollback for Antigravity, Codex, and OpenCode. Credit: [@bertheto](https://github.com/bertheto) for #86/#90.
 
 ### Fixed
-- Synchronized package, Claude Code marketplace, and plugin manifest versions to `0.10.0` after the mismatch reported by [@proxet-p35](https://github.com/proxet-p35) in #93.
-- Added a reduced-motion slide budget check that marks vertical overflow and `autoFit()` fallbacks instead of silently clipping or shrinking over-budget content, and aligned quote guidance at 150 characters. Reported by [@bertheto](https://github.com/bertheto) in #92.
-- Guarded the responsive-nav TOC history update for `file://` pages so scrolling still works without console errors. Based on PR #94 by [@ZanziPanzi](https://github.com/ZanziPanzi).
+- Fixed the stale nested Claude plugin version that made Claude Code report the wrong latest version after `0.10.0`, and added a version check across package, marketplace, plugin, and skill metadata. Reported by [@proxet-p35](https://github.com/proxet-p35) in #93.
+- Added a reduced-motion slide budget check that marks vertical overflow and `autoFit()` fallbacks instead of silently clipping or shrinking over-budget content. Reported by [@bertheto](https://github.com/bertheto) in #92.
+- Guarded the responsive-nav table-of-contents history update for `file://` pages so local scrolling still works without console errors. Based on PR #94 by [@ZanziPanzi](https://github.com/ZanziPanzi).
 
 ## [0.10.0] - 2026-08-20
 
