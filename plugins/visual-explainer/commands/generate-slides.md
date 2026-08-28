@@ -9,7 +9,7 @@ If `$@` contains the literal `--pptx` flag, remove that flag from the topic. Gen
 
 Before writing HTML, read `./templates/slide-deck.html`, `./references/slide-patterns.md`, and only the shared CSS/library sections needed for the source.
 
-Plan the deck first: inventory the source, map every item to slides, choose a narrative arc, and assign a composition to each slide. Use the 10 slide types and nav chrome from `slide-patterns.md`/`slide-deck.html`, including carousel dots, prev/next, slide count, and keyboard controls. Keep each slide to `100dvh`; split dense content across slides rather than scrolling or dropping content.
+Plan the deck first: inventory the source, map every item to slides, choose a narrative arc, and assign a composition to each slide. Use the 10 slide types and nav chrome from `slide-patterns.md`/`slide-deck.html`, including carousel dots, prev/next, slide count, and keyboard controls. Treat `100dvh` as a hard content budget: split dense content across slides rather than scrolling or dropping content. Before delivery, enable `prefers-reduced-motion: reduce` at the target viewport and a short landscape height; fix every overflow or `autoFit()` warning before shipping.
 
 Use visual-first slides: diagrams, charts, tables, SVG accents, and images from `surf` only when they clarify the story. Vary compositions; three centered slides in a row is a smell.
 

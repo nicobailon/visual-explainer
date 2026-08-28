@@ -1,6 +1,6 @@
 # Slide Deck Patterns
 
-CSS patterns, JS engine, slide type layouts, transitions, navigation chrome, and curated presets for self-contained HTML slide presentations. All slides are viewport-fit (100dvh), single-file, same philosophy as scrollable pages.
+CSS patterns, JS engine, slide type layouts, transitions, navigation chrome, and curated presets for self-contained HTML slide presentations. Every slide gets one `100dvh` viewport budget, but that CSS height does not prove that its content fits. Because the default slide clips overflow, run the delivery check below before shipping instead of relying on the browser to reveal a problem.
 
 **When to use slides:** Only when the user explicitly requests them — `/generate-slides`, `--slides` flag on an existing prompt, or natural language like "as a slide deck." Never auto-select slide format.
 
@@ -29,7 +29,7 @@ When converting a plan, spec, review, or any structured document into slides, fo
 
 ## Slide Engine Base
 
-The deck is a scroll-snap container. Each slide is exactly one viewport tall.
+The deck is a scroll-snap container. Each slide is allocated one viewport; only a passing delivery check proves that its content fits inside that `100dvh` budget.
 
 ```html
 <body>
@@ -52,7 +52,7 @@ The deck is a scroll-snap container. Each slide is exactly one viewport tall.
   -webkit-overflow-scrolling: touch;
 }
 
-/* Individual slide */
+/* Individual slide — keep overflow hidden only after the delivery check passes */
 .slide {
   height: 100dvh;
   scroll-snap-align: start;
@@ -266,7 +266,7 @@ Do not add quiz widgets, fact ledgers, validation scripts, fork updaters, or a s
 
 ## Auto-Fit
 
-A single post-render function that handles all known content overflow cases. Agents can't perfectly predict how text reflows at every viewport size, so `autoFit()` is a required safety net. Call it after Mermaid/Chart.js render but before SlideEngine init.
+A single post-render function that handles known rendering overflow cases. Agents can't perfectly predict how text reflows at every viewport size, so `autoFit()` is a safety net, never proof that the slide budget passed. Call it after Mermaid/Chart.js render but before SlideEngine init, then run the delivery check.
 
 ```javascript
 function autoFit() {
@@ -285,16 +285,20 @@ function autoFit() {
       var s = el.clientWidth / el.scrollWidth;
       el.style.transform = 'scale(' + s + ')';
       el.style.transformOrigin = 'left top';
+      var slide = el.closest('.slide');
+      if (slide) slide.setAttribute('data-auto-fit', 'KPI value');
     }
   });
 
-  // Blockquotes: reduce font proportionally for long text
+  // Blockquotes: reduce font proportionally only as a last-resort fallback
   document.querySelectorAll('.slide--quote blockquote').forEach(function(el) {
     var len = el.textContent.trim().length;
-    if (len > 100) {
-      var scale = Math.max(0.5, 100 / len);
+    if (len > 150) {
+      var scale = Math.max(0.5, 150 / len);
       var fs = parseFloat(getComputedStyle(el).fontSize);
       el.style.fontSize = Math.max(16, Math.round(fs * scale)) + 'px';
+      var slide = el.closest('.slide');
+      if (slide) slide.setAttribute('data-auto-fit', 'quote');
     }
   });
 }
@@ -302,8 +306,58 @@ function autoFit() {
 
 Three cases, one function:
 - **Mermaid:** SVGs render with fixed dimensions inside flex containers — force them to fill available width.
-- **KPI values:** Long text strings at hero scale overflow card boundaries — `transform: scale()` shrinks visually without reflow.
-- **Blockquotes:** Quotes longer than ~100 characters get proportionally smaller font. The 0.5 floor prevents unreadably small text; if it needs more than 50% shrink, it should have been a content slide.
+- **KPI values:** Long text strings at hero scale overflow card boundaries — `transform: scale()` shrinks visually without reflow. Mark the slide so the delivery check can still call out the fallback.
+- **Blockquotes:** Quotes over the ~150-character budget get proportionally smaller font. The 0.5 floor prevents unreadably small text, but `data-auto-fit="quote"` is still a review warning — split it into a content slide rather than treating the shrink as a pass.
+
+## Delivery Overflow Check
+
+`100dvh` is a hard content budget, not an instruction to hide overflow. Run the check at the target viewport and at a short landscape height with `prefers-reduced-motion: reduce` enabled. The reference template disables entrance states in that mode, outlines failures, and prints the offending slide numbers. It also keeps slides marked by `autoFit()` visible as review warnings, so a fallback cannot silently turn an over-budget slide into a pass.
+
+The check is intentionally self-contained and should run after fonts and Mermaid/Chart.js content settle. The reference template invokes the same check after rendering whenever reduced motion is enabled; retain that invocation in a custom deck or run this snippet manually during review:
+
+```javascript
+function checkSlideOverflow() {
+  var failures = [];
+  document.querySelectorAll('.slide').forEach(function(slide, index) {
+    var excess = Math.ceil(slide.scrollHeight - slide.clientHeight);
+    var autoFit = slide.getAttribute('data-auto-fit');
+    var reasons = [];
+    if (excess > 1) reasons.push('vertical overflow ' + excess + 'px');
+    if (autoFit) reasons.push('autoFit: ' + autoFit);
+
+    if (reasons.length) {
+      var kind = excess > 1 ? 'overflow' : 'auto-fit';
+      slide.setAttribute('data-slide-check', kind);
+      slide.setAttribute(
+        'data-slide-check-label',
+        excess > 1
+          ? 'OVERFLOW — split or reduce (' + excess + 'px)'
+          : 'AUTO-FIT USED — review budget (' + autoFit + ')'
+      );
+      failures.push('Slide ' + (index + 1) + ': ' + reasons.join('; '));
+    } else {
+      slide.removeAttribute('data-slide-check');
+      slide.removeAttribute('data-slide-check-label');
+    }
+  });
+
+  if (failures.length) {
+    console.error(
+      'Slide delivery check failed. ' + failures.join(' | ') +
+      '. Split or reduce content; autoFit is only a safety net.'
+    );
+  } else {
+    console.info('Slide delivery check passed: no vertical overflow or autoFit fallback.');
+  }
+  return failures;
+}
+
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  requestAnimationFrame(checkSlideOverflow);
+}
+```
+
+Do not ship with `data-slide-check` warnings unresolved. A flagged slide needs fewer items, a smaller composition, or another slide; do not solve a vertical failure by adding an inner scroller or by lowering readable type below the typography minimum.
 
 ## Slide Type Layouts
 
@@ -1027,7 +1081,7 @@ Slides get projected, screen-shared, viewed at distance. Design accordingly:
 
 ## Content Density Limits
 
-Each slide must fit in exactly 100dvh. If content exceeds these limits, the agent splits across multiple slides — never scrolls within a slide.
+Each slide has one `100dvh` content budget. The delivery check must pass before the deck is considered fit; `overflow: hidden` is a clipping guard, not a fit test. If content exceeds these limits, the agent splits across multiple slides — never scrolls within a slide or relies on `autoFit()` to conceal the excess.
 
 | Slide type | Max content |
 |-----------|-------------|
@@ -1039,7 +1093,7 @@ Each slide must fit in exactly 100dvh. If content exceeds these limits, the agen
 | Dashboard | 1 heading + 6 KPI cards. Hero values ≤6 chars (numbers, %, short labels). Longer strings belong in the label row. |
 | Table | 1 heading + 8 rows; overflow paginates to next slide |
 | Code | 1 heading + 10 lines of code |
-| Quote | 1 short quote (~25 words / ~150 chars max) + 1 attribution. Longer quotes are content slides, not quote slides. |
+| Quote | 1 short quote (~25 words / ~150 chars max) + 1 attribution. Quotes over 150 characters trigger the `autoFit()` review warning; move longer quotes to content slides. |
 | Full-Bleed | 1 heading + 1 subtitle over background |
 
 ## Responsive Height Breakpoints

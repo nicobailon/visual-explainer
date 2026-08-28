@@ -48,7 +48,7 @@ Read only the references needed for the current output:
 | Mermaid flowcharts, sequence, ER, state, class, C4, data flow | `./templates/mermaid-flowchart.html`, Mermaid sections in `./references/libraries.md` |
 | Data tables, comparisons, audits | `./templates/data-table.html` |
 | Slide decks | `./templates/slide-deck.html`, `./references/slide-patterns.md` |
-| CSS layout, overflow, depth, collapsibles, SVG connectors, generated images | `./references/css-patterns.md` |
+| CSS layout, type scale, overflow, depth, collapsibles, SVG connectors, generated images | `./references/css-patterns.md` |
 | Pages with 4+ major sections | `./references/responsive-nav.md` |
 | Switchable themes or fonts, or a named palette (Dracula, Nord, Gruvbox…) | `./references/themes.md` |
 | Prose-heavy pages | “Prose Page Elements” in `css-patterns.md`, typography sections in `libraries.md` |
@@ -96,6 +96,7 @@ How to render:
 - Anchor the aesthetic direction to the content's domain: CLI/infra → terminal or IDE-inspired; metrics/audits → data-dense; plans/architecture → blueprint; recaps → editorial; prose → paper/ink. Warm cream + serif + terracotta on everything is itself a cliché.
 - Avoid generic defaults when choosing freely (a project's existing design system overrides this list): no body font that is only Inter, Roboto, Arial, Helvetica, or system-ui; no violet/fuchsia Tailwind-default accents as the main palette (`#8b5cf6`, `#7c3aed`, `#a78bfa`, `#d946ef`); no cyan+magenta+purple neon dashboard; no gradient-mesh blobs; no purple-to-blue gradient heroes, emoji section markers, centered-everything layouts, uniform large border-radius, or default accent bars on rounded cards.
 - Set type deliberately: running text near 65ch, a committed type scale, `text-wrap: balance` on headings, letter-spacing on uppercase labels.
+- For non-slide, scrollable pages, use a rem-based type scale with one root knob: set `html { font-size: 16px }` (choose a value in the 16–18px range) and express ordinary page text in `rem`, so a single line rescales the page. Minimum effective sizes at the chosen root: body/reading text ≥ 14px, secondary text and labels ≥ 11px, code/mono ≥ 12px. Never hard-code reading text below 14px in px — dense all-px scales render as unreadable dashboards. Mermaid SVG labels remain in px because Mermaid sizes them through configuration. Slide decks are a deliberate exception: preserve their viewport-responsive `clamp(...px, ...vw, ...px)` typography and `autoFit()` runtime fitting from `slide-patterns.md` and `slide-deck.html`; do not force slide styles into rem. Reference snippets and templates demonstrate structure; re-scale ordinary page px values when copying them.
 - Bias neutrals toward the accent hue; pure mid-grey reads as unconsidered. Space siblings with flex/grid `gap`, not collapsing margins; `tabular-nums` where digits align in columns; watch specificity so classes do not silently cancel each other's spacing.
 - Microcopy is design material: name things by what readers recognize, not internal structure; controls say exactly what happens; specific beats clever.
 - Dashboards are scanned, not read: summary before detail; encode state in form (pills, chips, severity stripes); keep semantic color separate from the accent hue; interactive things look interactive.
@@ -113,7 +114,7 @@ Use slides only when explicitly requested or when a command asks for slides. Sli
 
 Slides rules:
 
-- Each slide is one viewport (`100dvh`) with no page-level scrolling.
+- Each slide gets one `100dvh` viewport budget with no page-level scrolling. The template's `overflow: hidden` can clip excess content silently, so enable `prefers-reduced-motion: reduce` at target and short landscape heights, then fix every vertical-overflow or `autoFit()` warning before delivery.
 - Use larger type, fewer objects per slide, varied compositions, and visible navigation.
 - Include slide nav chrome from `slide-deck.html`: prev/next controls, slide count with reading percent, keyboard navigation, expandable reader rail, outline/help overlays, `#slide-N` deep links, and resume state.
 - Before writing HTML, inventory the source and map every source item to slides.
@@ -140,7 +141,8 @@ Before delivery, verify:
 - both color schemes hold up, or single-theme was deliberate;
 - Mermaid diagrams use `diagram-shell` with zoom/pan/expand;
 - a runtime picker, if present, swaps palette and font variables and re-renders every diagram;
-- slides fit one viewport, include reader rail plus outline/help navigation, and preserve source coverage; if PPTX was requested, the static `.pptx` was generated after the HTML deck and its fidelity limits were stated;
+- slides fit one viewport, include reader rail plus outline/help navigation, preserve source coverage, and pass the template's overflow/autoFit delivery check under reduced motion; if PPTX was requested, the static `.pptx` was generated after the HTML deck and its fidelity limits were stated;
+- non-slide, scrollable page type uses rem with one root knob and meets the minimum effective sizes (body ≥ 14px, labels ≥ 11px, mono ≥ 12px); Mermaid SVG labels may remain config-driven px, while slide decks retain their `clamp()` typography and `autoFit()` runtime fitting;
 - visual hierarchy makes the main idea obvious in the first viewport;
 - styling would still be recognizable if compared against a generic dark/violet template;
 - if requested, the Markdown companion is a concise source brief that matches the delivered HTML without becoming its source of truth.
