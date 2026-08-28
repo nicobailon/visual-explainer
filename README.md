@@ -37,7 +37,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
-| Cursor | Rules-based guidance | Add the supplied `.mdc` rule; Cursor is not treated as native Agent Skills support |
+| Cursor | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.cursor/skills/visual-explainer` globally or `.cursor/skills/visual-explainer` per workspace; optional legacy rule in `configs/cursor/` |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 | VS Code Copilot / Copilot CLI | Custom instructions or rules guidance | Add the supplied AGENTS guidance to your supported workspace instruction or rules setup |
 
@@ -89,7 +89,7 @@ curl -fsSL https://raw.githubusercontent.com/nicobailon/visual-explainer/main/in
 
 **MCP:**
 
-Use `visual-explainer-mcp` from a package install, or run `npm install --no-package-lock` before pointing your host at `plugins/visual-explainer/mcp/server.mjs` from a checkout. Some hosts need an absolute path to the binary. The MCP server is local stdio only. It does not call an LLM, start an HTTP listener, handle credentials, or write outside `~/.agent/diagrams/`.
+Use `visual-explainer-mcp` from a package install, or run `npm install --no-package-lock` before pointing your host at `plugins/visual-explainer/mcp/server.mjs` from a checkout. Some hosts need an absolute path to the binary. The MCP server is local stdio only. It does not call an LLM, start an HTTP listener, handle credentials, or write outside its configured output directory (default `~/.agent/diagrams/`). Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths are rejected. Render targets reject existing symlinks and are written through a temporary file rename. Point the jail at a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write.
 
 Example package configuration:
 
@@ -132,6 +132,44 @@ cp -R /tmp/visual-explainer/plugins/visual-explainer ~/.gemini/antigravity-cli/s
 rm -rf /tmp/visual-explainer
 ```
 
+PowerShell (global):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = Join-Path $env:USERPROFILE ".gemini\antigravity-cli\skills\visual-explainer"
+$parent = Split-Path -Parent $dest
+$run = $null
+$staging = $null
+$backup = $null
+$moved = $false
+$attempted = $false
+$installed = $false
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  $repo = Join-Path $tmp 'repo'
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $repo
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  $run = Join-Path $parent (".visual-explainer-install-" + [guid]::NewGuid().ToString())
+  $staging = Join-Path $run 'staging'
+  $backup = Join-Path $run 'backup'
+  New-Item -ItemType Directory -Force -Path $run | Out-Null
+  Copy-Item -LiteralPath (Join-Path $repo 'plugins\visual-explainer') -Destination $staging -Recurse -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $staging 'SKILL.md') -PathType Leaf)) { throw 'staged skill is incomplete' }
+  if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination $backup; $moved = $true }
+  $attempted = $true
+  Move-Item -LiteralPath $staging -Destination $dest
+  $installed = $true
+} finally {
+  if (-not $installed -and $attempted) {
+    if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination (Join-Path $run 'failed') -ErrorAction SilentlyContinue }
+    if ($moved -and (Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $dest)) { Move-Item -LiteralPath $backup -Destination $dest -ErrorAction SilentlyContinue }
+  }
+  if ($run -and ((-not (Test-Path -LiteralPath $backup)) -or $installed)) { Remove-Item -LiteralPath $run -Recurse -Force -ErrorAction SilentlyContinue }
+  Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+```
+
 Workspace install:
 ```bash
 git clone --depth 1 https://github.com/nicobailon/visual-explainer.git /tmp/visual-explainer
@@ -140,6 +178,44 @@ mkdir -p .agents/skills
 cp -R /tmp/visual-explainer/plugins/visual-explainer .agents/skills/visual-explainer
 
 rm -rf /tmp/visual-explainer
+```
+
+PowerShell (workspace):
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = ".agents\skills\visual-explainer"
+$parent = Split-Path -Parent $dest
+$run = $null
+$staging = $null
+$backup = $null
+$moved = $false
+$attempted = $false
+$installed = $false
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  $repo = Join-Path $tmp 'repo'
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $repo
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  $run = Join-Path $parent (".visual-explainer-install-" + [guid]::NewGuid().ToString())
+  $staging = Join-Path $run 'staging'
+  $backup = Join-Path $run 'backup'
+  New-Item -ItemType Directory -Force -Path $run | Out-Null
+  Copy-Item -LiteralPath (Join-Path $repo 'plugins\visual-explainer') -Destination $staging -Recurse -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $staging 'SKILL.md') -PathType Leaf)) { throw 'staged skill is incomplete' }
+  if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination $backup; $moved = $true }
+  $attempted = $true
+  Move-Item -LiteralPath $staging -Destination $dest
+  $installed = $true
+} finally {
+  if (-not $installed -and $attempted) {
+    if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination (Join-Path $run 'failed') -ErrorAction SilentlyContinue }
+    if ($moved -and (Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $dest)) { Move-Item -LiteralPath $backup -Destination $dest -ErrorAction SilentlyContinue }
+  }
+  if ($run -and ((-not (Test-Path -LiteralPath $backup)) -or $installed)) { Remove-Item -LiteralPath $run -Recurse -Force -ErrorAction SilentlyContinue }
+  Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
 ```
 
 Launch `agy` in the project and use `/skills` to confirm `visual-explainer` is discovered. Ask Antigravity to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables. Antigravity SDK projects can reuse the same `SKILL.md` content as an Agent Skill resource, but this repo does not ship a separate SDK wrapper. The bundled prompt templates remain reference markdown under `plugins/visual-explainer/commands/`; no separate Antigravity plugin adapter is included.
@@ -157,6 +233,47 @@ cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.codex/prompts
 rm -rf /tmp/visual-explainer
 ```
 
+PowerShell:
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = Join-Path $env:USERPROFILE ".codex\skills\visual-explainer"
+$parent = Split-Path -Parent $dest
+$promptDir = Join-Path $env:USERPROFILE ".codex\prompts"
+$run = $null
+$staging = $null
+$backup = $null
+$moved = $false
+$attempted = $false
+$installed = $false
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  $repo = Join-Path $tmp 'repo'
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $repo
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path $parent, $promptDir | Out-Null
+  $run = Join-Path $parent (".visual-explainer-install-" + [guid]::NewGuid().ToString())
+  $staging = Join-Path $run 'staging'
+  $backup = Join-Path $run 'backup'
+  New-Item -ItemType Directory -Force -Path $run | Out-Null
+  Copy-Item -LiteralPath (Join-Path $repo 'plugins\visual-explainer') -Destination $staging -Recurse -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $staging 'SKILL.md') -PathType Leaf)) { throw 'staged skill is incomplete' }
+  # Optional, only if your Codex build supports prompt templates:
+  Copy-Item -Path (Join-Path $staging 'commands\*.md') -Destination $promptDir -Force
+  if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination $backup; $moved = $true }
+  $attempted = $true
+  Move-Item -LiteralPath $staging -Destination $dest
+  $installed = $true
+} finally {
+  if (-not $installed -and $attempted) {
+    if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination (Join-Path $run 'failed') -ErrorAction SilentlyContinue }
+    if ($moved -and (Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $dest)) { Move-Item -LiteralPath $backup -Destination $dest -ErrorAction SilentlyContinue }
+  }
+  if ($run -and ((-not (Test-Path -LiteralPath $backup)) -or $installed)) { Remove-Item -LiteralPath $run -Recurse -Force -ErrorAction SilentlyContinue }
+  Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+```
+
 Invoke with `$visual-explainer` or ask Codex to use the `visual-explainer` skill. If prompts are installed and supported, use `/prompts:diff-review`, `/prompts:plan-review`, etc.
 
 **OpenCode/opencode:**
@@ -172,11 +289,135 @@ cp /tmp/visual-explainer/plugins/visual-explainer/commands/*.md ~/.config/openco
 rm -rf /tmp/visual-explainer
 ```
 
+PowerShell:
+```powershell
+$ErrorActionPreference = 'Stop'
+$tmp = Join-Path $env:TEMP ("visual-explainer-" + [guid]::NewGuid().ToString())
+$dest = Join-Path $env:USERPROFILE ".config\opencode\skill\visual-explainer"
+$parent = Split-Path -Parent $dest
+$promptDir = Join-Path $env:USERPROFILE ".config\opencode\command"
+$run = $null
+$staging = $null
+$backup = $null
+$moved = $false
+$attempted = $false
+$installed = $false
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+try {
+  $repo = Join-Path $tmp 'repo'
+  git clone --depth 1 https://github.com/nicobailon/visual-explainer.git $repo
+  if ($LASTEXITCODE -ne 0) { throw "git clone failed with exit code $LASTEXITCODE" }
+  New-Item -ItemType Directory -Force -Path $parent, $promptDir | Out-Null
+  $run = Join-Path $parent (".visual-explainer-install-" + [guid]::NewGuid().ToString())
+  $staging = Join-Path $run 'staging'
+  $backup = Join-Path $run 'backup'
+  New-Item -ItemType Directory -Force -Path $run | Out-Null
+  Copy-Item -LiteralPath (Join-Path $repo 'plugins\visual-explainer') -Destination $staging -Recurse -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $staging 'SKILL.md') -PathType Leaf)) { throw 'staged skill is incomplete' }
+  # Optional command templates:
+  Copy-Item -Path (Join-Path $staging 'commands\*.md') -Destination $promptDir -Force
+  if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination $backup; $moved = $true }
+  $attempted = $true
+  Move-Item -LiteralPath $staging -Destination $dest
+  $installed = $true
+} finally {
+  if (-not $installed -and $attempted) {
+    if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination (Join-Path $run 'failed') -ErrorAction SilentlyContinue }
+    if ($moved -and (Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $dest)) { Move-Item -LiteralPath $backup -Destination $dest -ErrorAction SilentlyContinue }
+  }
+  if ($run -and ((-not (Test-Path -LiteralPath $backup)) -or $installed)) { Remove-Item -LiteralPath $run -Recurse -Force -ErrorAction SilentlyContinue }
+  Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+}
+```
+
 Activate it by asking OpenCode to use the `visual-explainer` skill. Command-template behavior depends on the installed OpenCode/opencode build.
 
 **Cursor:**
 
-Add `configs/cursor/visual-explainer.mdc` to your Cursor rules, or copy its contents into the project rules UI. This is rules-based guidance that points Cursor at the canonical skill; it does not claim native Agent Skills support.
+Cursor loads Agent Skills from `~/.cursor/skills/` globally and `.cursor/skills/` at the workspace level. Copy the canonical skill directory there and Cursor discovers it from the `name:` field in `SKILL.md`.
+
+Global install:
+```bash
+set -euo pipefail
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/visual-explainer.XXXXXX")"
+dest="$HOME/.cursor/skills/visual-explainer"
+parent="$(dirname "$dest")"
+run=''
+stage=''
+backup=''
+moved=0
+installed=0
+cleanup() {
+  status=$?
+  if [ "$status" -ne 0 ] && [ "$moved" -eq 1 ] && [ "$installed" -eq 0 ]; then
+    if [ -e "$dest" ]; then mv -- "$dest" "$run/failed" || true; fi
+    if [ -e "$backup" ]; then mv -- "$backup" "$dest" || true; fi
+  fi
+  if [ -n "$run" ] && { [ "$installed" -eq 1 ] || [ ! -e "$backup" ]; }; then
+    rm -rf -- "$run" || true
+  fi
+  rm -rf -- "$tmp" || true
+}
+trap cleanup EXIT
+if git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$tmp/repo"; then :; else
+  status=$?
+  echo "git clone failed with exit code $status" >&2
+  exit "$status"
+fi
+mkdir -p "$parent"
+run="$(mktemp -d "$parent/.visual-explainer-install.XXXXXX")"
+stage="$run/staging"
+backup="$run/backup"
+cp -R "$tmp/repo/plugins/visual-explainer" "$stage"
+test -f "$stage/SKILL.md"
+if [ -e "$dest" ]; then mv -- "$dest" "$backup"; moved=1; fi
+mv -- "$stage" "$dest"
+installed=1
+```
+
+Workspace install:
+```bash
+set -euo pipefail
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/visual-explainer.XXXXXX")"
+dest=".cursor/skills/visual-explainer"
+parent="$(dirname "$dest")"
+run=''
+stage=''
+backup=''
+moved=0
+installed=0
+cleanup() {
+  status=$?
+  if [ "$status" -ne 0 ] && [ "$moved" -eq 1 ] && [ "$installed" -eq 0 ]; then
+    if [ -e "$dest" ]; then mv -- "$dest" "$run/failed" || true; fi
+    if [ -e "$backup" ]; then mv -- "$backup" "$dest" || true; fi
+  fi
+  if [ -n "$run" ] && { [ "$installed" -eq 1 ] || [ ! -e "$backup" ]; }; then
+    rm -rf -- "$run" || true
+  fi
+  rm -rf -- "$tmp" || true
+}
+trap cleanup EXIT
+if git clone --depth 1 https://github.com/nicobailon/visual-explainer.git "$tmp/repo"; then :; else
+  status=$?
+  echo "git clone failed with exit code $status" >&2
+  exit "$status"
+fi
+mkdir -p "$parent"
+run="$(mktemp -d "$parent/.visual-explainer-install.XXXXXX")"
+stage="$run/staging"
+backup="$run/backup"
+cp -R "$tmp/repo/plugins/visual-explainer" "$stage"
+test -f "$stage/SKILL.md"
+if [ -e "$dest" ]; then mv -- "$dest" "$backup"; moved=1; fi
+mv -- "$stage" "$dest"
+installed=1
+```
+
+
+Ask Cursor to use the `visual-explainer` skill for diagrams, visual reviews, slide decks, and complex tables.
+
+Optional legacy rule: add `configs/cursor/visual-explainer.mdc` to your Cursor rules if you prefer rules-based guidance over relying on skill discovery alone.
 
 **OpenClaw:**
 

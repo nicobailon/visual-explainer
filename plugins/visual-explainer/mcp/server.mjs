@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -108,6 +109,34 @@ function outputFilename(input) {
   if (raw.includes("..")) throw new Error("filename must not contain '..'");
 
   return /\.html?$/i.test(raw) ? raw : `${raw}.html`;
+}
+
+function resolveOutputDirectory() {
+  const configured = process.env.VISUAL_EXPLAINER_OUTPUT_DIR?.trim();
+  return {
+    path: configured ? resolve(configured) : join(homedir(), ".agent", "diagrams"),
+    configured: Boolean(configured),
+  };
+}
+
+function assertOutputPathContained(resolvedDir, outputPath) {
+  const resolvedPath = resolve(outputPath);
+  const dirPrefix = resolvedDir.endsWith(sep) ? resolvedDir : `${resolvedDir}${sep}`;
+  if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(dirPrefix)) {
+    throw new Error(`${outputPath} must stay inside ${resolvedDir}`);
+  }
+}
+
+function writeRenderedFile(outputPath, html) {
+  const temporaryPath = `${outputPath}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporaryPath, html, { encoding: "utf8", flag: "wx", mode: 0o666 });
+    renameSync(temporaryPath, outputPath);
+  } catch (error) {
+    throw error;
+  } finally {
+    rmSync(temporaryPath, { force: true });
+  }
 }
 
 function assertHtmlDocument(html) {
@@ -243,7 +272,7 @@ function prepareVisualExplanation(params) {
     "Gather and verify the source facts in the host model. The MCP server does not call an LLM.",
     "For custom output, generate a complete self-contained HTML document and call visual_explainer_render_html.",
     "For explicit quick mode, build a compact spec that follows visual-explainer://quick/schema.json and call visual_explainer_render_quick.",
-    "Keep output filenames as basenames. The MCP server writes only under ~/.agent/diagrams/.",
+    "Keep output filenames as basenames. The MCP server writes only inside its configured output directory (default ~/.agent/diagrams/).",
   ];
 
   const structuredContent = { topic, goal, audience, files, recommendedFlow };
@@ -263,16 +292,23 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer) {
   const filename = outputFilename(filenameInput);
   assertHtmlDocument(htmlInput);
   const html = prepareRenderedHtml(htmlInput);
-  const outputDir = join(homedir(), ".agent", "diagrams");
+  const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
 
   const outputDirStatus = lstatSync(outputDir, { throwIfNoEntry: false });
   if (outputDirStatus?.isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
   mkdirSync(outputDir, { recursive: true });
+
+  const resolvedDir = realpathSync(outputDir);
+  if (configured && resolvedDir !== outputDir) {
+    throw new Error(`${outputDir} must not contain symlinks and must resolve to itself`);
+  }
+  assertOutputPathContained(resolvedDir, join(resolvedDir, filename));
+
   const outputStatus = lstatSync(outputPath, { throwIfNoEntry: false });
   if (outputStatus?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
 
-  writeFileSync(outputPath, html, "utf8");
+  writeRenderedFile(outputPath, html);
 
   const openResult = open ? await openRenderedPage(outputPath, viewer) : { openAttempted: false, openStatus: "disabled" };
   let message = `Wrote ${outputPath}.`;
@@ -350,7 +386,7 @@ function registerTools(server) {
 
   server.registerTool("visual_explainer_render_html", {
     title: "Render Visual Explainer HTML",
-    description: "Validate and write a complete self-contained HTML document to ~/.agent/diagrams/. Does not call an LLM.",
+    description: "Validate and write a complete self-contained HTML document to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
     inputSchema: renderInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
@@ -365,7 +401,7 @@ function registerTools(server) {
 
   server.registerTool("visual_explainer_render_quick", {
     title: "Render Visual Explainer Quick Spec",
-    description: "Validate a quick-mode JSON spec and render it to ~/.agent/diagrams/. Does not call an LLM.",
+    description: "Validate a quick-mode JSON spec and render it to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
     inputSchema: renderQuickInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },

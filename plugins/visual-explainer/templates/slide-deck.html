@@ -136,11 +136,40 @@
   .slide.visible .reveal:nth-child(5) { transition-delay: 0.5s; }
   .slide.visible .reveal:nth-child(6) { transition-delay: 0.6s; }
 
+  /* Reduced-motion mode doubles as the delivery check. Never use a clipped slide as proof of fit. */
   @media (prefers-reduced-motion: reduce) {
-    .slide, .slide .reveal {
+    .slide,
+    .slide .reveal {
       opacity: 1 !important;
       transform: none !important;
       transition: none !important;
+    }
+    .slide[data-slide-check] {
+      outline: 4px solid var(--red);
+      outline-offset: -4px;
+    }
+    .slide[data-slide-check="auto-fit"] {
+      outline-color: var(--accent);
+    }
+    .slide[data-slide-check]::after {
+      content: attr(data-slide-check-label);
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      z-index: 20;
+      max-width: calc(100% - 32px);
+      padding: 6px 10px;
+      transform: translateX(-50%);
+      border-radius: 4px;
+      color: var(--bg);
+      background: var(--red);
+      font: 600 11px/1.2 var(--font-mono);
+      letter-spacing: 0.4px;
+      text-align: center;
+      pointer-events: none;
+    }
+    .slide[data-slide-check="auto-fit"]::after {
+      background: var(--accent);
     }
   }
 
@@ -894,6 +923,7 @@ graph LR
     }
   });
 
+  // Safety net only; reduced-motion delivery checks still report its fallbacks.
   function autoFit() {
     document.querySelectorAll('.mermaid svg').forEach(function(svg) {
       svg.removeAttribute('height');
@@ -907,22 +937,72 @@ graph LR
         var s = el.clientWidth / el.scrollWidth;
         el.style.transform = 'scale(' + s + ')';
         el.style.transformOrigin = 'left top';
+        var slide = el.closest('.slide');
+        if (slide) slide.setAttribute('data-auto-fit', 'KPI value');
       }
     });
     document.querySelectorAll('.slide--quote blockquote').forEach(function(el) {
       var len = el.textContent.trim().length;
-      if (len > 100) {
-        var scale = Math.max(0.5, 100 / len);
+      if (len > 150) {
+        var scale = Math.max(0.5, 150 / len);
         var fs = parseFloat(getComputedStyle(el).fontSize);
         el.style.fontSize = Math.max(16, Math.round(fs * scale)) + 'px';
+        var slide = el.closest('.slide');
+        if (slide) slide.setAttribute('data-auto-fit', 'quote');
       }
     });
   }
 
-  mermaid.run().then(function() {
+  function checkSlideOverflow() {
+    var failures = [];
+    document.querySelectorAll('.slide').forEach(function(slide, index) {
+      var excess = Math.ceil(slide.scrollHeight - slide.clientHeight);
+      var autoFit = slide.getAttribute('data-auto-fit');
+      var reasons = [];
+      if (excess > 1) reasons.push('vertical overflow ' + excess + 'px');
+      if (autoFit) reasons.push('autoFit: ' + autoFit);
+      if (reasons.length) {
+        var kind = excess > 1 ? 'overflow' : 'auto-fit';
+        slide.setAttribute('data-slide-check', kind);
+        slide.setAttribute(
+          'data-slide-check-label',
+          excess > 1
+            ? 'OVERFLOW — split or reduce (' + excess + 'px)'
+            : 'AUTO-FIT USED — review budget (' + autoFit + ')'
+        );
+        failures.push('Slide ' + (index + 1) + ': ' + reasons.join('; '));
+      } else {
+        slide.removeAttribute('data-slide-check');
+        slide.removeAttribute('data-slide-check-label');
+      }
+    });
+    if (failures.length) {
+      console.error(
+        'Slide delivery check failed. ' + failures.join(' | ') +
+        '. Split or reduce content; autoFit is only a safety net.'
+      );
+    } else {
+      console.info('Slide delivery check passed: no vertical overflow or autoFit fallback.');
+    }
+    return failures;
+  }
+
+  function finishSlideRender() {
     autoFit();
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var runCheck = function() { requestAnimationFrame(checkSlideOverflow); };
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(runCheck);
+    } else {
+      runCheck();
+    }
+  }
+
+  mermaid.run().then(function() {
+    finishSlideRender();
   }).catch(function(error) {
     console.error(error);
+    finishSlideRender();
   });
 </script>
 
