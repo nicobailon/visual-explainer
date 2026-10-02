@@ -33,7 +33,7 @@ y:210                  ┌──▼───┐
     <g class="ve-n is-key" transform="translate(280 60)"><rect width="160" height="60" rx="6"/><text x="80" y="30">API</text></g>
     <path class="ve-e" d="M200 90H280" marker-end="url(#ah)"/><text class="ve-el" x="240" y="80">GET /u</text>
   </svg>
-  <figcaption>Cache hits never reach the database.</figcaption>
+  <figcaption><span class="fig-n">Fig. 1</span>Cache hits never reach the database.</figcaption>
 </figure>
 ```
 
@@ -54,7 +54,7 @@ Edge language: solid = sync call · dashed = async or optional · thick accent =
 
 ## Linked highlighting
 
-Any element with `data-ref` is linked to every other element with the same ref: a term in the prose, a node or edge in the figure, a table row, a legend button. Hover or focus one, and all of them light up while the rest of that figure dims. One element can carry several refs (`data-ref="hit miss"`).
+Any element with `data-ref` is linked to every other element with the same ref: a term in the prose, a node or edge in the figure, a table row, a legend button. Hover any of them, or focus a prose term or button, and all of them light up while the other shapes in the figure dim. Prose terms get `tabindex="0"` so the keyboard reaches them. One element can carry several refs (`data-ref="hit miss"`).
 
 ```html
 <p>The API asks <span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> first.</p>
@@ -73,17 +73,17 @@ This is the most useful interaction for teaching. The full drawing appears faint
   <svg class="ve-svg" ...>  <!-- data-s="N": part appears at step N -->
     <g class="ve-n" data-s="1">…</g> <path class="ve-e" data-s="2" pathLength="1" …/>
   </svg>
-  <ol class="ve-cap"><li>Client sends GET /u.</li><li>API checks the cache first.</li></ol>
-  <div class="ve-ctl">
+  <div class="ve-player">
+    <ol class="ve-cap"><li data-n="1/2">Client sends GET /u.</li><li data-n="2/2">API checks the cache first.</li></ol>
     <button data-go="-1" aria-label="Previous step">←</button>
     <button data-play>Play</button>
-    <input type="range" min="0" value="0" aria-label="Scene">
+    <input type="range" min="0" value="0" aria-label="Step">
     <button data-go="1" aria-label="Next step">→</button>
   </div>
-  <figcaption>(the claim, one sentence)</figcaption>
+  <figcaption><span class="fig-n">Fig. 2</span>(the claim, one sentence)</figcaption>
 </figure>
 ```
-Copy the `.ve-steps` CSS and script from `templates/page.html` as they are. A part with `data-s="N"` stays faint until step N, then turns `.on`. The current step's parts also get `.now`. A path with `pathLength="1"` draws itself in.
+Copy the `.ve-steps` and `.ve-player` CSS and the script from `templates/page.html` as they are. A shape with `data-s="N"` stays a faint outline, with its label hidden, until step N. Then it turns `.on`. The current step's parts also get `.now`. A path with `pathLength="1"` draws itself in.
 
 Scene rules: one claim per scene. Each caption is one sentence. Something visibly changes at every step. Open on the complete picture, because the first viewport must show the answer. Never autoplay. Keep Play available under reduced motion, because the reader starts it.
 

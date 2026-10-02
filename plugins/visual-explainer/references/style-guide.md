@@ -31,7 +31,7 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 ## Visual principles
 
 1. **Quiet ground, one signal.** About 90% of the page is neutral. The accent marks only what the reader must look at now: the key node, the hot path, the active control, the one number that matters.
-2. **The figure is the interface.** A term in the prose and its element in the figure are linked: hover or focus either one, and both light up (`diagrams.md` → Linked highlighting). Data elements show their exact value on hover or focus.
+2. **The figure is the interface.** A term in the prose and its element in the figure are linked. Hover either one, or focus the prose term, and both light up (`diagrams.md` → Linked highlighting). Data elements show their exact value on hover or focus.
 3. **Overview, then detail.** The full picture comes first. The reader zooms, steps, or expands to get detail. Raw material goes in `<details>`.
 4. **Label in place.** Put labels next to lines, bars, and areas. Use a legend only when in-place labels do not fit.
 5. **Space before lines, lines before boxes.** Group with space first. Use a 1px rule when space is not enough. Use a frame only when the content is one unit.
@@ -56,11 +56,11 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 | Decision | Rule |
 |---|---|
 | Spacing | Scale steps only. Inside a component: `s-2`–`s-4`. Between components: `s-5`–`s-6`. Between sections: `s-8`. A bigger gap means less related. |
-| Type | Seven sizes, no others. `--t-hero` only in Editorial. Body 400, line height 1.6. Headings 600 (or the display face at 400–500), line height 1.1–1.25, tracking −0.02em at `h1` and larger. Mono only for code, IDs, paths, and data labels. |
+| Type | Seven sizes, no others; the only exceptions are sizes a component spec names (KPI value). `--t-hero` only in Editorial. `--t-small` only for buttons, code, and mono labels; sentences use `--t-body` or larger. Body 400, line height 1.6. Headings 600 (or the display face at 400–500), line height 1.2–1.25, or 1.05 at `h1` and larger, with −0.02 to −0.03em tracking. Mono only for code, IDs, paths, and data labels. |
 | Labels | Mono, `--t-label`, `--text-dim`. Uppercase with `.08em` tracking only for 3 words or fewer. |
-| Radius | `r-1` for chips, buttons, and inputs. `r-2` for frames and tables. Nothing else is rounded. Blueprint uses `r-1` everywhere. |
+| Radius | `r-1` for chips, buttons, inputs, and inline highlights. `r-2` for frames, tables, and overlays. Nothing else is rounded. Blueprint uses `r-1` everywhere. |
 | Accent | One accent, on 10% of the screen or less. Status colors (`ok warn risk info`) only mean status. |
-| Motion | Animate only `transform`, `opacity`, and `stroke-dashoffset`. `fast` for hover, `med` for state, `slow` for steps. Always `--ease`. |
+| Motion | Move and reveal only with `transform`, `opacity`, and `stroke-dashoffset`. Color changes on hover and highlight may fade at `fast`. `med` for state, `slow` for steps. Always `--ease`. |
 | Layout | Column max 64rem. Text max 68ch. Figures use the full column. Card grids: `repeat(auto-fit, minmax(13rem, 1fr))`. |
 
 ## Components
@@ -68,11 +68,12 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 | Component | Spec |
 |---|---|
 | Page header | Eyebrow label → `h1` that states the answer → lead (`t-lead`, `--text-dim`, one bold phrase in `--text`). `s-4` between them. |
-| Figure | `<figure>` → `.frame` (surface, 1px border, `r-2`, padding `s-5`) → `<figcaption>` (`t-small`, `--text-dim`) that starts with `Fig. N` in mono and states the claim. |
+| Figure | `<figure>` → `.frame` (surface, 1px border, `r-2`, padding `s-5`) → `<figcaption>` (`t-body`, `--text-dim`) that starts with `Fig. N` in mono and states the claim. |
+| Dimming | To focus part of a figure, fade shapes and lines to 15–25% opacity. Never fade text: dimmed labels change to `--text-dim`, and labels of future steps are hidden. Never put accent-colored text on `--accent-dim`; use `--text` there. |
 | Diagram | Node: `--bg` fill, 1.5 `--border-bright` stroke, rx 6. Key node: 2.5 `--accent`. Edge: 1.75 `--text-dim`. Hot edge: 2.75 `--accent`. Async: dash `6 5`. Edge labels: mono, 14 units, 9 units above the line. Identical in every figure. |
 | KPI strip | One frame. Cells split by 1px rules (`gap:1px` over a `--border` background). Each cell: label → value (2.4rem, 600, tabular, −0.03em) → signed delta or sparkline. |
 | Chip | Mono `t-label` 600, 1px `currentColor` border, `r-1`. Shape and word: ● ok · ▲ warn · ■ risk · ◆ info. |
-| Table | Header: surface, label style. Cells: `s-3 s-4`. Row rules only. Numbers right-aligned and tabular. Inside `.table-scroll` with an `r-2` frame. |
+| Table | Header: surface, label style. Cells: `t-body`, padding `s-3 s-4`. Row rules only. Numbers right-aligned and tabular. Inside `.table-scroll` with an `r-2` frame. |
 | Button | Mono `t-small`, surface, 1px `--border-bright`, `r-1`, padding `s-2 s-3`. Hover and focus: accent border. |
 | Callout | Surface, `r-2`, padding `s-4`, a status chip as its title. No colored side bar. |
 | Code | Mono `t-small`, surface, `r-2`, padding `s-4`, scrolls horizontally. Inline code: `.875em`, no box. |
@@ -85,4 +86,4 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 - `::selection` uses `--accent-dim`. Sections get `scroll-margin-top` under a sticky nav.
 - Hover and focus look the same. Every control has a visible focus ring.
 - Nothing shifts on load: every SVG has a `viewBox`, and every image has a width and height.
-- `@media print`: hide controls, use a white ground, and show all steps.
+- `@media print`: switch to the light-scheme values on a white ground, hide controls, and show every step fully drawn.

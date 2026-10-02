@@ -52,7 +52,7 @@
 
   /* figure */
   .frame { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-5); overflow-x: auto; }
-  figcaption { font-size: var(--t-small); color: var(--text-dim); margin-top: var(--s-3); max-width: 68ch; }
+  figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(--s-3); max-width: 68ch; }
   .fig-n { font: 600 var(--t-label) var(--font-mono); color: var(--text); margin-right: var(--s-2); }
 
   /* diagram kit (references/diagrams.md) */
@@ -69,18 +69,22 @@
   .ve-el.l { text-anchor: end; } .ve-el.r { text-anchor: start; }
 
   /* linked highlighting: same data-ref lights up together */
-  .ve-ref { text-decoration: underline dotted var(--text-dim) 1px; text-underline-offset: .22em; border-radius: 2px; transition: background var(--fast) var(--ease); }
+  /* Dim shapes, never text below 4.5:1: unlit labels drop to --text-dim instead of fading. */
+  .ve-ref { text-decoration: underline dotted var(--text-dim) 1px; text-underline-offset: .22em; border-radius: var(--r-1); transition: background var(--fast) var(--ease); }
   .ve-ref.is-lit { background: var(--accent-dim); text-decoration-color: var(--accent); }
-  svg [data-ref] { transition: opacity var(--med) var(--ease); }
-  svg.has-lit [data-ref]:not(.is-lit) { opacity: .2; }
+  svg [data-ref], svg [data-ref] rect { transition: opacity var(--med) var(--ease); }
+  svg.has-lit path[data-ref]:not(.is-lit), svg.has-lit g[data-ref]:not(.is-lit) rect { opacity: .25; }
+  svg.has-lit g[data-ref]:not(.is-lit) text, svg.has-lit text[data-ref]:not(.is-lit) { fill: var(--text-dim); }
   .ve-n.is-lit rect { stroke: var(--accent); }
   .ve-e.is-lit { stroke: var(--accent); marker-end: url(#ah-hot); }
   .ve-el.is-lit { fill: var(--text); }
   tr.is-lit td { background: var(--accent-dim); }
 
   /* stepper / scene player */
-  .ve-steps [data-s] { opacity: .1; transition: opacity var(--slow) var(--ease), stroke-dashoffset var(--slow) var(--ease); }
-  .ve-steps [data-s].on { opacity: 1; }
+  /* Future steps: shapes stay as a faint outline; their labels are hidden, not faded to an unreadable gray. */
+  .ve-steps [data-s] { transition: opacity var(--slow) var(--ease), stroke-dashoffset var(--slow) var(--ease); }
+  .ve-steps [data-s]:not(.on) { opacity: .15; }
+  .ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 0; }
   .ve-steps path[pathLength][data-s] { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .ve-steps path[pathLength][data-s].on { stroke-dashoffset: 0; }
   .ve-steps .ve-n.now rect { stroke: var(--accent); }
@@ -104,7 +108,7 @@
 
   /* table + chips */
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-2); }
-  table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--t-body); }
   th { text-align: left; font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); background: var(--surface); }
   th, td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; transition: background var(--fast) var(--ease); }
   tr:last-child td { border-bottom: 0; }
@@ -114,13 +118,16 @@
   .chip.warn { color: var(--warn); } .chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
   .chip.risk { color: var(--risk); }
 
-  details { border-top: 1px solid var(--border); padding-top: var(--s-4); color: var(--text-dim); font-size: var(--t-small); }
+  details { border-top: 1px solid var(--border); padding-top: var(--s-4); color: var(--text-dim); font-size: var(--t-body); }
   summary { cursor: pointer; font: 500 var(--t-label) var(--font-mono); margin-bottom: var(--s-2); }
 
   @media print {
-    :root { --bg: #fff; --surface: #fff; }
+    /* Print uses the light foregrounds on white, and every step fully drawn. */
+    :root { --bg: #fff; --surface: #fff; --border: #dfe3e0; --border-bright: #c5ccc8; --text: #121614; --text-dim: #545e59; --accent: #955700; --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890; }
     .ve-player button, .ve-player input { display: none; }
-    .ve-steps [data-s] { opacity: 1; stroke-dashoffset: 0; }
+    .frame { overflow: visible; } .ve-svg { min-width: 0; }
+    .ve-steps [data-s]:not(.on), .ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 1; }
+    .ve-steps path[pathLength][data-s] { stroke-dashoffset: 0; }
   }
 </style>
 </head>
@@ -214,16 +221,20 @@
 
 </main>
 <script>
-  // Linked highlighting: hover or focus any [data-ref] to light every element that shares a ref.
+  // Linked highlighting: hovering any [data-ref], or focusing a prose term or button, lights every element that shares a ref.
+  // Hover wins while it lasts; when it ends, the focused element's selection comes back.
   const linked = [...document.querySelectorAll('[data-ref]')], refs = (el) => el.dataset.ref.split(' ');
+  let hovered = null, focused = null;
+  const paint = () => {
+    const keys = (hovered || focused)?.dataset.ref.split(' ') ?? [];
+    for (const t of linked) t.classList.toggle('is-lit', refs(t).some((k) => keys.includes(k)));
+    for (const svg of document.querySelectorAll('svg')) svg.classList.toggle('has-lit', !!svg.querySelector('.is-lit'));
+  };
   for (const el of linked) {
-    const light = (on) => {
-      const keys = refs(el);
-      for (const t of linked) t.classList.toggle('is-lit', on && refs(t).some((k) => keys.includes(k)));
-      for (const svg of document.querySelectorAll('svg')) svg.classList.toggle('has-lit', on && !!svg.querySelector('.is-lit'));
-    };
-    el.addEventListener('pointerenter', () => light(true)); el.addEventListener('pointerleave', () => light(false));
-    el.addEventListener('focus', () => light(true)); el.addEventListener('blur', () => light(false));
+    el.addEventListener('pointerenter', () => { hovered = el; paint(); });
+    el.addEventListener('pointerleave', () => { hovered = null; paint(); });
+    el.addEventListener('focus', () => { focused = el; paint(); });
+    el.addEventListener('blur', () => { focused = null; paint(); });
   }
 
   // Stepper / scene player. Range and Play are optional: a plain stepper needs only data-go buttons.
