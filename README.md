@@ -38,6 +38,7 @@ This skill fixes that. Real typography, dark/light themes, interactive Mermaid d
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |
 | Cursor | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.cursor/skills/visual-explainer` globally or `.cursor/skills/visual-explainer` per workspace; optional legacy rule in `configs/cursor/` |
+| Agent Plugins clients | [Agent Plugins](https://agent-plugins.org/) 1.0.0 plugin | The repository root is the plugin: `plugin.json` plus `skills/visual-explainer`, a link to `plugins/visual-explainer/`. On Windows, clone with `git -c core.symlinks=true` so the link resolves |
 | OpenClaw | Lightweight AGENTS/rules guidance | Use the supplied AGENTS guidance with the canonical skill directory |
 | VS Code Copilot / Copilot CLI | Custom instructions or rules guidance | Add the supplied AGENTS guidance to your supported workspace instruction or rules setup |
 

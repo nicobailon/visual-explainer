@@ -12,6 +12,7 @@ function readJson(relativePath) {
 
 const packageJson = readJson("package.json");
 const rootPluginManifest = readJson(".claude-plugin/plugin.json");
+const agentPluginManifest = readJson("plugin.json");
 const marketplace = readJson(".claude-plugin/marketplace.json");
 const pluginManifest = readJson("plugins/visual-explainer/.claude-plugin/plugin.json");
 const skill = readFileSync(new URL("plugins/visual-explainer/SKILL.md", root), "utf8");
@@ -23,6 +24,7 @@ const skillVersion = skill.match(/^metadata:\n(?:  .+\n)*?  version:\s*["']?([^"
 const versions = [
   ["package.json", packageJson?.version],
   [".claude-plugin/plugin.json", rootPluginManifest?.version],
+  ["plugin.json", agentPluginManifest?.version],
   [".claude-plugin/marketplace.json metadata.version", marketplace?.metadata?.version],
   [
     ".claude-plugin/marketplace.json plugins[visual-explainer].version",

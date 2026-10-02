@@ -4,6 +4,7 @@
 
 ### Added
 - The Pi `visual_explainer` tool honors `VISUAL_EXPLAINER_OUTPUT_DIR` for `render` and `render_quick`, like the MCP server. The default stays `~/.agent/diagrams/`; a configured directory must not be a symlink and must resolve to itself, and filenames stay basenames inside it. `/fact-check` without an argument looks in the same directory. Thanks to [@eaxeax](https://github.com/eaxeax) for #99.
+- The repository is an [Agent Plugins](https://agent-plugins.org/) 1.0.0 plugin: a root `plugin.json` and `skills/visual-explainer`, a link to the canonical skill, so compatible clients can discover the skill without a client-specific install. Thanks to [@gunzip](https://github.com/gunzip) for #100.
 
 ### Changed
 - Rewrote the skill to be figure-first and about 61% smaller (83% fewer lines). The first screen shows the answer as a picture plus one sentence, figures lead every section, and prose follows a Simplified Technical English style.

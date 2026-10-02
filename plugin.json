@@ -1,0 +1,12 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "visual-explainer",
+  "version": "0.11.0",
+  "description": "Generate beautiful HTML pages for diagrams, diff reviews, plan reviews, slides, and data tables",
+  "author": {
+    "name": "nicobailon"
+  },
+  "repository": "https://github.com/nicobailon/visual-explainer",
+  "license": "MIT",
+  "keywords": ["diagrams", "html", "visualization", "diff-review", "slides"]
+}
