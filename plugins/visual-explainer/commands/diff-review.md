@@ -9,6 +9,8 @@ Scope: read `$@` as a branch, commit, range, PR, or `HEAD`. If it is empty, comp
 
 Gather before you draw: diff stats, name-status, the full changed files and the code paths around them, public API or type changes, tests, dependency or config changes, and commit messages. Every claim cites a path or `file:line`. Do not invent a rationale.
 
+Typical sections; merge, reorder, drop, or add as the content needs:
+
 | Section | Figure |
 |---|---|
 | Verdict | one sentence + merge/blocked chip + `+N −M · K files` |

@@ -9,6 +9,8 @@ Input: `$@` is a plan path or plan text. If it is empty, ask for the plan. If it
 
 Read the whole plan. Then read every file it references and the code that depends on those files. For each proposed change, check that the file, function, or type exists, that current behavior matches the plan, which ripple effects the plan misses, and whether its tests fit the repo style. Cite the plan section and `file:line`.
 
+Typical sections; merge, reorder, drop, or add as the content needs:
+
 | Section | Figure |
 |---|---|
 | Verdict | approve / revise / reject chip + one-sentence reason |

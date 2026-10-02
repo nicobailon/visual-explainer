@@ -6,7 +6,7 @@ One system, four registers, and a topic motif on top. Choose the register from t
 
 | Register | Use for | Display / body / mono | Signature |
 |---|---|---|---|
-| **Instrument** | diff and plan reviews, audits, metrics, status | Geist 600 / Geist / Geist Mono | A KPI strip right after the first figure. Tabular numbers everywhere. Cells split by hairlines, not floating cards. Status as shape + word. |
+| **Instrument** | diff and plan reviews, audits, metrics, status | Geist 600 / Geist / Geist Mono | A KPI strip near the top when there are metrics. Tabular numbers everywhere. Cells split by hairlines, not floating cards. Status as shape + word. |
 | **Blueprint** | architecture, data flow, systems, visual plans | IBM Plex Sans 600 / IBM Plex Sans / IBM Plex Mono | 24px grid on the background. Boundaries as dashed frames with a mono tag. Numbered callouts ① ② on the drawing. |
 | **Paper** | concepts, how-it-works, fact-checks, long reading | Newsreader 500 / Atkinson Hyperlegible Next / Atkinson Hyperlegible Mono | Narrow text column, wide figures. Margin notes at ≥ 1200px. `Fig. N` labels. |
 | **Editorial** | recaps, narratives, decks, showcases | Instrument Serif / Instrument Sans / JetBrains Mono | Display type at full scale. Asymmetric grid with large empty areas. One number or phrase per screen carries the page. |
@@ -61,9 +61,9 @@ Effect tokens, per scheme. Dark: `--node-top: color-mix(in srgb, var(--text) 7%,
 | Grid | 12 columns on the 64rem container, `s-5` gutter. Text spans about 8 columns, figures 12, section labels and side notes 3. Every left edge lands on a column line. |
 | One axis | Kicker, headline, deck, figures, captions, and section labels share one flush-left edge. Center only a single number or a title slide. |
 | Entry points | Reading order: kicker → headline → deck → figure → caption → body. Each screen has one dominant element, one or two secondary ones, and quiet text. Squint test: blur the page and the dominant element still reads. |
-| Section opener | A hairline across the full width, then a mono section label in columns 1–3 and the `h2` in 4–12, on a shared first baseline. Stacks below 52rem. |
+| Section opener | Pick one per page and keep it. Swiss head: a hairline, a mono label in columns 1–3, the `h2` in 4–12 on a shared baseline (reports, reviews; `page.html`). Kicker head: a small label above the `h2` (explainers). Figure head: a full-width figure first, the `h2` as its title (narratives). |
 | Proximity | Space above a heading is 2–3× the space below it. A caption sits `s-3` from its figure. Related things are always closer than unrelated things. |
-| Rhythm | Vary width and density down the page: wide figure → number strip → grid of small multiples → short text. Never three identical blocks in a row. |
+| Rhythm | Vary width and density down the page: wide figure → number strip → grid of small multiples → short text. Avoid three identical blocks in a row. |
 | Structure | Space first, a hairline second, a frame last. No card inside a card. Leave real empty space; asymmetric space reads as deliberate, evenly spread gaps read as unfinished. |
 
 ## Figures

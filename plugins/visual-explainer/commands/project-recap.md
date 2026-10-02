@@ -9,6 +9,8 @@ If `$@` has `--quick`, remove the flag and follow the skill's Quick mode. Otherw
 
 Read the README, changelog, and package/build files, the top-level tree, `git status`, recent commits, open branches, TODOs in recently changed files, any progress or todo notes, and the main entry points. Cite command output or `file:line`. Do not invent momentum.
 
+Typical sections; merge, reorder, drop, or add as the content needs:
+
 | Section | Figure |
 |---|---|
 | What this is | one sentence + stack chips + entry points |

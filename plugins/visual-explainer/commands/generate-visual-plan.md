@@ -7,6 +7,8 @@ Load the visual-explainer skill and make a visual implementation plan for: $@
 
 Research first: entry points, affected modules, public APIs, data model and config, tests, similar features, and README/CHANGELOG constraints. Cite `file:line`.
 
+Typical sections; merge, reorder, drop, or add as the content needs:
+
 | Section | Figure |
 |---|---|
 | Goal and scope | one-sentence goal + in/out columns |

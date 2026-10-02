@@ -30,13 +30,24 @@ Climb as high as the request allows. The default output is one HTML page whose s
 ## Show, don't tell
 
 1. **One claim per figure.** Put each figure in `<figure>`; the `<figcaption>` states the claim in one sentence.
-2. **Figures lead, words label.** Every section is a heading plus a figure. Keep the lead to a sentence or two, and prose outside captions light, roughly a short paragraph per screen. Write more when the reader needs the reasoning, not to restate the picture. If a sentence describes the picture, make it a label in the picture.
-3. **First viewport = the answer.** The main idea as a picture plus one sentence. No decorative hero.
+2. **Figures lead, words label.** Most sections open with a figure. Reasoning, definitions, trade-offs, and open questions can lead with text, then earn a figure when one helps. Keep the lead to a sentence or two, and prose outside captions light, roughly a short paragraph per screen. Write more when the reader needs the reasoning, not to restate the picture. If a sentence describes the picture, make it a label in the picture.
+3. **First viewport = the answer.** The main idea as a picture plus one sentence. To teach a concept, it can be the question and the picture that frames it, with the answer one scroll away. No decorative hero.
 4. **Draw the mechanism, not the name.** A request path through a cache beats a box labeled "cache". Label every arrow with a verb: `writes`, `invalidates`, `polls 30s`.
 5. **Draw the difference.** To compare options, show the edge or box each one adds or removes.
 6. **Encode state in form.** Shape, position, and pattern, plus color. Never color alone.
 7. **Every number gets a picture.** Waffle, bars, or sparkline beside it. A number inside a sentence is lost.
 8. **Cases become small multiples.** Failure modes, options, environments: the same mini diagram once per case, not a table of sentences.
+
+Shape the page to the content. These are starting points, not templates: merge, reorder, drop, or add sections, and skip any that would be empty.
+
+| Page | Typical shape |
+|---|---|
+| Concept explainer | question → intuition picture → mechanism (stepper) → edge cases → what to remember |
+| Visual plan | target state → current vs. proposed → sequence → risks → done when |
+| Review or audit | verdict → evidence figures → risks → next steps |
+| Comparison | the difference drawn side by side → trade-offs → recommendation |
+| Essay or long read | Paper register: text column with figures beside or between it; more prose is fine |
+| One diagram | a single large figure, a headline, and a caption; no sections |
 
 | Content | Figure |
 |---|---|
@@ -50,7 +61,7 @@ Climb as high as the request allows. The default output is one HTML page whose s
 | A process that changes over time | Stepper or scene player → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
 
-Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. `templates/page.html` is the reference build: copy its structure and swap in the register the content needs.
+Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. `templates/page.html` is the reference build. Copy its parts (tokens, kit CSS, scripts, components), not its outline, and swap in the register the content needs.
 
 ## Words
 
@@ -122,7 +133,7 @@ Optional. If `surf` or another image tool is available, you can embed generated 
 □ every number has a picture; scenarios are small multiples, not a sentence table
 □ topic motif: 2–3 touches taken from the subject; page still reads without them
 □ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing (the SVG, or the Mermaid shell)
-□ 2–4 key terms per figure linked with data-ref
+□ key terms linked with data-ref where hovering helps
 □ no horizontal overflow at 1280px or 390px wide
 □ both color schemes work (or one theme was deliberate)
 □ type in rem; body ≥16px, labels ≥12px; all text ≥4.5:1 in both schemes; visible keyboard focus
@@ -130,7 +141,7 @@ Optional. If `surf` or another image tool is available, you can embed generated 
 □ any Mermaid uses the zoom/pan shell
 □ every size, gap, and radius is on the style-guide scale; polish pass done
 □ typography: real dashes, minus, ×, curly quotes; no-break space before units; tabular figures in data
-□ layout: one flush-left axis, section openers, varied rhythm; blurred, each screen still shows one dominant element
+□ layout: one flush-left axis, consistent section openers, varied rhythm; blurred, each screen still shows one dominant element
 □ register fonts and neutrals used exactly; would not pass for a generic dark/violet template
 □ slides: each fits, nav chrome works, all source items covered, delivery check passes
 ```
