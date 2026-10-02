@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why most reads never touch the database</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1411'/%3E%3Cpath d='M16 32h14M34 22h14M34 42h14' stroke='%23e8a33d' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- Reference page: copy the structure (answer + figure first, tokens, rem scale), not the palette. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-body: 'Bricolage Grotesque', 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --bg: #0d1411; --surface: #141e1a; --border: #24332c; --border-bright: #36493f;
+    --text: #e4ede7; --text-dim: #93a89c;
+    --accent: #e8a33d; --accent-dim: rgba(232,163,61,.14);
+    --ok: #7cc49a; --warn: #e8c33d; --risk: #e5735f; --info: #6cb6d9;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f3f0e6; --surface: #fffdf6; --border: #ddd6c4; --border-bright: #c4bba4;
+      --text: #1b231f; --text-dim: #56635b;
+      --accent: #975a08; --accent-dim: rgba(151,90,8,.10);
+      --ok: #2f7d4f; --warn: #8a6d00; --risk: #b23a26; --info: #1f6f99;
+    }
+  }
+  html { font-size: 17px; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 400 1rem/1.6 var(--font-body); }
+  main { max-width: 64rem; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4rem; }
+  header + figure { margin-top: -1.5rem; }
+  section, figure, header { min-width: 0; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.05; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; max-width: 20ch; }
+  h2 { font-size: 1.6rem; line-height: 1.2; font-weight: 600; text-wrap: balance; margin-bottom: 1.25rem; }
+  .eyebrow { font: 500 .75rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+  .answer { font-size: 1.3rem; line-height: 1.5; color: var(--text-dim); max-width: 48ch; margin-top: 1.25rem; }
+  .answer b { color: var(--text); font-weight: 600; }
+  figcaption { font-size: .9375rem; color: var(--text-dim); margin-top: .75rem; }
+  button { font: 500 .875rem var(--font-mono); color: var(--text); background: var(--surface); border: 1px solid var(--border-bright); border-radius: 6px; padding: .45rem .8rem; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* figure kit (references/diagrams.md) */
+  .ve-frame { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; overflow-x: auto; }
+  /* min-width keeps 14-unit labels ≥ 12px as rendered; narrow screens scroll the frame instead. */
+  .ve-svg { width: 100%; min-width: 700px; height: auto; display: block; font: 500 17px var(--font-body); }
+  .ve-n rect { fill: var(--bg); stroke: var(--border-bright); stroke-width: 1.5; }
+  .ve-n.is-key rect { stroke: var(--accent); stroke-width: 2.5; }
+  .ve-n text { fill: var(--text); text-anchor: middle; dominant-baseline: central; font-weight: 600; }
+  .ve-n .sub { fill: var(--text-dim); font: 500 14px var(--font-mono); }
+  .ve-e { fill: none; stroke: var(--text-dim); stroke-width: 1.75; }
+  .ve-e.is-hot { stroke: var(--accent); stroke-width: 2.75; }
+  .ve-e.is-async { stroke-dasharray: 6 5; }
+  .ve-el { fill: var(--text-dim); font: 500 14px var(--font-mono); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 6px; stroke-linejoin: round; }
+  .ve-el.l { text-anchor: end; } .ve-el.r { text-anchor: start; }
+  .ve-steps [data-s] { opacity: .1; transition: opacity .5s, stroke-dashoffset .8s; }
+  .ve-steps [data-s].on { opacity: 1; }
+  .ve-steps path[pathLength][data-s] { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .ve-steps path[pathLength][data-s].on { stroke-dashoffset: 0; }
+  .ve-steps .ve-n.now rect { stroke: var(--accent); }
+  .ve-cap { list-style: none; padding: 0; min-height: 3.2rem; margin-top: 1rem; font-size: 1.125rem; }
+  .ve-cap li::before { content: attr(data-n); font: 600 .8rem var(--font-mono); color: var(--accent); margin-right: .6rem; }
+  .ve-ctl { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; }
+  .ve-ctl input { flex: 1; accent-color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .ve-steps * { transition: none !important; } }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; display: grid; gap: .35rem; min-width: 0; }
+  .kpi .val { font: 600 2.4rem/1 var(--font-body); font-variant-numeric: tabular-nums; }
+  .kpi .lbl { font: 500 .8125rem var(--font-mono); color: var(--text-dim); }
+  .delta { font: 600 .8rem var(--font-mono); } .delta.good { color: var(--ok); }
+  .ve-spark { width: 100%; height: 2rem; } .ve-spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; vector-effect: non-scaling-stroke; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+  th { text-align: left; font: 500 .75rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); background: var(--surface); }
+  th, td { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+  tr:last-child td { border-bottom: 0; }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; font: 600 .75rem var(--font-mono); padding: .15rem .55rem; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+  .chip::before { content: ''; width: .45rem; height: .45rem; background: currentColor; }
+  .chip.ok { color: var(--ok); } .chip.ok::before { border-radius: 50%; }
+  .chip.warn { color: var(--warn); } .chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .chip.risk { color: var(--risk); }
+  details { border-top: 1px solid var(--border); padding-top: 1rem; color: var(--text-dim); }
+  summary { cursor: pointer; font: 500 .875rem var(--font-mono); }
+  code { font: .875em var(--font-mono); }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <p class="eyebrow">Read path</p>
+    <h1>Why most reads never touch the database</h1>
+    <p class="answer">The API asks Redis first. <b>94% of reads end there in about 1 ms.</b> Only misses reach Postgres, and the API writes each miss back for the next read.</p>
+  </header>
+
+  <figure class="ve-steps">
+    <div class="ve-frame">
+      <svg class="ve-svg" viewBox="0 50 800 270" role="img" aria-label="Client calls API. API gets the key from Redis. A hit returns in 1 ms. A miss reads Postgres in 9 ms, then the API sets the key with a 60 second TTL.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
+          <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker>
+        </defs>
+        <g class="ve-n" data-s="1" transform="translate(20 60)"><rect width="150" height="90" rx="6"/><text x="75" y="45">Client</text></g>
+        <g class="ve-n is-key" data-s="1" transform="translate(300 60)"><rect width="150" height="90" rx="6"/><text x="75" y="38">API</text><text class="sub" x="75" y="62">user-service</text></g>
+        <g class="ve-n" data-s="2" transform="translate(610 60)"><rect width="170" height="90" rx="6"/><text x="85" y="38">Redis</text><text class="sub" x="85" y="62">TTL 60 s</text></g>
+        <g class="ve-n" data-s="4" transform="translate(300 230)"><rect width="150" height="80" rx="6"/><text x="75" y="40">Postgres</text></g>
+
+        <path class="ve-e" data-s="1" pathLength="1" d="M170 105H300" marker-end="url(#ah)"/>
+        <text class="ve-el" data-s="1" x="235" y="95">GET /user/42</text>
+        <path class="ve-e" data-s="2" pathLength="1" d="M450 80H610" marker-end="url(#ah)"/>
+        <text class="ve-el" data-s="2" x="505" y="71">get key</text>
+        <path class="ve-e is-hot" data-s="3" pathLength="1" d="M610 105H450" marker-end="url(#ah-hot)"/>
+        <text class="ve-el" data-s="3" x="560" y="96">hit · 1 ms</text>
+        <path class="ve-e" data-s="4" pathLength="1" d="M355 150V230" marker-end="url(#ah)"/>
+        <text class="ve-el l" data-s="4" x="345" y="194">miss: SELECT</text>
+        <path class="ve-e" data-s="4" pathLength="1" d="M395 230V150" marker-end="url(#ah)"/>
+        <text class="ve-el r" data-s="4" x="405" y="194">row · 9 ms</text>
+        <path class="ve-e is-async" data-s="5" d="M450 130H610" marker-end="url(#ah)"/>
+        <text class="ve-el" data-s="5" x="505" y="121">set key</text>
+      </svg>
+    </div>
+    <ol class="ve-cap">
+      <li data-n="1/5">The client asks the API for user 42.</li>
+      <li data-n="2/5">The API asks Redis for the key first.</li>
+      <li data-n="3/5">On a hit, Redis answers in about 1 ms. The request ends here.</li>
+      <li data-n="4/5">On a miss, the API reads the row from Postgres in about 9 ms.</li>
+      <li data-n="5/5">The API writes the row to Redis, so the next read is a hit.</li>
+    </ol>
+    <div class="ve-ctl">
+      <button data-go="-1" aria-label="Previous step">←</button>
+      <button data-play>Play</button>
+      <input type="range" min="0" value="0" aria-label="Step">
+      <button data-go="1" aria-label="Next step">→</button>
+    </div>
+  </figure>
+
+  <section>
+    <h2>The cache takes the load off Postgres</h2>
+    <figure>
+      <div class="kpis">
+        <div class="kpi"><span class="lbl">Hit rate · 7 days</span><span class="val">94%</span>
+          <svg class="ve-spark" viewBox="0 0 100 24" preserveAspectRatio="none" role="img" aria-label="Hit rate rose from 81% to 94% over 7 days"><polyline points="0,20 16,17 33,12 50,9 66,6 83,5 100,4"/></svg></div>
+        <div class="kpi"><span class="lbl">p50 read latency</span><span class="val">1.2 ms</span><span class="delta good">−86% vs. no cache</span></div>
+        <div class="kpi"><span class="lbl">Postgres reads / s</span><span class="val">340</span><span class="delta good">from 5,600</span></div>
+      </div>
+      <figcaption>Hit rate climbs as the cache warms. Postgres now serves 6% of reads.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>One failure mode is still open</h2>
+    <figure>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Event</th><th>What happens</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>User updates profile</td><td>The API deletes <code>user:42</code>. The next read misses and gets fresh data.</td><td><span class="chip ok">Handled</span></td></tr>
+            <tr><td>Key reaches its TTL</td><td>The next read misses and refills the key.</td><td><span class="chip ok">Handled</span></td></tr>
+            <tr><td>Write races a read</td><td>An old row can be cached for up to 60 s.</td><td><span class="chip warn">Accepted</span></td></tr>
+            <tr><td>Redis is down</td><td>All reads go to Postgres at about 16× the normal load.</td><td><span class="chip risk">Open risk</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption>One open risk: Postgres cannot take the full read load if Redis fails.</figcaption>
+    </figure>
+  </section>
+
+  <details>
+    <summary>Sources</summary>
+    <p><code>src/cache/user.ts:14–52</code> · <code>src/routes/user.ts:30</code> · dashboard "user-service read path", last 7 days.</p>
+  </details>
+
+</main>
+<script>
+  for (const root of document.querySelectorAll('.ve-steps')) {
+    const parts = [...root.querySelectorAll('[data-s]')], caps = [...root.querySelectorAll('.ve-cap li')];
+    const range = root.querySelector('input[type=range]'), play = root.querySelector('[data-play]');
+    const n = caps.length; let i = 0, timer = null;
+    if (range) range.max = n - 1; // range and play are optional: a plain stepper needs only data-go buttons
+    const show = (k) => {
+      i = Math.max(0, Math.min(n - 1, k));
+      for (const el of parts) { el.classList.toggle('on', +el.dataset.s <= i + 1); el.classList.toggle('now', +el.dataset.s === i + 1); }
+      caps.forEach((c, j) => c.hidden = j !== i);
+      if (range) range.value = i;
+    };
+    const stop = () => { clearInterval(timer); timer = null; if (play) play.textContent = 'Play'; };
+    root.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { stop(); show(i + +b.dataset.go); } });
+    range?.addEventListener('input', () => { stop(); show(+range.value); });
+    play?.addEventListener('click', () => {
+      if (timer) return stop();
+      if (i === n - 1) show(0);
+      play.textContent = 'Pause';
+      timer = setInterval(() => (i < n - 1 ? show(i + 1) : stop()), 3500);
+    });
+    show(n - 1); // open on the full picture; Play replays from step 1
+  }
+</script>
+</body>
+</html>
