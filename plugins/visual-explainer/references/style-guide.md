@@ -35,11 +35,51 @@ Effect tokens, per scheme. Dark: `--node-top: color-mix(in srgb, var(--text) 7%,
 1. **Quiet ground, one signal.** About 90% of the page is neutral. The accent marks only what the reader must look at now: the key node, the hot path, the active control, the one number that matters.
 2. **The figure is the interface.** A term in the prose and its element in the figure are linked. Hover either one, or focus the prose term, and both light up (`diagrams.md` → Linked highlighting).
 3. **Overview, then detail.** The full picture comes first. The reader steps, hovers, or expands to get detail. Raw material goes in `<details>`.
-4. **Label in place.** Put labels next to lines, bars, and areas. Use a legend only when in-place labels do not fit.
-5. **Space before lines, lines before boxes.** Group with space first, then a 1px rule, then a frame.
-6. **Every number gets a picture.** A waffle, bar, or sparkline beside it. Tabular figures, the unit smaller and in `--text-dim`, and the comparison stated (`from 5,600`).
-7. **Motion shows change or flow.** Blocks rise in once. Dots move along edges at the real rate. Steps reveal parts. Nothing loops for its own sake.
-8. **Craft is part of the meaning.** Nodes sit raised on a dot-grid stage. Shapes say what a thing is (a cylinder is a store). The one focal element gets a soft halo, the hot path a glow. No glassmorphism, neon, gradient text or backgrounds, blobs, clip-art, or emoji.
+4. **Every number gets a picture.** A waffle, bar, or sparkline beside it. Tabular figures, the unit smaller and in `--text-dim`, and the comparison stated (`from 5,600`).
+5. **Motion shows change or flow.** Blocks rise in once. Dots move along edges at the real rate. Steps reveal parts. Nothing loops for its own sake.
+6. **Craft is part of the meaning.** Nodes sit raised on a dot-grid stage. Shapes say what a thing is (a cylinder is a store). The one focal element gets a soft halo, the hot path a glow. No glassmorphism, neon, gradient text or backgrounds, blobs, clip-art, or emoji.
+
+## Typography
+
+| | Rule |
+|---|---|
+| Hierarchy | Few sizes, big jumps. Contrast comes from the gap between body and display, not from many middle steps. Each level changes one or two of size, weight, and color, never all three. Start with every word quiet, then promote only what must be read first. |
+| Measure | Body about 65ch (45–75 characters per line; 66 is the classic ideal). Side notes and multi-column text 40–50. Lead 40–50ch. |
+| Leading | Body 1.5–1.6 on screen; more for a longer measure, less for a shorter one. Display 1.0–1.15, tighter as it grows. |
+| Tracking | Display tightens as it grows: −0.01em at `h2`, −0.03 to −0.04em at `h1` and big numbers. All caps and small caps get +0.05 to +0.12em. Never track lowercase body text. |
+| Breaks | `text-wrap: balance` on headings, `pretty` on paragraphs and captions. Break display lines at phrase boundaries. Flush left, ragged right; never justify on the web. |
+| Numerals | `tabular-nums` in tables, KPIs, and anything that updates. Proportional figures in prose (oldstyle in Paper). Number columns right-aligned. Format for reading (`5.6k`, `−86%`) and repeat the unit in every label. |
+| Characters | Curly quotes and apostrophes. `–` for ranges, `—` for a break, `−` for minus, `×` for multipliers and sizes, `…`, `≤`. A no-break space between number and unit (`1&nbsp;ms`). |
+| Font hygiene | `font-kerning: normal; font-synthesis: none`, and load every weight you use: no faux bold, italic, or small caps. Ligatures on in prose, off in code. Bold or italic, never both. Underline only links and linked terms. |
+| Optical edges | `text-box: trim-both cap alphabetic` on headings and big numbers, so spacing is measured from the letters, not the line box (Chrome, Safari; harmless elsewhere). Hang bullets and opening quotes outside the text edge. |
+| Pairing | One family plus its mono, or one display face plus one text face. The display face only at `h1`, `h2`, and hero sizes. |
+
+## Layout
+
+| | Rule |
+|---|---|
+| Grid | 12 columns on the 64rem container, `s-5` gutter. Text spans about 8 columns, figures 12, section labels and side notes 3. Every left edge lands on a column line. |
+| One axis | Kicker, headline, deck, figures, captions, and section labels share one flush-left edge. Center only a single number or a title slide. |
+| Entry points | Reading order: kicker → headline → deck → figure → caption → body. Each screen has one dominant element, one or two secondary ones, and quiet text. Squint test: blur the page and the dominant element still reads. |
+| Section opener | A hairline across the full width, then a mono section label in columns 1–3 and the `h2` in 4–12, on a shared first baseline. Stacks below 52rem. |
+| Proximity | Space above a heading is 2–3× the space below it. A caption sits `s-3` from its figure. Related things are always closer than unrelated things. |
+| Rhythm | Vary width and density down the page: wide figure → number strip → grid of small multiples → short text. Never three identical blocks in a row. |
+| Structure | Space first, a hairline second, a frame last. No card inside a card. Leave real empty space; asymmetric space reads as deliberate, evenly spread gaps read as unfinished. |
+
+## Figures
+
+| | Rule |
+|---|---|
+| Pick by relationship | Change over time → line or sparkline. Magnitude → bars. Part of a whole → waffle or stacked bar. Ranking → sorted bars. Deviation → bars around zero. Distribution → strip or histogram. Correlation → scatter. Flow → diagram with flow dots. Place → map. |
+| Data-ink | Every mark carries data or guides the eye. No chart borders, plot backgrounds, heavy gridlines, or 3D bars. Gridlines in `--border`, only when values must be read. |
+| Layering | Ground (texture, rules) < structure (nodes, axes) < data < signal (accent). Each layer is quieter than the one above it. Two lines close together make a third shape (1+1=3): add space or merge them. |
+| Smallest difference | Make each distinction as subtle as it can be while it is still clear. Two label levels only: small and dim, larger and bright; bold for emphasis inside them. |
+| Labels | On the data, horizontal, left-aligned. Repeat the unit. No legend under 5 series. A `--bg` halo where a label crosses a line. |
+| Annotate | One or two notes per chart at the point the caption names: a short leader line and a plain phrase. |
+| Honest scale | Bars start at zero. Small multiples share one scale. Sort by value unless the order means something. Line charts about 2:1 to 3:1. |
+| Line weights | Three: 1 for structure, 1.5–1.75 for data and outlines, 2.5–3 for the signal. Glyph strokes match the stem weight of the labels beside them. |
+| Color scales | Sequential: one hue in OKLCH lightness steps. Diverging: two hues around a neutral middle. Categorical: up to 5 hues at equal OKLCH lightness and chroma. Never color alone. |
+| Optical alignment | Center a label on its cap height, not its box. Nudge triangles and play icons toward their point; round shapes overshoot a flat edge by about 2%. |
 
 ## Topic motif
 
@@ -72,19 +112,19 @@ Test each touch: if removing it makes the page no harder to read and no less spe
 | Decision | Rule |
 |---|---|
 | Spacing | Scale steps only. Inside a component: `s-2`–`s-4`. Between components: `s-5`–`s-6`. Between sections: `s-8`. A bigger gap means less related. |
-| Type | Seven sizes, no others; the only exceptions are sizes a component spec names (KPI value). `--t-hero` only in Editorial. `--t-small` only for buttons, code, and mono labels; sentences use `--t-body` or larger. Body 400, line height 1.6. Headings 600 (or the display face at 400–500), line height 1.2–1.25, or 1.05 at `h1` and larger, with −0.02 to −0.03em tracking. Mono only for code, IDs, paths, and data labels. |
+| Type | Seven sizes, no others, plus sizes a component spec names (KPI value). The steps run about ×1.25 apart, with a big jump to display. `--t-hero` only in Editorial. `--t-small` only for buttons, code, and mono labels. Body 400; headings 600, or the display face at 400–500. Leading and tracking: see Typography. |
 | Labels | Mono, `--t-label`, `--text-dim`. Uppercase with `.08em` tracking only for 3 words or fewer. |
 | Radius | `r-1` for chips, buttons, inputs, and inline highlights. `r-2` for frames, tables, and overlays. Nothing else is rounded. Blueprint uses `r-1` everywhere. |
 | Accent | One accent, on 10% of the screen or less. Status colors (`ok warn risk info`) only mean status. |
 | Motion | Move and reveal only with `transform`, `opacity`, and `stroke-dashoffset`. Color changes on hover and highlight may fade at `fast`. `med` for state, `slow` for steps and entrances, 900ms for count-ups and bar growth. Always `--ease`. |
 | Effects | Shadow (`--lift`): raised diagram nodes and overlays only. Glow: the key node (`--halo`) and the hot edge only. |
-| Layout | Column max 64rem. Text max 68ch. Figures use the full column. Card grids: `repeat(auto-fit, minmax(13rem, 1fr))`. |
+| Layout | Container max 64rem on a 12-column grid. Text about 65ch. Figures use the full width. Card grids: `repeat(auto-fit, minmax(13rem, 1fr))`. |
 
 ## Components
 
 | Component | Spec |
 |---|---|
-| Page header | Eyebrow label with a short accent rule → `h1` that states the answer → lead (`t-lead`, `--text-dim`, one bold phrase in `--text`, a sentence or two). If the answer is a number, the number leads the `h1` in accent. `s-4` between them. |
+| Page header | Kicker (mono label with a short accent rule) → `h1` that states the answer → deck: lead (`t-lead`, `--text-dim`, one bold phrase in `--text`, a sentence or two). If the answer is a number, the number leads the `h1` in accent. Then a quiet meta line (scope, period). `s-4` between them. |
 | Figure | `<figure>` → `.frame` (stage: `--bg` with the motif texture, 1px border, `r-2`, padding `s-5`) → `<figcaption>` (`t-body`, `--text-dim`) that starts with `Fig. N` in mono and states the claim. |
 | Dimming | To focus part of a figure, fade shapes and lines to 15–25% opacity. Never fade text: dimmed labels change to `--text-dim`, and labels of future steps are hidden. Never put accent-colored text on `--accent-dim`; use `--text` there. |
 | Diagram | Node: `#ve-node` gradient fill, 1.5 `--border-bright` stroke, rx 6, `--lift` shadow. Key node: accent tint fill, 2 `--accent` stroke, halo. Edge: 1.75 `--text-dim`. Hot edge: 2.75 `--accent` with a 5px glow. Async: dash `6 5`. One arrowhead marker with `context-stroke`. Edge labels: mono, 14 units, 9 units above the line, `--bg` halo. Identical in every figure. |
@@ -98,9 +138,7 @@ Test each touch: if removing it makes the page no harder to read and no less spe
 
 ## Polish pass
 
-- Everything aligns to one left edge: headings, figures, captions, tables.
 - The same element looks the same everywhere: captions, chips, arrowheads, stroke widths.
-- `text-wrap: balance` on headings and `pretty` on body, so no line ends with one word.
 - `::selection` uses `--accent-dim`. Sections get `scroll-margin-top` under a sticky nav.
 - Hover and focus look the same. Every control has a visible focus ring.
 - Nothing shifts on load: every SVG has a `viewBox`, and every image has a width and height.

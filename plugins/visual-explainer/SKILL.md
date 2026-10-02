@@ -77,6 +77,7 @@ concepts, reading  Paper         Newsreader + Atkinson · ink blue  one type hab
 recaps, decks      Editorial     Instrument Serif + Sans           the domain's diagram convention
 ```
 
+- **Set it like a good magazine.** A 12-column grid with one flush-left axis. Few type sizes with big jumps. Real typographic characters. Charts labeled directly, each with one annotation. The style guide's Typography, Layout, and Figures sections hold the rules.
 - **Quiet ground, one signal.** Neutrals carry the page. The accent marks only what the reader must look at now.
 - **Craft is part of the meaning.** Raised nodes on a dot-grid stage, shapes that say what a thing is, a halo on the focal element, a glow on the hot path, the number leading the headline. Each effect points at something.
 - **The figure is the interface.** Prose terms and figure elements light up together. Overview first, detail on demand.
@@ -128,6 +129,8 @@ Optional. If `surf` or another image tool is available, you can embed generated 
 □ headings state takeaways; paragraphs stay short
 □ any Mermaid uses the zoom/pan shell
 □ every size, gap, and radius is on the style-guide scale; polish pass done
+□ typography: real dashes, minus, ×, curly quotes; no-break space before units; tabular figures in data
+□ layout: one flush-left axis, section openers, varied rhythm; blurred, each screen still shows one dominant element
 □ register fonts and neutrals used exactly; would not pass for a generic dark/violet template
 □ slides: each fits, nav chrome works, all source items covered, delivery check passes
 ```

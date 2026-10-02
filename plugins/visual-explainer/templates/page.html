@@ -36,28 +36,35 @@
   /* base */
   html { font-size: 17px; }
   * { box-sizing: border-box; margin: 0; }
-  body { background: var(--bg); color: var(--text); font: 400 var(--t-body)/1.6 var(--font-body); text-wrap: pretty; -webkit-font-smoothing: antialiased; }
+  body { background: var(--bg); color: var(--text); font: 400 var(--t-body)/1.6 var(--font-body); text-wrap: pretty; font-kerning: normal; font-synthesis: none; -webkit-font-smoothing: antialiased; }
   ::selection { background: var(--accent-dim); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   main { max-width: 64rem; margin: 0 auto; padding: var(--s-8) var(--s-5); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-8); }
   section, figure, header { min-width: 0; }
   header { display: grid; gap: var(--s-4); }
   header + figure { margin-top: calc(var(--s-6) - var(--s-8)); }
-  h1 { font-size: var(--t-h1); line-height: 1.05; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; max-width: 16ch; }
+  /* text-box trims to cap height and baseline, so gaps are measured from the letters, not the line box */
+  h1, h2, .kpi .val { text-box: trim-both cap alphabetic; }
+  h1 { font-size: var(--t-h1); line-height: 1.05; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; max-width: 16ch; margin-bottom: var(--s-2); }
   h1 .num { color: var(--accent); font-variant-numeric: tabular-nums; }
-  h2 { font-size: var(--t-h2); line-height: 1.2; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; margin-bottom: var(--s-5); }
+  h2 { font-size: var(--t-h2); line-height: 1.2; font-weight: 600; letter-spacing: -.015em; text-wrap: balance; }
+  /* section opener: hairline, mono label in columns 1–3, h2 in 4–12, on one baseline */
+  .sec-head { display: grid; gap: var(--s-3) var(--s-5); align-items: baseline; border-top: 1px solid var(--border); padding-top: var(--s-5); margin-bottom: var(--s-6); }
+  @media (min-width: 52rem) { .sec-head { grid-template-columns: 3fr 9fr; } }
   h3 { font-size: var(--t-body); line-height: 1.3; font-weight: 600; }
   .eyebrow { display: flex; align-items: center; gap: var(--s-2); font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
   .eyebrow::before { content: ''; width: 1.25rem; height: 2px; background: currentColor; }
   .label { font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); }
+  .caps { text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--text); }
   .lead { font-size: var(--t-lead); line-height: 1.5; color: var(--text-dim); max-width: 44ch; }
   .lead b { color: var(--text); font-weight: 600; }
+  .meta { font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .unit { font-size: .5em; font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
-  code { font: .875em var(--font-mono); }
+  code { font: .875em var(--font-mono); font-variant-ligatures: none; }
 
   /* figure: the stage is a faint dot grid, so nodes read as objects placed on it */
   .frame { background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 13%, transparent) 1px, transparent 1.5px) 0 0 / 20px 20px, var(--bg); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-5); overflow-x: auto; }
-  figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(--s-3); max-width: 68ch; }
+  figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(--s-3); max-width: 65ch; }
   .fig-n { font: 600 var(--t-label) var(--font-mono); color: var(--text); margin-right: var(--s-2); }
 
   /* diagram kit (references/diagrams.md) */
@@ -113,7 +120,9 @@
   .kpis { display: flex; flex-wrap: wrap; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-2); overflow: hidden; }
   .kpi { flex: 1 1 14rem; background: var(--surface); padding: var(--s-5); display: grid; grid-template-rows: auto auto 1fr; gap: var(--s-3); min-width: 0; }
   .kpi .val { font: 600 2.75rem/1 var(--font-body); font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
-  .ve-waffle { align-self: end; width: 6.5rem; height: auto; }
+  .ve-waffle { align-self: end; width: 11rem; height: auto; font: 500 13px var(--font-mono); overflow: visible; }
+  .ve-waffle text { fill: var(--text-dim); dominant-baseline: central; }
+  .ann { fill: none; stroke: var(--text-dim); stroke-width: 1; }
   .ve-bars { align-self: end; width: 100%; max-width: 16rem; height: auto; font: 500 13px var(--font-mono); overflow: visible; }
   .ve-bars text { fill: var(--text-dim); dominant-baseline: central; }
   .ve-bars rect { fill: var(--border-bright); transform-box: fill-box; transform-origin: left; transition: transform 900ms var(--ease) 150ms; }
@@ -178,7 +187,8 @@
   <header>
     <p class="eyebrow">Read path</p>
     <h1><span class="num">94%</span> of reads never touch the database</h1>
-    <p class="lead"><span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> answers them in <b class="ve-ref" data-ref="hit" tabindex="0">about 1 ms</b>. Only misses reach <span class="ve-ref" data-ref="pg" tabindex="0">Postgres</span>.</p>
+    <p class="lead"><span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> answers them in <b class="ve-ref" data-ref="hit" tabindex="0">about 1&nbsp;ms</b>. Only misses reach <span class="ve-ref" data-ref="pg" tabindex="0">Postgres</span>.</p>
+    <p class="meta">user-service · GET /user/:id · 7 days to 1 Oct</p>
   </header>
 
   <figure class="ve-steps">
@@ -225,11 +235,11 @@
   </figure>
 
   <section>
-    <h2>Postgres now serves 6% of reads</h2>
+    <div class="sec-head"><p class="label caps">Load</p><h2>Postgres now serves 6% of reads</h2></div>
     <figure>
       <div class="kpis">
         <div class="kpi"><span class="label">Hit rate · 7 days</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>
-          <svg class="ve-waffle" viewBox="0 0 100 100" role="img" aria-label="94 of 100 reads hit Redis; 6 miss"><rect width="100" height="90" fill="url(#ve-w-on)"/><rect y="90" width="40" height="10" fill="url(#ve-w-on)"/><rect x="40" y="90" width="60" height="10" fill="url(#ve-w-off)"/></svg></div>
+          <svg class="ve-waffle" viewBox="0 0 170 100" role="img" aria-label="94 of 100 reads hit Redis; 6 miss"><rect width="100" height="90" fill="url(#ve-w-on)"/><rect y="90" width="40" height="10" fill="url(#ve-w-on)"/><rect x="40" y="90" width="60" height="10" fill="url(#ve-w-off)"/><path class="ann" d="M104 95H114"/><text x="118" y="95">6 misses</text></svg></div>
         <div class="kpi"><span class="label">p50 read latency</span><span class="val"><span data-count="1.2">1.2</span><span class="unit"> ms</span></span>
           <svg class="ve-bars" viewBox="0 0 240 52" role="img" aria-label="A hit takes 1 ms; a miss takes 9 ms"><text y="12">hit</text><rect class="hot" x="44" y="5" width="16" height="14" rx="2"/><text x="68" y="12">1 ms</text><text y="40">miss</text><rect x="44" y="33" width="140" height="14" rx="2"/><text x="192" y="40">9 ms</text></svg></div>
         <div class="kpi"><span class="label">Postgres reads / s</span><span class="val" data-ref="pg"><span data-count="340">340</span></span>
@@ -240,7 +250,7 @@
   </section>
 
   <section>
-    <h2>One failure mode is still open</h2>
+    <div class="sec-head"><p class="label caps">Failure modes</p><h2>One failure mode is still open</h2></div>
     <figure>
       <div class="cases">
         <div class="case" data-st="ok"><span class="chip ok">Handled</span><h3>User updates profile</h3>
