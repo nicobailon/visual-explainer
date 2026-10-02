@@ -124,6 +124,10 @@ Make slides only when asked (`/generate-slides`, `--slides`). Read `references/s
 
 Optional. If `surf` or another image tool is available, you can embed generated images as base64 for a hero or concept art. Never use images for data or structure. The page must work without them.
 
+## Older recipes (optional)
+
+Longer how-to files from v0.11.0, outside this skill. Fetch one only when you need its mechanics: `https://raw.githubusercontent.com/nicobailon/visual-explainer/v0.11.0/plugins/visual-explainer/` + `references/css-patterns.md` (layout and CSS animation recipes) · `references/libraries.md` (Chart.js, anime.js, font pairs) · `references/responsive-nav.md` (sticky TOC with scroll-spy) · `references/slide-patterns.md` (slide layouts, transitions) · `templates/architecture.html` · `templates/data-table.html` · `templates/mermaid-flowchart.html`. They predate this guide: take the mechanics, keep this guide's look and rules.
+
 ## Before delivery
 
 ```

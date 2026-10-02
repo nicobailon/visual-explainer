@@ -17,13 +17,13 @@ What to draw is still the same: show the mechanism, label every arrow with a ver
 
 ## Shell
 
-Every diagram gets zoom, pan, fit, and expand. Keep the source in a separate element so you can re-render it.
+Every diagram gets zoom, pan, pinch, fit, 1:1, and expand. Keep the source in a separate element so you can re-render it.
 
 ```html
 <figure>
   <div class="diagram-shell" role="img" aria-label="(the claim)">
     <div class="mermaid-wrap">
-      <div class="zoom-controls"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit">⤢</button><button data-z="open" aria-label="Open full size">↗</button></div>
+      <div class="zoom-controls"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit">⤢</button><button data-z="one" aria-label="Actual size">1:1</button><button data-z="open" aria-label="Open full size">↗</button></div>
       <div class="mermaid-viewport"><div class="mermaid-canvas"></div></div>
     </div>
     <script type="text/plain" class="diagram-source">
@@ -58,27 +58,38 @@ for (const shell of document.querySelectorAll('.diagram-shell')) {
   const src = shell.querySelector('.diagram-source').textContent.trim();
   let z = 1, x = 0, y = 0, w = 0, h = 0;
   const apply = () => { canvas.style.transform = `translate(${x}px,${y}px) scale(${z})`; };
-  const fit = () => { z = Math.min(vp.clientWidth / w, vp.clientHeight / h, 2) * 0.92;
-    x = (vp.clientWidth - w * z) / 2; y = (vp.clientHeight - h * z) / 2; apply(); };
+  // Readability floor: never below 0.75 (16px labels stay >= 12px); a bigger graph pans instead of shrinking.
+  const zoomFor = (s) => Math.min(Math.max(s * 0.92, 0.75), 2);
+  const fit = () => { const W = vp.clientWidth, H = vp.clientHeight; z = zoomFor(Math.min(W / w, H / h));
+    x = Math.max((W - w * z) / 2, 0); y = Math.max((H - h * z) / 2, 0); apply(); };
   const zoomAt = (f, cx = vp.clientWidth / 2, cy = vp.clientHeight / 2) => {
     const n = Math.min(Math.max(z * f, 0.1), 8); x = cx - (cx - x) * n / z; y = cy - (cy - y) * n / z; z = n; apply(); };
   const render = async () => {
     const { svg } = await mermaid.render('m' + Math.random().toString(36).slice(2), src);
-    canvas.innerHTML = svg;
+    // Parse instead of innerHTML: keeps Mermaid's foreignObject labels and avoids scanner warnings.
+    canvas.replaceChildren(document.importNode(new DOMParser().parseFromString(svg, 'text/html').querySelector('svg'), true));
     const el = canvas.querySelector('svg'), vb = el.viewBox.baseVal;
-    w = vb.width; h = vb.height; el.setAttribute('width', w); el.setAttribute('height', h); fit();
+    w = vb.width; h = vb.height; el.setAttribute('width', w); el.setAttribute('height', h);
+    shell.querySelector('.mermaid-wrap').style.height = Math.round(Math.min(Math.max(h * zoomFor(vp.clientWidth / w) + 32, 240), innerHeight * 0.8)) + 'px';
+    fit();
   };
   shell.querySelector('.zoom-controls').onclick = (e) => {
     const a = e.target.closest('[data-z]')?.dataset.z;
-    if (a === 'in') zoomAt(1.2); if (a === 'out') zoomAt(1 / 1.2); if (a === 'fit') fit();
+    if (a === 'in') zoomAt(1.2); if (a === 'out') zoomAt(1 / 1.2); if (a === 'fit') fit(); if (a === 'one') zoomAt(1 / z);
     if (a === 'open') { const page = `<!doctype html><body style="margin:0;display:grid;place-items:center;min-height:100vh;background:${tok('--bg')}">${canvas.innerHTML}</body>`;
       open(URL.createObjectURL(new Blob([page], { type:'text/html' }))); }
   };
   vp.addEventListener('wheel', (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault();
     const r = vp.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top); }, { passive:false });
-  vp.addEventListener('pointerdown', (e) => { const sx = e.clientX - x, sy = e.clientY - y; vp.setPointerCapture(e.pointerId); vp.classList.add('is-panning');
-    vp.onpointermove = (m) => { x = m.clientX - sx; y = m.clientY - sy; apply(); };
-    vp.onpointerup = () => { vp.onpointermove = null; vp.classList.remove('is-panning'); }; });
+  // One pointer pans; two pinch-zoom around their midpoint. Lifting one finger hands back to a smooth pan.
+  const pts = new Map(); let span = 0;
+  vp.addEventListener('pointerdown', (e) => { vp.setPointerCapture(e.pointerId); pts.set(e.pointerId, e); vp.classList.add('is-panning'); });
+  vp.addEventListener('pointermove', (e) => { const p = pts.get(e.pointerId); if (!p) return; pts.set(e.pointerId, e);
+    if (pts.size === 1) { x += e.clientX - p.clientX; y += e.clientY - p.clientY; return apply(); }
+    const [a, b] = pts.values(), d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), r = vp.getBoundingClientRect();
+    if (span) zoomAt(d / span, (a.clientX + b.clientX) / 2 - r.left, (a.clientY + b.clientY) / 2 - r.top); span = d; });
+  const up = (e) => { pts.delete(e.pointerId); span = 0; if (!pts.size) vp.classList.remove('is-panning'); };
+  vp.addEventListener('pointerup', up); vp.addEventListener('pointercancel', up);
   vp.addEventListener('dblclick', fit);
   new ResizeObserver(() => w && fit()).observe(vp);
   renders.push(render);
