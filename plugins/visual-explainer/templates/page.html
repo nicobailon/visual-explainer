@@ -13,7 +13,7 @@
   /* tokens: Instrument register */
   :root {
     color-scheme: light dark;
-    --bg: #0b0d0c; --surface: #121614; --border: #1f2522; --border-bright: #313a35;
+    --bg: #0b0d0c; --surface: #121614; --border: #1f2522; --border-bright: #5e6662;
     --text: #e6ebe8; --text-dim: #919d97; --accent: #f2a93b; --accent-dim: rgba(242,169,59,.14);
     --ok: #6fcf97; --warn: #e8c547; --risk: #ef6f5c; --info: #6cb6e0;
     --font-body: 'Geist', 'Segoe UI', sans-serif;
@@ -25,7 +25,7 @@
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #f4f5f3; --surface: #ffffff; --border: #dfe3e0; --border-bright: #c5ccc8;
+      --bg: #f4f5f3; --surface: #ffffff; --border: #dfe3e0; --border-bright: #888e8b;
       --text: #121614; --text-dim: #545e59; --accent: #955700; --accent-dim: rgba(149,87,0,.12);
       --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890;
     }
@@ -123,7 +123,7 @@
 
   @media print {
     /* Print uses the light foregrounds on white, and every step fully drawn. */
-    :root { --bg: #fff; --surface: #fff; --border: #dfe3e0; --border-bright: #c5ccc8; --text: #121614; --text-dim: #545e59; --accent: #955700; --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890; }
+    :root { --bg: #fff; --surface: #fff; --border: #dfe3e0; --border-bright: #888e8b; --text: #121614; --text-dim: #545e59; --accent: #955700; --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890; }
     .ve-player button, .ve-player input { display: none; }
     .frame { overflow: visible; } .ve-svg { min-width: 0; }
     .ve-steps [data-s]:not(.on), .ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 1; }

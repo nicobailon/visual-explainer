@@ -13,18 +13,18 @@ One system, four registers. Choose the register from the content, then use its f
 
 The project's own design system overrides the register. If the user names a palette, use `themes.md`.
 
-Token order: `--bg --surface --border --border-bright --text --text-dim --accent --ok --warn --risk --info`. The first scheme listed is the default; put the other one in `prefers-color-scheme`. Every text token reaches 4.5:1 on `--bg` and on `--surface`.
+Token order: `--bg --surface --border --border-bright --text --text-dim --accent --ok --warn --risk --info`. The first scheme listed is the default; put the other one in `prefers-color-scheme`. Every text token reaches 4.5:1 on `--bg` and on `--surface`. `--border-bright` reaches 3:1, so it carries meaningful outlines (diagram nodes, controls). `--border` is for decorative frames and rules only.
 
 | Register · scheme | Values |
 |---|---|
-| Instrument · dark | `#0b0d0c #121614 #1f2522 #313a35 #e6ebe8 #919d97 #f2a93b #6fcf97 #e8c547 #ef6f5c #6cb6e0` |
-| Instrument · light | `#f4f5f3 #ffffff #dfe3e0 #c5ccc8 #121614 #545e59 #955700 #1c7443 #7a5e00 #b0341e #1a6890` |
-| Blueprint · dark | `#0d1520 #132031 #22324a #34496a #e3ecf5 #92a6bb #ffb547 #6fd3a0 #e8d36a #ff7b6b #7cc0f0` |
-| Blueprint · light | `#f2f6fa #ffffff #d6e0ea #b7c6d6 #0f1a26 #4d6074 #a34700 #1c7443 #776300 #b0341e #145f99` |
-| Paper · light | `#f7f7f4 #ffffff #e3e3dc #cbcbc2 #17191c #575c63 #2c4cd0 #1d7443 #836000 #b3301d #1b6a94` |
-| Paper · dark | `#111316 #181b1f #262a30 #3a4048 #e8e8e3 #9ba1a9 #93a6ff #6cc492 #e3b94d #f0806b #6fb8dc` |
-| Editorial · light | `#fbfbf9 #f1f0ec #e2e0da #c6c3bb #111111 #5a5853 #cc3418 #1d7443 #836000 #a01d48 #1b6a94` |
-| Editorial · dark | `#0f0f0f #1a1a19 #2b2a28 #403e3a #f2f0eb #a4a19b #ff6e50 #6cc492 #e3b94d #f57fa2 #7cb8e8` |
+| Instrument · dark | `#0b0d0c #121614 #1f2522 #5e6662 #e6ebe8 #919d97 #f2a93b #6fcf97 #e8c547 #ef6f5c #6cb6e0` |
+| Instrument · light | `#f4f5f3 #ffffff #dfe3e0 #888e8b #121614 #545e59 #955700 #1c7443 #7a5e00 #b0341e #1a6890` |
+| Blueprint · dark | `#0d1520 #132031 #22324a #596b87 #e3ecf5 #92a6bb #ffb547 #6fd3a0 #e8d36a #ff7b6b #7cc0f0` |
+| Blueprint · light | `#f2f6fa #ffffff #d6e0ea #818f9e #0f1a26 #4d6074 #a34700 #1c7443 #776300 #b0341e #145f99` |
+| Paper · light | `#f7f7f4 #ffffff #e3e3dc #8e8e8a #17191c #575c63 #2c4cd0 #1d7443 #836000 #b3301d #1b6a94` |
+| Paper · dark | `#111316 #181b1f #262a30 #62676c #e8e8e3 #9ba1a9 #93a6ff #6cc492 #e3b94d #f0806b #6fb8dc` |
+| Editorial · light | `#fbfbf9 #f1f0ec #e2e0da #8c8a85 #111111 #5a5853 #cc3418 #1d7443 #836000 #a01d48 #1b6a94` |
+| Editorial · dark | `#0f0f0f #1a1a19 #2b2a28 #696763 #f2f0eb #a4a19b #ff6e50 #6cc492 #e3b94d #f57fa2 #7cb8e8` |
 
 `--accent-dim` = the accent at 12–16% alpha. Blueprint grid: `background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 24px 24px` at about 50% opacity.
 

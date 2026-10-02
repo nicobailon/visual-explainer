@@ -25,7 +25,7 @@ Climb as high as the request allows. The default output is one HTML page whose s
 - Pi: `visual_explainer` `prepare` → `render` (ask before `prepare` unless a visual was requested). MCP: render tools default to `open:false`. Elsewhere: write the file and open it. Use `viewer:"glimpse"` only on request.
 - If a terminal table would have 4+ rows or 3+ columns, render HTML and reply with one summary line.
 - Write a Markdown companion (`<name>.md` beside the HTML) only when the user asks for AI-readable output or a source brief. HTML stays the source. Ask before you overwrite one.
-- Quick mode: only for a literal `--quick` on `/generate-web-diagram`, `/diff-review`, `/plan-review`, `/project-recap`. Do the same research, read `./quick/README.md` and `./quick/schema.json`, emit the JSON spec, and render with `action:"render_quick"` (Pi) or `node ./quick/render.mjs spec.json out.html`. If the content does not fit or rendering fails, use full HTML.
+- Quick mode: only for a literal `--quick` on `/generate-web-diagram`, `/diff-review`, `/plan-review`, `/project-recap`. Do the same research, read `./quick/README.md` and `./quick/schema.json`, emit the JSON spec, and render with `action:"render_quick"` (Pi) or `node <this skill's directory>/quick/render.mjs spec.json out.html` (resolve the path from the skill directory, not the user's repo). If the content does not fit or rendering fails, use full HTML.
 
 ## Show, don't tell
 

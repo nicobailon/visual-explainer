@@ -49,4 +49,4 @@ Progress bar · dot rail that expands to titles on hover or focus · `4 / 12 · 
 
 ## PPTX
 
-`visual-explainer-pptx deck.html deck.pptx` reads each `section.slide`: its headings, `.slide__subtitle`, lists, paragraphs, tables, and `pre`. Keep that structure semantic so the export has content to read.
+`visual-explainer-pptx deck.html deck.pptx` reads each `section.slide`: its headings, `.slide__subtitle`, lists, paragraphs, tables, and `pre`. Keep that structure semantic so the export has content to read. The exporter drops SVG, figures, and captions, so when PPTX is requested, give every figure slide its claim in a `<p class="slide__body">` as well.
