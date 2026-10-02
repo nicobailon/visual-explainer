@@ -72,7 +72,7 @@ Controls that recompute the picture, so the reader feels a setting instead of re
 
 - One to three controls (`input[type=range]`, `button[aria-pressed]`). Each changes something the reader cares about.
 - One pure `model(settings)` feeds the figure, the numbers, and the sentence. Nothing else holds state.
-- Default to the real current value and mark it on the scale, so the first screen is still the answer. Print, no-JS, and reduced motion show that state.
+- Default to the real current value and mark it on the scale, so the first screen is still the answer. Print and no-JS show that state with no controls: insert them from JS and hide them in print. Reduced motion keeps the controls live and drops only the transitions.
 - Show the formula in the caption or a `<details>`. Label a simplified model "illustrative".
 - Model the concept, never copy production logic into the page; a copy drifts.
 
