@@ -59,6 +59,7 @@ Shape the page to the content. These are starting points, not templates: merge, 
 | Depth that carries data: embeddings, spatial layouts, geometry | three.js → `references/diagrams.md` |
 | Sequence, ER/schema, class, git graph, 12+ nodes with crossings | Mermaid → `references/mermaid.md` |
 | A process that changes over time | Stepper or scene player → `references/diagrams.md` |
+| A setting the reader should feel: TTL, rollout %, a policy | Live figure → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
 
 Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. `templates/page.html` is the reference build. Copy its parts (tokens, kit CSS, scripts, components), not its outline, and swap in the register the content needs.

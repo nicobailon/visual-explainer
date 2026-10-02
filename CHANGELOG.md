@@ -17,6 +17,7 @@
 - Added guidance for three.js figures when depth carries data, such as embeddings, spatial layouts, and geometry.
 - Added editorial typography, layout, and chart rules to the style guide, drawn from Bringhurst, Butterick, Müller-Brockmann, Tufte, Datawrapper, and the FT Visual Vocabulary. They cover measure, leading, tracking, numerals, real characters, a 12-column grid with one axis, section openers, entry points, chart choice by relationship, layering, direct labels, and annotation.
 - Theme palettes now lift `--text-dim` where the original value was below 4.5:1 contrast.
+- Added a live figure pattern: one to three controls recompute the diagram, numbers, and headline from one model, including why-demos that show a bad policy's attractive wrong answer. Thanks to [@zanzipanzi](https://github.com/zanzipanzi) for #96.
 - Added a stepper and scene player pattern for step-by-step and animated explainers, plus guidance for narrated video when the user asks for it.
 - Replaced `css-patterns.md`, `libraries.md`, `responsive-nav.md`, and `slide-patterns.md` with `style-guide.md`, `diagrams.md`, `mermaid.md`, and `slides.md`. Replaced the architecture, Mermaid, and data-table templates with one `page.html` reference page. The removed files stay reachable as optional links pinned to v0.11.0.
 

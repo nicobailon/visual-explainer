@@ -66,6 +66,16 @@ Open on the complete picture, because the first viewport must show the answer. O
 
 One drawing, same coordinates, a toggle (`button[aria-pressed]` flips `figure[data-view]`; `.only-before` / `.only-after` groups). The reader sees exactly what moves. Added = `--ok` stroke; removed = `--risk` dashed. For a static version, two panels side by side at the same scale.
 
+## Live figure
+
+Controls that recompute the picture, so the reader feels a setting instead of reading about it: a TTL slider moves the hit rate, the flow-dot split, the load bar, and the headline. A policy toggle is a why-demo: on the same data the bad rule gives a nicer, wrong number.
+
+- One to three controls (`input[type=range]`, `button[aria-pressed]`). Each changes something the reader cares about.
+- One pure `model(settings)` feeds the figure, the numbers, and the sentence. Nothing else holds state.
+- Default to the real current value and mark it on the scale, so the first screen is still the answer. Print, no-JS, and reduced motion show that state.
+- Show the formula in the caption or a `<details>`. Label a simplified model "illustrative".
+- Model the concept, never copy production logic into the page; a copy drifts.
+
 ## Small multiples
 
 For a set of cases (failure modes, options, environments), draw the same small diagram once per case instead of writing a table. Same coordinates in each, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]` sets `--st`; mark the changed parts `.is-st`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 13 units or more, cards at least 14.5rem wide.
