@@ -54,7 +54,7 @@
   h3 { font-size: var(--t-body); line-height: 1.3; font-weight: 600; }
   .eyebrow { display: flex; align-items: center; gap: var(--s-2); font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
   .eyebrow::before { content: ''; width: 1.25rem; height: 2px; background: currentColor; }
-  .label { font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); }
+  .ve-label { font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); }
   .caps { text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--text); }
   .lead { font-size: var(--t-lead); line-height: 1.5; color: var(--text-dim); max-width: 44ch; }
   .lead b { color: var(--text); font-weight: 600; }
@@ -235,14 +235,14 @@
   </figure>
 
   <section>
-    <div class="sec-head"><p class="label caps">Load</p><h2>Postgres now serves 6% of reads</h2></div>
+    <div class="sec-head"><p class="ve-label caps">Load</p><h2>Postgres now serves 6% of reads</h2></div>
     <figure>
       <div class="kpis">
-        <div class="kpi"><span class="label">Hit rate · 7 days</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>
+        <div class="kpi"><span class="ve-label">Hit rate · 7 days</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>
           <svg class="ve-waffle" viewBox="0 0 170 100" role="img" aria-label="94 of 100 reads hit Redis; 6 miss"><rect width="100" height="90" fill="url(#ve-w-on)"/><rect y="90" width="40" height="10" fill="url(#ve-w-on)"/><rect x="40" y="90" width="60" height="10" fill="url(#ve-w-off)"/><path class="ann" d="M104 95H114"/><text x="118" y="95">6 misses</text></svg></div>
-        <div class="kpi"><span class="label">p50 read latency</span><span class="val"><span data-count="1.2">1.2</span><span class="unit"> ms</span></span>
+        <div class="kpi"><span class="ve-label">p50 read latency</span><span class="val"><span data-count="1.2">1.2</span><span class="unit"> ms</span></span>
           <svg class="ve-bars" viewBox="0 0 240 52" role="img" aria-label="A hit takes 1 ms; a miss takes 9 ms"><text y="12">hit</text><rect class="hot" x="44" y="5" width="16" height="14" rx="2"/><text x="68" y="12">1 ms</text><text y="40">miss</text><rect x="44" y="33" width="140" height="14" rx="2"/><text x="192" y="40">9 ms</text></svg></div>
-        <div class="kpi"><span class="label">Postgres reads / s</span><span class="val" data-ref="pg"><span data-count="340">340</span></span>
+        <div class="kpi"><span class="ve-label">Postgres reads / s</span><span class="val" data-ref="pg"><span data-count="340">340</span></span>
           <svg class="ve-bars" viewBox="0 0 240 52" role="img" aria-label="Postgres reads fell from 5,600 to 340 per second"><text y="12">before</text><rect x="64" y="5" width="140" height="14" rx="2"/><text x="212" y="12">5.6k</text><text y="40">now</text><rect class="hot" x="64" y="33" width="9" height="14" rx="2"/><text x="81" y="40">340</text></svg></div>
       </div>
       <figcaption><span class="fig-n">Fig. 2</span>Each square is 1% of reads. A miss costs 9× a hit.</figcaption>
@@ -250,7 +250,7 @@
   </section>
 
   <section>
-    <div class="sec-head"><p class="label caps">Failure modes</p><h2>One failure mode is still open</h2></div>
+    <div class="sec-head"><p class="ve-label caps">Failure modes</p><h2>One failure mode is still open</h2></div>
     <figure>
       <div class="cases">
         <div class="case" data-st="ok"><span class="chip ok">Handled</span><h3>User updates profile</h3>

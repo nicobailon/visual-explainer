@@ -17,6 +17,7 @@
 - Replaced `css-patterns.md`, `libraries.md`, `responsive-nav.md`, and `slide-patterns.md` with `style-guide.md`, `diagrams.md`, `mermaid.md`, and `slides.md`. Replaced the architecture, Mermaid, and data-table templates with one `page.html` reference page. The removed files stay reachable as optional links pinned to v0.11.0.
 
 ### Fixed
+- Page styles no longer leak into Mermaid diagrams. The reference page's eyebrow and KPI labels use `.ve-label` instead of `.label`, which Mermaid also uses for every node label, and the Mermaid guidance now names the common bare classes it emits plus a computed-style check. Thanks to [@vnakhate](https://github.com/vnakhate) for #98.
 - Slide resume no longer stops between slides, because the jump is instant instead of smooth. Saving the resume position no longer depends on `history.replaceState`, which fails on `file://` pages. The outline and help dialog has an accessible name again.
 
 ## [0.11.0] - 2026-08-28
