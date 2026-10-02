@@ -21,6 +21,8 @@ y:210                  ┌──▼───┐
 - SVG text does not wrap: keep lines short (about 18 characters), `<tspan x=".." dy="1.2em">` for a second line.
 - Draw edges first and nodes after, so nodes sit on top.
 - A boundary (process, network, trust zone) is a dashed rect with a mono label in its top-left corner.
+- Over about 12 nodes, draw a 5–8 node overview and put the detail in cards or a second figure.
+- Sequence: one column per actor with a thin lifeline, one row per message, time runs down, each arrow labeled with its call. Schema: one box per table with its key fields in mono, crow's-foot ends for many.
 
 ## Kit
 

@@ -24,7 +24,7 @@ Every coding agent defaults to ASCII art when you ask for a diagram. Box-drawing
 
 Tables are worse. Ask the agent to compare 15 requirements against a plan and you get a wall of pipes and dashes that wraps and breaks in the terminal. The data is there but it's painful to read.
 
-This skill fixes that. Real typography, dark/light themes, interactive Mermaid diagrams with zoom and pan. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
+This skill fixes that. Real typography, dark/light themes, hand-drawn diagrams that animate and respond to the reader. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
 
 ## Install
 
@@ -474,14 +474,14 @@ https://github.com/user-attachments/assets/342d3558-5fcf-4fb2-bc03-f0dd5b9e35dc
 
 ## Themes
 
-Ask for switchable themes, or name a palette, and the page gets a picker — colored dots for the palette and `Aa` chips for the font pair, both swapping live and re-rendering every Mermaid diagram:
+Ask for switchable themes, or name a palette, and the page gets a picker — colored dots for the palette and `Aa` chips for the font pair, both swapping live:
 
 ```
 "explain this pipeline, use Gruvbox"
 "diagram the auth flow, let me switch themes"
 ```
 
-Eleven palettes ship with it: Dracula, Nord, One Dark, Catppuccin Mocha, Tokyo Night, Gruvbox Dark, Synthwave '84 (dark) and Solarized Light, GitHub Light, Catppuccin Latte, Gruvbox Light. The font chips offer the pairs the skill already recommends. Mermaid colors and label fonts are derived from the active selection, so diagrams always match the page around them. Set `theme:` or `font:` in `visual-explainer.config.md` to choose what loads first. Claude Code users can keep personal overrides in `.claude/visual-explainer.local.md`; shared project defaults should use the harness-neutral file.
+Eleven palettes ship with it: Dracula, Nord, One Dark, Catppuccin Mocha, Tokyo Night, Gruvbox Dark, Synthwave '84 (dark) and Solarized Light, GitHub Light, Catppuccin Latte, Gruvbox Light. The font chips offer the pairs the skill already recommends. Diagrams draw with the page tokens, so they always match the active selection. Set `theme:` or `font:` in `visual-explainer.config.md` to choose what loads first. Claude Code users can keep personal overrides in `.claude/visual-explainer.local.md`; shared project defaults should use the harness-neutral file.
 
 The picker is opt-in. Pages that don't ask for one still get a single palette and font pair chosen to fit the content.
 
@@ -504,7 +504,6 @@ plugins/
     ├── references/        ← read on demand
     │   ├── style-guide.md (four registers, tokens, scale, components, polish pass)
     │   ├── diagrams.md    (hand-drawn SVG kit, linked highlighting, stepper/scene player)
-    │   ├── mermaid.md     (when auto-layout pays + zoom/pan shell)
     │   ├── slides.md      (deck budget, engine contract, delivery check)
     │   └── themes.md      (11 palettes + runtime theme/font picker)
     └── templates/
@@ -514,14 +513,13 @@ plugins/
 
 **Output:** `~/.agent/diagrams/filename.html` → opens in browser. When you explicitly request AI-readable output or a source brief, the agent can also write `~/.agent/diagrams/filename.md` as a concise companion. It asks before replacing an existing companion. HTML remains the final visual output; the Markdown companion is not its source. In Pi package installs, agents can offer `visual_explainer` with `action: "prepare"` after generating or reviewing a substantial plan, architecture, diff, or implementation when a visual explanation would help, then call it with `action: "render"` as the final write/open step. MCP hosts use the separate `visual-explainer-mcp` stdio server and default render tools to `open: false`.
 
-Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Most diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when automatic layout pays off (sequence, ER, large graphs). Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
+Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when you ask for it. Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 
 ## Limitations
 
 - Generated HTML is portable and self-contained, but auto-opening depends on the harness, browser access, and sandbox rules.
 - PPTX export is a static best-effort handoff. The HTML deck remains the source of truth for full visual fidelity.
 - All harnesses write visual output to `~/.agent/diagrams/` unless the user asks for a different path. The Pi tool and the MCP server write to `VISUAL_EXPLAINER_OUTPUT_DIR` instead when it is set.
-- Switching OS theme requires a page refresh for Mermaid SVGs.
 - Results vary by model capability.
 
 ## Credits

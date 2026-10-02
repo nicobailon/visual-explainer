@@ -31,10 +31,10 @@ Font pairs (id → body / mono): `dm` DM Sans / Fira Code · `instrument` Instru
 - Put one fixed bar at the top right: theme dots (fill `--surface`, ring `--accent`), a divider, then `Aa` font chips, each set in its own family. Every control uses `aria-pressed`.
 - Build the dots and chips from the `THEMES` / `FONT_PAIRS` data. Never hand-write them, so a control cannot drift from the value it sets.
 - Put the default theme and font in `:root` as plain CSS. Then the page renders correctly without JS, and you do not need to apply anything on load.
-- `applyTheme(id)` sets every column above, including the status colors and `--border-bright`, with `root.style.setProperty`. `applyFont(id)` sets `--font-body` and `--font-mono`. Both are `async`, update `aria-pressed`, and then `await window.rerenderDiagrams()` (`mermaid.md`). Re-render after a font change too, because Mermaid measures labels at render time.
+- `applyTheme(id)` sets every column above, including the status colors and `--border-bright`, with `root.style.setProperty`. `applyFont(id)` sets `--font-body` and `--font-mono`. Both are `async`, update `aria-pressed`, and then redraw anything that baked colors or measured text, such as a canvas chart.
 - Rules must read fonts only through `var(--font-body)` and `var(--font-mono)`.
 - Draw the active ring in `var(--text)`, not white, because white disappears on light themes. Give every control a focus ring. Hide the bar in print.
-- Declare `DEFAULT_THEME`, `DEFAULT_FONT`, and the active state before the Mermaid init that reads them. `let` and `const` are not hoisted.
+- Declare `DEFAULT_THEME`, `DEFAULT_FONT`, and the active state before any script that reads them. `let` and `const` are not hoisted.
 
 ## Project defaults
 

@@ -51,18 +51,17 @@ Shape the page to the content. These are starting points, not templates: merge, 
 
 | Content | Figure |
 |---|---|
-| Architecture, data flow, pipeline, state, before/after | Hand-drawn inline SVG → `references/diagrams.md` |
+| Architecture, data flow, pipeline, state, sequence, schema, before/after | Hand-drawn inline SVG → `references/diagrams.md` |
 | Cards, timelines, file maps, side-by-side | CSS grid/flex |
 | Scenarios, failure modes, options | Small multiples → `references/diagrams.md` |
 | Matrix, audit, many rows of data | `<table>` with status chips |
 | Rates, shares, metrics, trends | Waffle, bars, sparklines in SVG; Chart.js only for many interactive series |
 | Depth that carries data: embeddings, spatial layouts, geometry | three.js → `references/diagrams.md` |
-| Sequence, ER/schema, class, git graph, 12+ nodes with crossings | Mermaid → `references/mermaid.md` |
 | A process that changes over time | Stepper or scene player → `references/diagrams.md` |
 | A setting the reader should feel: TTL, rollout %, a policy | Live figure → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
 
-Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. `templates/page.html` is the reference build. Copy its parts (tokens, kit CSS, scripts, components), not its outline, and swap in the register the content needs.
+Draw every diagram by hand. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. Use Mermaid only when the user asks for it or supplies Mermaid source (see Known traps). `templates/page.html` is the reference build. Copy its parts (tokens, kit CSS, scripts, components), not its outline, and swap in the register the content needs.
 
 ## Words
 
@@ -104,7 +103,7 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 
 - Set `min-width:0` on grid/flex children, `grid-template-columns:minmax(0,1fr)` on single-column grids, and `overflow-wrap:anywhere` on paths. Put wide tables, code, and SVG in a scroll container.
 - Do not put `display:flex` on `<li>` when its markers matter.
-- Never give a page class a name Mermaid's SVG also uses: `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, `.commit`. A page rule on any of them restyles every diagram; add a `ve-` prefix instead (`.ve-label`).
+- If the user asks for Mermaid: `theme:'base'` with `themeVariables` read from `getComputedStyle` (Mermaid cannot read CSS variables), re-rendered on a theme or font switch. Quote labels that hold punctuation; `<br/>`, not `\n`. Natural size in a scroll box, never shrunk to fit. No page class named `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, or `.commit`; Mermaid uses them. For zoom and pan, copy `templates/mermaid-flowchart.html` from Older recipes.
 - Wrap `history.replaceState` in `try/catch`. It throws on `file://` pages.
 - Add section navigation (sticky TOC with scroll-spy) only for 4+ sections.
 - Respect `prefers-reduced-motion`: copy the template's `.js-motion` pattern, so the final state shows without JS, in print, and under reduced motion.
@@ -137,13 +136,12 @@ Longer how-to files from v0.11.0, outside this skill. Fetch one only when you ne
 □ figures outnumber prose paragraphs; the lead and prose are short enough that the pictures carry the page
 □ every number has a picture; scenarios are small multiples, not a sentence table
 □ topic motif: 2–3 touches taken from the subject; page still reads without them
-□ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing (the SVG, or the Mermaid shell)
+□ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing
 □ key terms linked with data-ref where hovering helps
 □ no horizontal overflow at 1280px or 390px wide
 □ both color schemes work (or one theme was deliberate)
 □ type in rem; body ≥16px, labels ≥12px; all text ≥4.5:1 in both schemes; visible keyboard focus
 □ headings state takeaways; paragraphs stay short
-□ any Mermaid uses the zoom/pan shell
 □ every size, gap, and radius is on the style-guide scale; polish pass done
 □ typography: real dashes, minus, ×, curly quotes; no-break space before units; tabular figures in data
 □ layout: one flush-left axis, consistent section openers, varied rhythm; blurred, each screen still shows one dominant element

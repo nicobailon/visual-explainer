@@ -31,8 +31,7 @@
         "diagrams",
         "html-generation",
         "code-review",
-        "slides",
-        "mermaid"
+        "slides"
       ]
     }
   ]

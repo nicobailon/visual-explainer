@@ -34,8 +34,7 @@
     "plan-review",
     "slides",
     "pptx",
-    "powerpoint",
-    "mermaid"
+    "powerpoint"
   ],
   "files": [
     "plugins/visual-explainer",
