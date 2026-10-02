@@ -40,9 +40,7 @@
   "files": [
     "plugins/visual-explainer",
     ".claude-plugin",
-    "plugin.json",
     "configs",
-    "scripts",
     "install-pi.sh",
     "banner.png",
     "README.md",

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 
 const root = new URL("../", import.meta.url);
 
@@ -39,12 +39,22 @@ const invalid =
   expected.length === 0 ||
   versions.some(([, version]) => version !== expected);
 
+// Agent Plugins clients discover the skill only through this link.
+const linkedSkill = "skills/visual-explainer/SKILL.md";
+const linkOk =
+  realpathSync(new URL(linkedSkill, root)) ===
+  realpathSync(new URL("plugins/visual-explainer/SKILL.md", root));
+if (!linkOk) {
+  console.error(`${linkedSkill} must link to plugins/visual-explainer/SKILL.md`);
+  process.exitCode = 1;
+}
+
 if (invalid) {
   console.error("Version guard failed. All release metadata must match package.json:");
   for (const [file, version] of versions) {
     console.error(`  ${file}: ${version ?? "<missing>"}`);
   }
   process.exitCode = 1;
-} else {
+} else if (linkOk) {
   console.log(`Version guard passed: ${expected}`);
 }
