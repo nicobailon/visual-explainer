@@ -1,6 +1,6 @@
 # Hand-drawn SVG figures
 
-Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. `templates/page.html` shows all of these patterns working together.
+Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. `templates/page.html` has the CSS and JS for every pattern here. Copy those blocks as they are; this file gives the markup contracts and the rules.
 
 ## Plan on a grid
 
@@ -15,103 +15,89 @@ y:210                  ┌──▼───┐
                        └──────┘
 ```
 
-- Sketch the layout in ASCII first, then turn columns and rows into coordinates.
-- Make the viewBox width close to the display width (720–1000) so `14` units ≈ 14px. On narrow screens, put the SVG in a scroll container with `min-width`. Do not let text shrink below the type minimums.
-- Leave at least 40 units between boxes. Draw edges as orthogonal paths (`M x y H x V y`). Put each label about 9 units above its line. The `.ve-el` halo is only for a label that must cross a line, because the line still shows between the letters.
-- SVG text does not wrap. Keep each line to 18 characters or fewer and use `<tspan x=".." dy="1.2em">` for a second line.
-- Show a boundary (process, network, trust zone) as a dashed rect with a mono label in its top-left corner.
+- Sketch in ASCII first, then turn columns and rows into coordinates.
+- Make the viewBox width close to the display width (720–1000) so `14` units ≈ 14px. On narrow screens the `.frame` scrolls and the SVG keeps a `min-width`. Text never shrinks below the type minimums.
+- At least 40 units between boxes. Orthogonal edges (`M x y H x V y`). Labels 9 units above their line, with the `.ve-el` halo.
+- SVG text does not wrap: keep lines short (about 18 characters), `<tspan x=".." dy="1.2em">` for a second line.
+- Draw edges first and nodes after, so nodes sit on top.
+- A boundary (process, network, trust zone) is a dashed rect with a mono label in its top-left corner.
 
 ## Kit
 
+```
+page   <svg width=0 height=0> defs once: #ve-ah marker (fill="context-stroke"), #ve-node gradient
+figure <figure> → .frame (dot-grid stage) → svg.ve-svg[role=img][aria-label] → <figcaption>Fig. N + claim
+node   <g class="ve-n [is-key]"> <rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>] </g>
+edge   <path class="ve-e [is-hot|is-async]"/>  + <text class="ve-el [l|r]">verb or value</text>
+```
+
+- **Shape says what a thing is.** Rect for a service. Cylinder for a datastore (`path.sh` body + `ellipse.sh.lid`, as Postgres in the template). Rect with 3 short dividers for a queue. Dashed rect for something optional or down.
+- **Glyph** (`.gl`): a 16-unit line drawing in the node's top-left corner, only when the kind is not clear from the name. Stroke `--text-dim`, never filled, never emoji.
+- **Edge language:** solid = sync call · dashed = async or optional · thick glowing accent = the path this figure is about · red ✕ = blocked.
+
+## Flow dots
+
+Moving dots show direction and volume at a glance. Use them on the main figure when traffic or data moves. The rate must mean something: the ratio of spawn intervals is the real split.
+
 ```html
-<figure class="ve-fig">
-  <svg class="ve-svg" viewBox="0 0 800 300" role="img" aria-label="API reads cache; a miss falls through to DB">
-    <defs><!-- markers do not inherit the path's color: one per color. userSpaceOnUse keeps every head the same size. -->
-      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
-      <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>
-    <g class="ve-n" transform="translate(40 60)"><rect width="160" height="60" rx="6"/><text x="80" y="30">Client</text></g>
-    <g class="ve-n is-key" transform="translate(280 60)"><rect width="160" height="60" rx="6"/><text x="80" y="30">API</text></g>
-    <path class="ve-e" d="M200 90H280" marker-end="url(#ah)"/><text class="ve-el" x="240" y="80">GET /u</text>
-  </svg>
-  <figcaption><span class="fig-n">Fig. 1</span>Cache hits never reach the database.</figcaption>
-</figure>
+<path data-flow="hit"  data-every="420"  d="M95 105H375V80H695V105H375"/>   <!-- invisible route -->
+<path data-flow="miss" data-every="7000" d="M95 105H355V270H395V130H695"/>  <!-- 420:7000 ≈ 94:6 -->
+<g class="ve-dots" aria-hidden="true"></g>                                   <!-- after edges, before nodes -->
 ```
 
-```css
-/* values from style-guide.md → Diagram; keep them identical in every figure */
-.ve-svg { width:100%; height:auto; display:block; font:500 17px var(--font-body); }
-.ve-n rect { fill:var(--bg); stroke:var(--border-bright); stroke-width:1.5; }
-.ve-n text { fill:var(--text); font-weight:600; text-anchor:middle; dominant-baseline:central; }
-.ve-n.is-key rect { stroke:var(--accent); stroke-width:2.5; }
-.ve-e { fill:none; stroke:var(--text-dim); stroke-width:1.75; }
-.ve-e.is-async { stroke-dasharray:6 5; }
-.ve-e.is-hot { stroke:var(--accent); stroke-width:2.75; }
-.ve-el { fill:var(--text-dim); font:500 14px var(--font-mono); text-anchor:middle; }
-.ve-el.halo { paint-order:stroke; stroke:var(--surface); stroke-width:6px; stroke-linejoin:round; } /* only where a label must cross a line */
-```
-
-Edge language: solid = sync call · dashed = async or optional · thick accent = the path this figure is about · red ✕ = blocked.
+Routes pass through node centers. The dots move under the opaque nodes, so they enter one box and leave the next. One moving layer per page. The script runs dots only while the figure is on screen, hides them mid-step, and never runs them under reduced motion.
 
 ## Linked highlighting
 
-Any element with `data-ref` is linked to every other element with the same ref: a term in the prose, a node or edge in the figure, a table row, a legend button. Hover any of them, or focus a prose term or button, and all of them light up while the other shapes in the figure dim. Prose terms get `tabindex="0"` so the keyboard reaches them. One element can carry several refs (`data-ref="hit miss"`).
-
-```html
-<p>The API asks <span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> first.</p>
-<g class="ve-n" data-ref="redis">…</g>  <path class="ve-e" data-ref="redis hit" …/>
-<button data-ref="miss">Cache miss</button>
-```
-
-Copy the `.ve-ref` CSS and the `data-ref` script from `templates/page.html` as they are. Link 2–4 key terms per figure, not every noun.
+Elements that share a `data-ref` light up together: a prose term, a node, an edge, a card, a button. Hovering any of them, or focusing a prose term or button, lights all of them while the other shapes dim. Prose terms get `tabindex="0"`. One element can carry several refs (`data-ref="hit miss"`). Link 2–4 key terms per figure, not every noun.
 
 ## Stepper and scene player
 
-This is the most useful interaction for teaching. The full drawing appears faintly, and each step brings its parts forward with a caption. Add play and a scrub bar, and the stepper becomes a scene player: a small explainer "video" in one HTML file.
+The most useful interaction for teaching: each step brings its parts forward with a one-line caption. Add Play and a scrub bar and it becomes a scene player, a small explainer video in one file.
 
-```html
-<figure class="ve-steps">
-  <svg class="ve-svg" ...>  <!-- data-s="N": part appears at step N -->
-    <g class="ve-n" data-s="1">…</g> <path class="ve-e" data-s="2" pathLength="1" …/>
-  </svg>
-  <div class="ve-player">
-    <ol class="ve-cap"><li data-n="1/2">Client sends GET /u.</li><li data-n="2/2">API checks the cache first.</li></ol>
-    <button data-go="-1" aria-label="Previous step">←</button>
-    <button data-play>Play</button>
-    <input type="range" min="0" value="0" aria-label="Step">
-    <button data-go="1" aria-label="Next step">→</button>
-  </div>
-  <figcaption><span class="fig-n">Fig. 2</span>(the claim, one sentence)</figcaption>
-</figure>
 ```
-Copy the `.ve-steps` and `.ve-player` CSS and the script from `templates/page.html` as they are. A shape with `data-s="N"` stays a faint outline, with its label hidden, until step N. Then it turns `.on`. The current step's parts also get `.now`. A path with `pathLength="1"` draws itself in.
+<figure class="ve-steps">  parts: data-s="N" (appears at step N) · paths with pathLength="1" draw in
+  .ve-player → ol.ve-cap > li[data-n="1/5"] · button[data-go=-1] · button[data-play] · input[type=range] · button[data-go=1]
+```
 
-Scene rules: one claim per scene. Each caption is one sentence. Something visibly changes at every step. Open on the complete picture, because the first viewport must show the answer. Never autoplay. Keep Play available under reduced motion, because the reader starts it.
+Open on the complete picture, because the first viewport must show the answer. One claim per scene; something visibly changes at every step. Never autoplay. Play stays available under reduced motion, because the reader starts it.
 
 ## Before / after
 
-Use one drawing with the same coordinates and a toggle. The reader sees exactly what moves.
+One drawing, same coordinates, a toggle (`button[aria-pressed]` flips `figure[data-view]`; `.only-before` / `.only-after` groups). The reader sees exactly what moves. Added = `--ok` stroke; removed = `--risk` dashed. For a static version, two panels side by side at the same scale.
 
-```html
-<figure class="ve-fig" data-view="before">
-  <button aria-pressed="false" onclick="const f=this.closest('figure');const a=f.dataset.view==='after';f.dataset.view=a?'before':'after';this.setAttribute('aria-pressed',String(!a))">Show after</button>
-  <svg>… <g class="only-before">…</g> <g class="only-after is-added">…</g> …</svg>
-</figure>
-```
-```css
-[data-view="before"] .only-after, [data-view="after"] .only-before { display:none; }
-.is-added rect { stroke:var(--ok); }  .is-removed rect { stroke:var(--risk); stroke-dasharray:4 4; }
-```
+## Small multiples
 
-For static before/after, put two panels side by side with the same scale. Red marks removed or before, green marks added or after, amber marks risk.
+For a set of cases (failure modes, options, environments), draw the same small diagram once per case instead of writing a table. Same coordinates in each, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]` sets `--st`; mark the changed parts `.is-st`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 13 units or more, cards at least 14.5rem wide.
 
 ## Small charts
 
-- **Sparkline:** a `0 0 100 24` SVG with one `polyline` and `vector-effect: non-scaling-stroke`. See the KPI row in `templates/page.html`.
-- **Bar:** a track `div` whose `::before` has `width: calc(var(--v) * 100%)`. Give it `role="img"` and an `aria-label` with the value.
+Every number gets a picture beside it. Each chart has `role="img"` and an `aria-label` with the values.
+
+- **Waffle** (rates, "N of 100"): 10×10 cells, two `<pattern>` fills over three rects.
+- **Bars** (2–5 values): value label just past each bar's end. The bar that matters is accent; the rest `--border-bright`. Bars grow in when their block enters.
+- **Sparkline** (trend): `0 0 100 24`, one `polyline`, `vector-effect: non-scaling-stroke`.
+
+## Entrance motion
+
+Each top-level block rises 1rem and fades in once. `data-count` numbers count up and bars grow. JS adds `.js-motion` only when motion is allowed, so no-JS, print, and reduced motion show the final state. Nothing beyond this: no parallax, no scroll-jacking, no looping effects other than flow dots.
+
+## 3D with three.js
+
+Use 3D only when depth carries data: embeddings and point clouds, physical or spatial layouts (racks, regions, floor plans), stacks where height is a real quantity, meshes and geometry. A graph of boxes and arrows is never 3D.
+
+```html
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186/examples/jsm/"}}</script>
+```
+
+- Canvas in a `.frame` with a fixed aspect ratio, `role="img"`, an `aria-label`, a `Fig. N` caption, and a one-line text fallback with the key numbers.
+- Colors from the page tokens via `getComputedStyle`. Labels with `CSS2DRenderer`, so they use the page font. One directional light plus ambient. No bloom, fog, or decorative particles.
+- `OrbitControls` with damping and zoom limits, plus a "Reset view" button. Open on an angle that already shows the answer. Auto-rotate only until the first interaction, never under reduced motion.
+- `setPixelRatio(Math.min(devicePixelRatio, 2))`, a `ResizeObserver`, and render only while visible.
 
 ## Page structure for 4+ sections
 
-Use a two-column grid: a sticky `<nav>` table of contents on the left and content on the right. Below 1000px, the nav becomes a sticky horizontal bar. Mark the active section with an `IntersectionObserver` (`rootMargin:'-10% 0px -80% 0px'`). On link click, scroll first, then run `try { history.replaceState(null,'','#'+id) } catch {}`, because `file://` pages throw on this call.
+Sticky `<nav>` table of contents on the left, content on the right; below 1000px it becomes a sticky top bar. Mark the active section with an `IntersectionObserver` (`rootMargin:'-10% 0px -80% 0px'`). Wrap `history.replaceState` in `try/catch`, because it throws on `file://` pages.
 
 ## Other shapes
 

@@ -30,19 +30,22 @@ Climb as high as the request allows. The default output is one HTML page whose s
 ## Show, don't tell
 
 1. **One claim per figure.** Put each figure in `<figure>`; the `<figcaption>` states the claim in one sentence.
-2. **Figures lead.** Every section opens with a figure. Prose after it: 3 sentences or fewer.
+2. **Figures lead, words label.** Every section is a heading plus a figure. Keep the lead to a sentence or two, and prose outside captions light, roughly a short paragraph per screen. Write more when the reader needs the reasoning, not to restate the picture. If a sentence describes the picture, make it a label in the picture.
 3. **First viewport = the answer.** The main idea as a picture plus one sentence. No decorative hero.
 4. **Draw the mechanism, not the name.** A request path through a cache beats a box labeled "cache". Label every arrow with a verb: `writes`, `invalidates`, `polls 30s`.
 5. **Draw the difference.** To compare options, show the edge or box each one adds or removes.
 6. **Encode state in form.** Shape, position, and pattern, plus color. Never color alone.
-7. **Numbers get a visual.** Bar, sparkline, or delta chip. A number inside a sentence is lost.
+7. **Every number gets a picture.** Waffle, bars, or sparkline beside it. A number inside a sentence is lost.
+8. **Cases become small multiples.** Failure modes, options, environments: the same mini diagram once per case, not a table of sentences.
 
 | Content | Figure |
 |---|---|
 | Architecture, data flow, pipeline, state, before/after | Hand-drawn inline SVG → `references/diagrams.md` |
 | Cards, timelines, file maps, side-by-side | CSS grid/flex |
-| Matrix, audit, comparison | `<table>` with status chips |
-| Metrics, trends | Inline SVG bars or sparklines; Chart.js only for many interactive series |
+| Scenarios, failure modes, options | Small multiples → `references/diagrams.md` |
+| Matrix, audit, many rows of data | `<table>` with status chips |
+| Rates, shares, metrics, trends | Waffle, bars, sparklines in SVG; Chart.js only for many interactive series |
+| Depth that carries data: embeddings, spatial layouts, geometry | three.js → `references/diagrams.md` |
 | Sequence, ER/schema, class, git graph, 12+ nodes with crossings | Mermaid → `references/mermaid.md` |
 | A process that changes over time | Stepper or scene player → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
@@ -54,33 +57,34 @@ Mermaid is the exception. Use it only when automatic layout saves real work. Han
 Write about 80% of the way to ASD-STE100 (Simplified Technical English):
 
 - Answer first, detail after. Headings state the takeaway ("Cache hits skip Postgres"), not the topic ("Caching").
-- One idea per sentence. 20 words or fewer. Active voice, present tense.
-- Paragraphs: 3 sentences at most. Bold one key phrase per paragraph, never more.
+- One idea per sentence. Mostly short sentences (around 20 words or under). Active voice, present tense.
+- Short paragraphs, usually 1–3 sentences. Bold the one key phrase, if any.
 - One term per concept, the same every time. Name things by what the reader sees, not by internal structure.
 - No idioms, metaphors, filler, or hedges. Specific beats clever. Controls say exactly what they do.
 - Use numbered lists for steps. Use plain words over jargon. Spell out an abbreviation the first time.
 
 ## Look
 
-Aim for the standard of the best research and engineering pages: exact, calm, and dense with meaning. The reader should feel that someone who understands the system drew every line on purpose.
+Aim for the standard of the best research and engineering pages: exact, calm, visual, and specific to the subject. The reader should feel that someone who understands the system drew every line on purpose, for this topic and no other.
 
 Always read `references/style-guide.md` before HTML. Precedence: the user's words → the project's design system → the style guide.
 
 ```
-content ──► register ──────────► fonts + palette + signature, used exactly
-reviews, audits, metrics     Instrument   Geist · near-black · amber signal
-architecture, flows, plans   Blueprint    IBM Plex · blue-black grid · safety orange
-concepts, long reading       Paper        Newsreader + Atkinson Hyperlegible · ink blue
-recaps, narratives, decks    Editorial    Instrument Serif + Sans · vermilion
+content ──► register ──────────► subject ──► topic motif (2–3 touches)
+reviews, metrics   Instrument    Geist · near-black · amber        accent hue from the subject
+architecture       Blueprint     IBM Plex · blue-black grid        stage texture · glyphs
+concepts, reading  Paper         Newsreader + Atkinson · ink blue  one type habit of the domain
+recaps, decks      Editorial     Instrument Serif + Sans           the domain's diagram convention
 ```
 
 - **Quiet ground, one signal.** Neutrals carry the page. The accent marks only what the reader must look at now.
-- **The figure is the interface.** Prose terms and figure elements light up together. Values appear on hover or focus. Overview first, detail on demand.
-- **Precision is the decoration.** Exact alignment, one stroke weight per role, labels in place, tabular numbers with smaller units. Nothing that carries no data.
-- **Stay on the scale.** No sizes, gaps, radii, or colors outside the style guide. Consistency is what makes a page look finished.
-- **Two schemes:** tokens on `:root`, and `prefers-color-scheme` redefines tokens only. One theme is fine for a one-shot page.
-- **Never:** Inter, Roboto, Arial, or system-ui as the only font; violet or fuchsia Tailwind accents; neon; gradient blobs or heroes; glass, glow, or pulse; emoji markers; centered everything; an accent bar on a rounded card; `01/02/03` when order does not matter.
-- **Reading comfort:** `html{font-size:17px}`, `rem` elsewhere. Body ≥ 16px, labels ≥ 12px, SVG labels ≥ 12px as rendered. 45–68ch, left-aligned. Text ≥ 4.5:1, lines ≥ 3:1. Italics and uppercase only for a few words. One focal point per viewport. No motion the reader did not start. Show position (`2 / 5`, section nav). Slides keep their `clamp()` px scale.
+- **Craft is part of the meaning.** Raised nodes on a dot-grid stage, shapes that say what a thing is, a halo on the focal element, a glow on the hot path, the number leading the headline. Each effect points at something.
+- **The figure is the interface.** Prose terms and figure elements light up together. Overview first, detail on demand.
+- **Motion shows change or flow.** Blocks rise in once, numbers count up, dots move along edges at the real rate. No parallax, scroll-jacking, or decorative loops. Under reduced motion, show the final state.
+- **Stay on the scale.** No sizes, gaps, radii, or colors outside the style guide.
+- **Two schemes:** tokens on `:root`, and `prefers-color-scheme` redefines tokens only.
+- **Never:** Inter, Roboto, Arial, or system-ui as the only font; violet or fuchsia Tailwind accents; neon; glassmorphism; gradient text, backgrounds, or blobs; clip-art, mascots, or emoji markers; centered everything; an accent bar on a rounded card; `01/02/03` when order does not matter.
+- **Reading comfort:** `html{font-size:17px}`, `rem` elsewhere. Body ≥ 16px, labels ≥ 12px, SVG labels ≥ 12px as rendered. 45–68ch, left-aligned. Text ≥ 4.5:1, lines ≥ 3:1. Italics and uppercase only for a few words. One focal point per viewport. Show position (`2 / 5`, section nav). Slides keep their `clamp()` px scale.
 - **Themes:** switchable themes or fonts, or a named palette (Dracula, Nord…) → `references/themes.md`.
 
 ## Known traps
@@ -90,7 +94,7 @@ recaps, narratives, decks    Editorial    Instrument Serif + Sans · vermilion
 - Never style a page-level `.node`; Mermaid uses it. Use a prefix such as `.ve-`.
 - Wrap `history.replaceState` in `try/catch`. It throws on `file://` pages.
 - Add section navigation (sticky TOC with scroll-spy) only for 4+ sections.
-- Respect `prefers-reduced-motion`. Motion must explain something.
+- Respect `prefers-reduced-motion`: copy the template's `.js-motion` pattern, so the final state shows without JS, in print, and under reduced motion.
 
 ## Animate
 
@@ -98,7 +102,7 @@ When the user asks for an animated explainer or a video:
 
 - **Default:** an HTML scene player. SVG scenes with play, pause, scrub, and captions, all in one file. See `references/diagrams.md`.
 - **Real video (3Blue1Brown style):** first check which tools are installed. Use Manim, Remotion, or Motion Canvas for visuals and ffmpeg to mux. For narration, use ElevenLabs if the user gives a key. If not, use local TTS (macOS `say`, Piper, Kokoro). Do not install tools or spend API credit without asking.
-- **Script first.** One claim per scene, 25 words or fewer of narration per scene, and the picture changes with every sentence.
+- **Script first.** One claim per scene, a sentence or two of narration, and the picture changes with every sentence.
 
 ## Slides and PPTX
 
@@ -113,15 +117,17 @@ Optional. If `surf` or another image tool is available, you can embed generated 
 ```
 □ one complete HTML file at the path; opens with no console errors
 □ first viewport: main idea as a picture + one sentence
-□ figures outnumber prose paragraphs
+□ figures outnumber prose paragraphs; the lead and prose are short enough that the pictures carry the page
+□ every number has a picture; scenarios are small multiples, not a sentence table
+□ topic motif: 2–3 touches taken from the subject; page still reads without them
 □ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing (the SVG, or the Mermaid shell)
 □ 2–4 key terms per figure linked with data-ref
 □ no horizontal overflow at 1280px or 390px wide
 □ both color schemes work (or one theme was deliberate)
 □ type in rem; body ≥16px, labels ≥12px; all text ≥4.5:1 in both schemes; visible keyboard focus
-□ headings state takeaways; no paragraph over 3 sentences
+□ headings state takeaways; paragraphs stay short
 □ any Mermaid uses the zoom/pan shell
 □ every size, gap, and radius is on the style-guide scale; polish pass done
-□ register fonts and palette used exactly; would not pass for a generic dark/violet template
+□ register fonts and neutrals used exactly; would not pass for a generic dark/violet template
 □ slides: each fits, nav chrome works, all source items covered, delivery check passes
 ```

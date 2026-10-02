@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Why most reads never touch the database</title>
+<title>94% of reads never touch the database</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b0d0c'/%3E%3Cpath d='M16 32h14M34 22h14M34 42h14' stroke='%23f2a93b' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
 <!-- Reference page: the Instrument register from references/style-guide.md, built exactly to the guide. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,9 +16,10 @@
     --bg: #0b0d0c; --surface: #121614; --border: #1f2522; --border-bright: #5e6662;
     --text: #e6ebe8; --text-dim: #919d97; --accent: #f2a93b; --accent-dim: rgba(242,169,59,.14);
     --ok: #6fcf97; --warn: #e8c547; --risk: #ef6f5c; --info: #6cb6e0;
+    --node-top: color-mix(in srgb, var(--text) 7%, var(--surface)); --lift: rgb(0 0 0 / .45); --halo: 32%;
     --font-body: 'Geist', 'Segoe UI', sans-serif;
     --font-mono: 'Geist Mono', ui-monospace, monospace;
-    --t-label: .75rem; --t-small: .875rem; --t-body: 1rem; --t-lead: 1.25rem; --t-h2: 1.625rem; --t-h1: clamp(2.25rem, 5vw, 3.5rem);
+    --t-label: .75rem; --t-small: .875rem; --t-body: 1rem; --t-lead: 1.25rem; --t-h2: 1.625rem; --t-h1: clamp(2.25rem, 5.5vw, 4rem);
     --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem; --s-5: 1.5rem; --s-6: 2rem; --s-7: 3rem; --s-8: 4.5rem;
     --r-1: 4px; --r-2: 10px;
     --ease: cubic-bezier(.16,1,.3,1); --fast: 150ms; --med: 300ms; --slow: 500ms;
@@ -28,6 +29,7 @@
       --bg: #f4f5f3; --surface: #ffffff; --border: #dfe3e0; --border-bright: #888e8b;
       --text: #121614; --text-dim: #545e59; --accent: #955700; --accent-dim: rgba(149,87,0,.12);
       --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890;
+      --node-top: var(--surface); --lift: rgb(18 22 20 / .12); --halo: 22%;
     }
   }
 
@@ -41,44 +43,56 @@
   section, figure, header { min-width: 0; }
   header { display: grid; gap: var(--s-4); }
   header + figure { margin-top: calc(var(--s-6) - var(--s-8)); }
-  h1 { font-size: var(--t-h1); line-height: 1.05; font-weight: 600; letter-spacing: -.03em; text-wrap: balance; max-width: 18ch; }
-  h2 { font-size: var(--t-h2); line-height: 1.2; font-weight: 600; letter-spacing: -.015em; text-wrap: balance; margin-bottom: var(--s-5); }
-  .eyebrow { font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: var(--t-h1); line-height: 1.05; font-weight: 600; letter-spacing: -.035em; text-wrap: balance; max-width: 16ch; }
+  h1 .num { color: var(--accent); font-variant-numeric: tabular-nums; }
+  h2 { font-size: var(--t-h2); line-height: 1.2; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; margin-bottom: var(--s-5); }
+  h3 { font-size: var(--t-body); line-height: 1.3; font-weight: 600; }
+  .eyebrow { display: flex; align-items: center; gap: var(--s-2); font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .eyebrow::before { content: ''; width: 1.25rem; height: 2px; background: currentColor; }
   .label { font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); }
-  .lead { font-size: var(--t-lead); line-height: 1.5; color: var(--text-dim); max-width: 46ch; }
+  .lead { font-size: var(--t-lead); line-height: 1.5; color: var(--text-dim); max-width: 44ch; }
   .lead b { color: var(--text); font-weight: 600; }
   .unit { font-size: .5em; font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
   code { font: .875em var(--font-mono); }
 
-  /* figure */
-  .frame { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-5); overflow-x: auto; }
+  /* figure: the stage is a faint dot grid, so nodes read as objects placed on it */
+  .frame { background: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 13%, transparent) 1px, transparent 1.5px) 0 0 / 20px 20px, var(--bg); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-5); overflow-x: auto; }
   figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(--s-3); max-width: 68ch; }
   .fig-n { font: 600 var(--t-label) var(--font-mono); color: var(--text); margin-right: var(--s-2); }
 
   /* diagram kit (references/diagrams.md) */
   /* min-width keeps 14-unit labels >= 12px as rendered; narrow screens scroll the frame instead. */
   .ve-svg { width: 100%; min-width: 700px; height: auto; display: block; font: 500 17px var(--font-body); }
-  .ve-n rect { fill: var(--bg); stroke: var(--border-bright); stroke-width: 1.5; transition: stroke var(--fast) var(--ease); }
-  .ve-n.is-key rect { stroke: var(--accent); stroke-width: 2.5; }
+  .ve-n .sh { fill: url(#ve-node); stroke: var(--border-bright); stroke-width: 1.5; filter: drop-shadow(0 6px 14px var(--lift)); transition: stroke var(--fast) var(--ease), opacity var(--med) var(--ease); }
+  .ve-n .lid { fill: var(--node-top); }
+  .ve-n.is-key .sh { fill: color-mix(in srgb, var(--accent) 11%, var(--surface)); stroke: var(--accent); stroke-width: 2; filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent) var(--halo), transparent)); }
   .ve-n text { fill: var(--text); text-anchor: middle; dominant-baseline: central; font-weight: 600; }
   .ve-n .sub { fill: var(--text-dim); font: 500 14px var(--font-mono); }
-  .ve-e { fill: none; stroke: var(--text-dim); stroke-width: 1.75; }
-  .ve-e.is-hot { stroke: var(--accent); stroke-width: 2.75; }
+  .ve-n .gl { fill: none; stroke: var(--text-dim); stroke-width: 1.5; stroke-linejoin: round; }
+  .ve-n.is-key .gl { stroke: var(--accent); }
+  .ve-e { fill: none; stroke: var(--text-dim); stroke-width: 1.75; marker-end: url(#ve-ah); }
+  .ve-e.is-hot { stroke: var(--accent); stroke-width: 2.75; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 55%, transparent)); }
   .ve-e.is-async { stroke-dasharray: 6 5; }
-  .ve-el { fill: var(--text-dim); font: 500 14px var(--font-mono); text-anchor: middle; }
+  .ve-el { fill: var(--text-dim); font: 500 14px var(--font-mono); text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 5px; stroke-linejoin: round; }
   .ve-el.l { text-anchor: end; } .ve-el.r { text-anchor: start; }
+
+  /* flow dots: they travel under the nodes, so a dot enters a box and leaves from the far side */
+  [data-flow] { fill: none; stroke: none; }
+  .ve-dots circle { fill: var(--text); }
+  .ve-dots .hit { fill: var(--accent); filter: drop-shadow(0 0 4px var(--accent)); }
+  .ve-steps:not(.is-full) .ve-dots { display: none; }
 
   /* linked highlighting: same data-ref lights up together */
   /* Dim shapes, never text below 4.5:1: unlit labels drop to --text-dim instead of fading. */
   .ve-ref { text-decoration: underline dotted var(--text-dim) 1px; text-underline-offset: .22em; border-radius: var(--r-1); transition: background var(--fast) var(--ease); }
   .ve-ref.is-lit { background: var(--accent-dim); text-decoration-color: var(--accent); }
-  svg [data-ref], svg [data-ref] rect { transition: opacity var(--med) var(--ease); }
-  svg.has-lit path[data-ref]:not(.is-lit), svg.has-lit g[data-ref]:not(.is-lit) rect { opacity: .25; }
+  svg [data-ref] { transition: opacity var(--med) var(--ease); }
+  svg.has-lit path[data-ref]:not(.is-lit), svg.has-lit g[data-ref]:not(.is-lit) .sh { opacity: .25; }
   svg.has-lit g[data-ref]:not(.is-lit) text, svg.has-lit text[data-ref]:not(.is-lit) { fill: var(--text-dim); }
-  .ve-n.is-lit rect { stroke: var(--accent); }
-  .ve-e.is-lit { stroke: var(--accent); marker-end: url(#ah-hot); }
+  .ve-n.is-lit .sh { stroke: var(--accent); }
+  .ve-e.is-lit { stroke: var(--accent); }
   .ve-el.is-lit { fill: var(--text); }
-  tr.is-lit td { background: var(--accent-dim); }
+  .case.is-lit { border-color: var(--accent); }
 
   /* stepper / scene player */
   /* Future steps: shapes stay as a faint outline; their labels are hidden, not faded to an unreadable gray. */
@@ -87,32 +101,40 @@
   .ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 0; }
   .ve-steps path[pathLength][data-s] { stroke-dasharray: 1; stroke-dashoffset: 1; }
   .ve-steps path[pathLength][data-s].on { stroke-dashoffset: 0; }
-  .ve-steps .ve-n.now rect { stroke: var(--accent); }
+  .ve-steps .ve-n.now .sh { stroke: var(--accent); }
   .ve-player { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-4); }
   .ve-cap { grid-column: 1 / -1; list-style: none; padding: 0; min-height: 3.2em; }
   .ve-cap li::before { content: attr(data-n); font: 600 var(--t-label) var(--font-mono); color: var(--accent); margin-right: var(--s-3); font-variant-numeric: tabular-nums; }
   .ve-player input { accent-color: var(--accent); min-width: 0; }
   button { font: 500 var(--t-small) var(--font-mono); color: var(--text); background: var(--surface); border: 1px solid var(--border-bright); border-radius: var(--r-1); padding: var(--s-2) var(--s-3); cursor: pointer; transition: border-color var(--fast) var(--ease); }
   button:hover, button:focus-visible { border-color: var(--accent); }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-  /* KPI strip: one frame, cells split by hairlines */
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-2); overflow: hidden; }
-  .kpi { background: var(--surface); padding: var(--s-5); display: grid; grid-template-rows: auto auto 1fr; gap: var(--s-2); min-width: 0; }
-  .kpi .val { font: 600 2.4rem/1 var(--font-body); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
-  .delta { align-self: end; font: 500 var(--t-label) var(--font-mono); color: var(--text-dim); }
-  .delta b { color: var(--ok); font-weight: 600; }
-  .ve-spark { align-self: end; width: 100%; height: 2rem; overflow: visible; }
-  .ve-spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; vector-effect: non-scaling-stroke; }
-  .ve-spark circle { fill: var(--accent); }
+  /* KPI strip: one frame, cells split by hairlines, each number with its picture. Flex, so a wrapped last row stretches instead of leaving an empty gray cell. */
+  .kpis { display: flex; flex-wrap: wrap; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-2); overflow: hidden; }
+  .kpi { flex: 1 1 14rem; background: var(--surface); padding: var(--s-5); display: grid; grid-template-rows: auto auto 1fr; gap: var(--s-3); min-width: 0; }
+  .kpi .val { font: 600 2.75rem/1 var(--font-body); font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+  .ve-waffle { align-self: end; width: 6.5rem; height: auto; }
+  .ve-bars { align-self: end; width: 100%; max-width: 16rem; height: auto; font: 500 13px var(--font-mono); overflow: visible; }
+  .ve-bars text { fill: var(--text-dim); dominant-baseline: central; }
+  .ve-bars rect { fill: var(--border-bright); transform-box: fill-box; transform-origin: left; transition: transform 900ms var(--ease) 150ms; }
+  .ve-bars .hot { fill: var(--accent); }
+  .ve-bars .hot + text { fill: var(--text); }
 
-  /* table + chips */
-  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-2); }
-  table { width: 100%; border-collapse: collapse; font-size: var(--t-body); }
-  th { text-align: left; font: 600 var(--t-label) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); background: var(--surface); }
-  th, td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; transition: background var(--fast) var(--ease); }
-  tr:last-child td { border-bottom: 0; }
-  .chip { display: inline-flex; align-items: center; gap: var(--s-2); font: 600 var(--t-label) var(--font-mono); padding: 2px var(--s-2); border: 1px solid currentColor; border-radius: var(--r-1); white-space: nowrap; }
+  /* small multiples: one mini diagram per case; the changed part takes the case's status color */
+  .cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr)); gap: var(--s-4); }
+  .case { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-4); display: grid; gap: var(--s-3); align-content: start; transition: border-color var(--fast) var(--ease); }
+  .case[data-st=ok] { --st: var(--ok); } .case[data-st=warn] { --st: var(--warn); } .case[data-st=risk] { --st: var(--risk); }
+  .ve-mini { width: 100%; height: auto; font: 600 15px var(--font-body); }
+  .ve-mini .ve-n .sh { filter: none; }
+  .ve-mini .ve-n .sub { font-size: 13px; }
+  .ve-mini .is-st.ve-e { stroke: var(--st); stroke-width: 2.75; }
+  .ve-mini .is-st .sh { stroke: var(--st); stroke-width: 2; }
+  .ve-mini .is-st .sub { fill: var(--st); }
+  .ve-mini .is-off { stroke-dasharray: 5 4; }
+  .ve-mini .ve-e.is-off { opacity: .35; }
+
+  /* chips */
+  .chip { display: inline-flex; align-items: center; gap: var(--s-2); font: 600 var(--t-label) var(--font-mono); padding: 2px var(--s-2); border: 1px solid currentColor; border-radius: var(--r-1); white-space: nowrap; justify-self: start; }
   .chip::before { content: ''; width: .5rem; height: .5rem; background: currentColor; }
   .chip.ok { color: var(--ok); } .chip.ok::before { border-radius: 50%; }
   .chip.warn { color: var(--warn); } .chip.warn::before { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
@@ -121,94 +143,134 @@
   details { border-top: 1px solid var(--border); padding-top: var(--s-4); color: var(--text-dim); font-size: var(--t-body); }
   summary { cursor: pointer; font: 500 var(--t-label) var(--font-mono); margin-bottom: var(--s-2); }
 
+  /* entrance: blocks rise in once; bars grow as their block arrives (JS adds .js-motion only when motion is allowed) */
+  .js-motion main > * { transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease); }
+  .js-motion main > :not(.in) { opacity: 0; transform: translateY(1rem); }
+  .js-motion main > :not(.in) .ve-bars rect { transform: scaleX(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
   @media print {
-    /* Print uses the light foregrounds on white, and every step fully drawn. */
-    :root { --bg: #fff; --surface: #fff; --border: #dfe3e0; --border-bright: #888e8b; --text: #121614; --text-dim: #545e59; --accent: #955700; --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890; }
-    .ve-player button, .ve-player input { display: none; }
-    .frame { overflow: visible; } .ve-svg { min-width: 0; }
+    /* Print uses the light foregrounds on white, every step fully drawn, and no effects. */
+    :root { --bg: #fff; --surface: #fff; --border: #dfe3e0; --border-bright: #888e8b; --text: #121614; --text-dim: #545e59; --accent: #955700; --ok: #1c7443; --warn: #7a5e00; --risk: #b0341e; --info: #1a6890; --node-top: #fff; }
+    .ve-player button, .ve-player input, .ve-dots { display: none; }
+    .frame { overflow: visible; background: #fff; } .ve-svg { min-width: 0; }
+    .frame, .case, .kpi { break-inside: avoid; } h2 { break-after: avoid; }
+    svg * { filter: none !important; }
+    .js-motion main > * { opacity: 1 !important; transform: none !important; }
+    .js-motion .ve-bars rect { transform: none !important; }
     .ve-steps [data-s]:not(.on), .ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 1; }
     .ve-steps path[pathLength][data-s] { stroke-dashoffset: 0; }
   }
 </style>
 </head>
 <body>
+<!-- Shared defs: one arrowhead (context-stroke follows each edge's color), the node fill, and the waffle cells. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ve-ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker>
+    <linearGradient id="ve-node" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--node-top)"/><stop offset="1" style="stop-color:var(--surface)"/></linearGradient>
+    <pattern id="ve-w-on" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="1" y="1" width="8" height="8" rx="1.5" style="fill:var(--accent)"/></pattern>
+    <pattern id="ve-w-off" width="10" height="10" patternUnits="userSpaceOnUse"><rect x="1.5" y="1.5" width="7" height="7" rx="1.5" style="fill:none;stroke:var(--text-dim)"/></pattern>
+  </defs>
+</svg>
 <main>
 
   <header>
     <p class="eyebrow">Read path</p>
-    <h1>Most reads never touch the database</h1>
-    <p class="lead">The API asks <span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> first. <b class="ve-ref" data-ref="hit" tabindex="0">94% of reads end there in about 1 ms.</b> Only misses reach <span class="ve-ref" data-ref="pg" tabindex="0">Postgres</span>, and the API writes each miss back for the next read.</p>
+    <h1><span class="num">94%</span> of reads never touch the database</h1>
+    <p class="lead"><span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> answers them in <b class="ve-ref" data-ref="hit" tabindex="0">about 1 ms</b>. Only misses reach <span class="ve-ref" data-ref="pg" tabindex="0">Postgres</span>.</p>
   </header>
 
   <figure class="ve-steps">
     <div class="frame">
       <svg class="ve-svg" viewBox="0 50 800 270" role="img" aria-label="Client calls API. API gets the key from Redis. A hit returns in 1 ms. A miss reads Postgres in 9 ms, then the API sets the key with a 60 second TTL.">
-        <defs>
-          <!-- userSpaceOnUse: every arrowhead is the same size, whatever the stroke width -->
-          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
-          <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker>
-        </defs>
-        <g class="ve-n" data-s="1" data-ref="client" transform="translate(20 60)"><rect width="150" height="90" rx="6"/><text x="75" y="45">Client</text></g>
-        <g class="ve-n is-key" data-s="1" data-ref="api" transform="translate(300 60)"><rect width="150" height="90" rx="6"/><text x="75" y="38">API</text><text class="sub" x="75" y="62">user-service</text></g>
-        <g class="ve-n" data-s="2" data-ref="redis" transform="translate(610 60)"><rect width="170" height="90" rx="6"/><text x="85" y="38">Redis</text><text class="sub" x="85" y="62">TTL 60 s</text></g>
-        <g class="ve-n" data-s="4" data-ref="pg" transform="translate(300 230)"><rect width="150" height="80" rx="6"/><text x="75" y="40">Postgres</text></g>
-
-        <path class="ve-e" data-s="1" data-ref="client api" pathLength="1" d="M170 105H300" marker-end="url(#ah)"/>
+        <path class="ve-e" data-s="1" data-ref="client api" pathLength="1" d="M170 105H300"/>
         <text class="ve-el" data-s="1" data-ref="client api" x="235" y="95">GET /user/42</text>
-        <path class="ve-e" data-s="2" data-ref="redis hit" pathLength="1" d="M450 80H610" marker-end="url(#ah)"/>
+        <path class="ve-e" data-s="2" data-ref="redis hit" pathLength="1" d="M450 80H610"/>
         <text class="ve-el" data-s="2" data-ref="redis hit" x="530" y="71">get key</text>
-        <path class="ve-e is-hot" data-s="3" data-ref="redis hit" pathLength="1" d="M610 105H450" marker-end="url(#ah-hot)"/>
+        <path class="ve-e is-hot" data-s="3" data-ref="redis hit" pathLength="1" d="M610 105H450"/>
         <text class="ve-el" data-s="3" data-ref="redis hit" x="530" y="96">hit · 1 ms</text>
-        <path class="ve-e" data-s="4" data-ref="pg" pathLength="1" d="M355 150V230" marker-end="url(#ah)"/>
+        <path class="ve-e" data-s="4" data-ref="pg" pathLength="1" d="M355 150V230"/>
         <text class="ve-el l" data-s="4" data-ref="pg" x="345" y="194">miss: SELECT</text>
-        <path class="ve-e" data-s="4" data-ref="pg" pathLength="1" d="M395 230V150" marker-end="url(#ah)"/>
+        <path class="ve-e" data-s="4" data-ref="pg" pathLength="1" d="M395 230V150"/>
         <text class="ve-el r" data-s="4" data-ref="pg" x="405" y="194">row · 9 ms</text>
-        <path class="ve-e is-async" data-s="5" data-ref="redis pg" d="M450 130H610" marker-end="url(#ah)"/>
+        <path class="ve-e is-async" data-s="5" data-ref="redis pg" d="M450 130H610"/>
         <text class="ve-el" data-s="5" data-ref="redis pg" x="530" y="121">set key</text>
+
+        <!-- One hit route and one miss route; spawn intervals give the real 94:6 split. -->
+        <path data-flow="hit" data-every="420" d="M95 105H375V80H695V105H375"/>
+        <path data-flow="miss" data-every="7000" d="M95 105H355V270H395V130H695"/>
+        <g class="ve-dots" aria-hidden="true"></g>
+
+        <g class="ve-n" data-s="1" data-ref="client" transform="translate(20 60)"><rect class="sh" width="150" height="90" rx="6"/><path class="gl" transform="translate(12 12)" d="M0 1h16v12H0zM0 4.5h16"/><text x="75" y="45">Client</text></g>
+        <g class="ve-n is-key" data-s="1" data-ref="api" transform="translate(300 60)"><rect class="sh" width="150" height="90" rx="6"/><path class="gl" transform="translate(12 12)" d="M8 0l7 4v8l-7 4-7-4V4z"/><text x="75" y="38">API</text><text class="sub" x="75" y="62">user-service</text></g>
+        <g class="ve-n" data-s="2" data-ref="redis" transform="translate(610 60)"><rect class="sh" width="170" height="90" rx="6"/><path class="gl" transform="translate(12 12)" d="M9 0L2 9h5l-1 7 7-9H8z"/><text x="85" y="38">Redis</text><text class="sub" x="85" y="62">TTL 60 s</text></g>
+        <g class="ve-n" data-s="4" data-ref="pg" transform="translate(300 230)"><path class="sh" d="M0 10V70A75 10 0 0 0 150 70V10"/><ellipse class="sh lid" cx="75" cy="10" rx="75" ry="10"/><text x="75" y="46">Postgres</text></g>
       </svg>
     </div>
     <div class="ve-player">
       <ol class="ve-cap">
         <li data-n="1/5">The client asks the API for user 42.</li>
-        <li data-n="2/5">The API asks Redis for the key first.</li>
-        <li data-n="3/5">On a hit, Redis answers in about 1 ms. The request ends here.</li>
-        <li data-n="4/5">On a miss, the API reads the row from Postgres in about 9 ms.</li>
-        <li data-n="5/5">The API writes the row to Redis, so the next read is a hit.</li>
+        <li data-n="2/5">The API asks Redis first.</li>
+        <li data-n="3/5">A hit returns in about 1 ms. Done.</li>
+        <li data-n="4/5">A miss reads Postgres in about 9 ms.</li>
+        <li data-n="5/5">The API writes the row back, so the next read hits.</li>
       </ol>
       <button data-go="-1" aria-label="Previous step">←</button>
       <button data-play>Play</button>
       <input type="range" min="0" value="0" aria-label="Step">
       <button data-go="1" aria-label="Next step">→</button>
     </div>
-    <figcaption><span class="fig-n">Fig. 1</span>Reads go to Redis first. Postgres only sees misses, and each miss refills the cache.</figcaption>
+    <figcaption><span class="fig-n">Fig. 1</span>Each moving dot is one read. One in sixteen misses and goes on to Postgres.</figcaption>
   </figure>
 
   <section>
-    <h2>The cache takes the load off Postgres</h2>
+    <h2>Postgres now serves 6% of reads</h2>
     <figure>
       <div class="kpis">
-        <div class="kpi"><span class="label">Hit rate · 7 days</span><span class="val">94<span class="unit">%</span></span>
-          <svg class="ve-spark" viewBox="0 0 100 24" preserveAspectRatio="none" role="img" aria-label="Hit rate rose from 81% to 94% over 7 days"><polyline points="0,20 16,17 33,12 50,9 66,6 83,5 100,4"/></svg></div>
-        <div class="kpi"><span class="label">p50 read latency</span><span class="val">1.2<span class="unit"> ms</span></span><span class="delta"><b>−86%</b> vs. no cache</span></div>
-        <div class="kpi"><span class="label">Postgres reads per second</span><span class="val">340</span><span class="delta"><b>−94%</b> from 5,600</span></div>
+        <div class="kpi"><span class="label">Hit rate · 7 days</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>
+          <svg class="ve-waffle" viewBox="0 0 100 100" role="img" aria-label="94 of 100 reads hit Redis; 6 miss"><rect width="100" height="90" fill="url(#ve-w-on)"/><rect y="90" width="40" height="10" fill="url(#ve-w-on)"/><rect x="40" y="90" width="60" height="10" fill="url(#ve-w-off)"/></svg></div>
+        <div class="kpi"><span class="label">p50 read latency</span><span class="val"><span data-count="1.2">1.2</span><span class="unit"> ms</span></span>
+          <svg class="ve-bars" viewBox="0 0 240 52" role="img" aria-label="A hit takes 1 ms; a miss takes 9 ms"><text y="12">hit</text><rect class="hot" x="44" y="5" width="16" height="14" rx="2"/><text x="68" y="12">1 ms</text><text y="40">miss</text><rect x="44" y="33" width="140" height="14" rx="2"/><text x="192" y="40">9 ms</text></svg></div>
+        <div class="kpi"><span class="label">Postgres reads / s</span><span class="val" data-ref="pg"><span data-count="340">340</span></span>
+          <svg class="ve-bars" viewBox="0 0 240 52" role="img" aria-label="Postgres reads fell from 5,600 to 340 per second"><text y="12">before</text><rect x="64" y="5" width="140" height="14" rx="2"/><text x="212" y="12">5.6k</text><text y="40">now</text><rect class="hot" x="64" y="33" width="9" height="14" rx="2"/><text x="81" y="40">340</text></svg></div>
       </div>
-      <figcaption><span class="fig-n">Fig. 2</span>Hit rate climbs as the cache warms. Postgres now serves 6% of reads.</figcaption>
+      <figcaption><span class="fig-n">Fig. 2</span>Each square is 1% of reads. A miss costs 9× a hit.</figcaption>
     </figure>
   </section>
 
   <section>
     <h2>One failure mode is still open</h2>
     <figure>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Event</th><th>What happens</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>User updates profile</td><td>The API deletes <code>user:42</code>. The next read misses and gets fresh data.</td><td><span class="chip ok">Handled</span></td></tr>
-            <tr><td>Key reaches its TTL</td><td>The next read misses and refills the key.</td><td><span class="chip ok">Handled</span></td></tr>
-            <tr><td>Write races a read</td><td>An old row can be cached for up to 60 s.</td><td><span class="chip warn">Accepted</span></td></tr>
-            <tr data-ref="pg"><td>Redis is down</td><td>All reads go to Postgres at about 16× the normal load.</td><td><span class="chip risk">Open risk</span></td></tr>
-          </tbody>
-        </table>
+      <div class="cases">
+        <div class="case" data-st="ok"><span class="chip ok">Handled</span><h3>User updates profile</h3>
+          <svg class="ve-mini" viewBox="0 0 240 128" role="img" aria-label="The API deletes the key in Redis. The next read goes to Postgres and gets fresh data.">
+            <path class="ve-e is-st" d="M58 56C94 56 94 28 130 28"/><path class="ve-e" d="M58 68C94 68 94 100 130 100"/>
+            <g class="ve-n"><rect class="sh" x="2" y="44" width="56" height="36" rx="5"/><text x="30" y="62">API</text></g>
+            <g class="ve-n is-st"><rect class="sh" x="130" y="4" width="106" height="48" rx="5"/><text x="183" y="21">Redis</text><text class="sub" x="183" y="40">key deleted</text></g>
+            <g class="ve-n"><path class="sh" d="M130 80V116A53 6 0 0 0 236 116V80"/><ellipse class="sh lid" cx="183" cy="80" rx="53" ry="6"/><text x="183" y="97">Postgres</text><text class="sub" x="183" y="112">fresh row</text></g>
+          </svg></div>
+        <div class="case" data-st="ok"><span class="chip ok">Handled</span><h3>Key reaches its TTL</h3>
+          <svg class="ve-mini" viewBox="0 0 240 128" role="img" aria-label="The key expires. The next read misses, reads Postgres, and refills the key.">
+            <path class="ve-e" d="M58 56C94 56 94 28 130 28"/><path class="ve-e is-st" d="M58 68C94 68 94 100 130 100"/>
+            <g class="ve-n"><rect class="sh" x="2" y="44" width="56" height="36" rx="5"/><text x="30" y="62">API</text></g>
+            <g class="ve-n"><rect class="sh" x="130" y="4" width="106" height="48" rx="5"/><text x="183" y="21">Redis</text><text class="sub" x="183" y="40">expired</text></g>
+            <g class="ve-n is-st"><path class="sh" d="M130 80V116A53 6 0 0 0 236 116V80"/><ellipse class="sh lid" cx="183" cy="80" rx="53" ry="6"/><text x="183" y="97">Postgres</text><text class="sub" x="183" y="112">refill</text></g>
+          </svg></div>
+        <div class="case" data-st="warn"><span class="chip warn">Accepted</span><h3>Write races a read</h3>
+          <svg class="ve-mini" viewBox="0 0 240 128" role="img" aria-label="A read caches an old row just before a write lands. Redis serves the old row for up to 60 seconds.">
+            <path class="ve-e" d="M58 56C94 56 94 28 130 28"/><path class="ve-e" d="M58 68C94 68 94 100 130 100"/>
+            <g class="ve-n"><rect class="sh" x="2" y="44" width="56" height="36" rx="5"/><text x="30" y="62">API</text></g>
+            <g class="ve-n is-st"><rect class="sh" x="130" y="4" width="106" height="48" rx="5"/><text x="183" y="21">Redis</text><text class="sub" x="183" y="40">old ≤ 60 s</text></g>
+            <g class="ve-n"><path class="sh" d="M130 80V116A53 6 0 0 0 236 116V80"/><ellipse class="sh lid" cx="183" cy="80" rx="53" ry="6"/><text x="183" y="97">Postgres</text><text class="sub" x="183" y="112">new row</text></g>
+          </svg></div>
+        <div class="case" data-st="risk" data-ref="pg"><span class="chip risk">Open risk</span><h3>Redis is down</h3>
+          <svg class="ve-mini" viewBox="0 0 240 128" role="img" aria-label="Redis is down. Every read goes to Postgres at about 16 times the normal load.">
+            <path class="ve-e is-off" d="M58 56C94 56 94 28 130 28"/><path class="ve-e is-st" d="M58 68C94 68 94 100 130 100"/>
+            <g class="ve-n"><rect class="sh" x="2" y="44" width="56" height="36" rx="5"/><text x="30" y="62">API</text></g>
+            <g class="ve-n is-st"><rect class="sh is-off" x="130" y="4" width="106" height="48" rx="5"/><text x="183" y="21">Redis</text><text class="sub" x="183" y="40">down</text></g>
+            <g class="ve-n is-st"><path class="sh" d="M130 80V116A53 6 0 0 0 236 116V80"/><ellipse class="sh lid" cx="183" cy="80" rx="53" ry="6"/><text x="183" y="97">Postgres</text><text class="sub" x="183" y="112">16× load</text></g>
+          </svg></div>
       </div>
       <figcaption><span class="fig-n">Fig. 3</span>Postgres cannot take the full read load if Redis fails.</figcaption>
     </figure>
@@ -221,6 +283,8 @@
 
 </main>
 <script>
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // Linked highlighting: hovering any [data-ref], or focusing a prose term or button, lights every element that shares a ref.
   // Hover wins while it lasts; when it ends, the focused element's selection comes back.
   const linked = [...document.querySelectorAll('[data-ref]')], refs = (el) => el.dataset.ref.split(' ');
@@ -247,6 +311,7 @@
       i = Math.max(0, Math.min(n - 1, k));
       for (const el of parts) { el.classList.toggle('on', +el.dataset.s <= i + 1); el.classList.toggle('now', +el.dataset.s === i + 1); }
       caps.forEach((c, j) => c.hidden = j !== i);
+      root.classList.toggle('is-full', i === n - 1);
       if (range) range.value = i;
     };
     const stop = () => { clearInterval(timer); timer = null; if (play) play.textContent = 'Play'; };
@@ -259,6 +324,54 @@
       timer = setInterval(() => (i < n - 1 ? show(i + 1) : stop()), 3500);
     });
     show(n - 1); // open on the full picture; Play replays from step 1
+  }
+
+  if (!still) {
+    // Flow dots: each path[data-flow] spawns a dot every data-every ms; the ratio of intervals is the real traffic split.
+    // Runs only while the figure is on screen.
+    for (const svg of document.querySelectorAll('svg:has([data-flow])')) {
+      const layer = svg.querySelector('.ve-dots');
+      const routes = [...svg.querySelectorAll('[data-flow]')].map((p) => ({ p, len: p.getTotalLength(), every: +p.dataset.every, next: 0 }));
+      let dots = [], visible = false;
+      const tick = (t) => {
+        if (!visible) return;
+        for (const r of routes) if (t >= r.next) {
+          r.next = t + r.every;
+          const c = document.createElementNS(svg.namespaceURI, 'circle');
+          c.setAttribute('r', 4); c.setAttribute('class', r.p.dataset.flow); layer.append(c);
+          dots.push({ c, r, t0: t });
+        }
+        dots = dots.filter((d) => {
+          const s = (t - d.t0) * .3; // 300 units per second
+          if (s > d.r.len) { d.c.remove(); return false; }
+          const pt = d.r.p.getPointAtLength(s);
+          d.c.setAttribute('cx', pt.x); d.c.setAttribute('cy', pt.y);
+          return true;
+        });
+        requestAnimationFrame(tick);
+      };
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) requestAnimationFrame(tick); }).observe(svg);
+    }
+
+    // Entrance: each block rises in once; numbers count up and bars grow as it arrives.
+    // Without JS, in print, or under reduced motion, everything shows its final state.
+    document.documentElement.classList.add('js-motion');
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target); e.target.classList.add('in');
+        for (const el of e.target.querySelectorAll('[data-count]')) {
+          const end = +el.dataset.count, dp = (el.dataset.count.split('.')[1] || '').length, t0 = performance.now();
+          const step = (t) => {
+            const k = Math.min(1, (t - t0) / 900);
+            el.textContent = (end * (1 - (1 - k) ** 3)).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+            if (k < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      }
+    }, { rootMargin: '0px 0px -10% 0px' });
+    for (const el of document.querySelectorAll('main > *')) io.observe(el);
   }
 </script>
 </body>

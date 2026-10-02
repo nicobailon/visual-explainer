@@ -1,6 +1,6 @@
 # Style guide
 
-One system, four registers. Choose the register from the content, then use its fonts and colors exactly. The scale, components, and polish pass below apply to all of them. `templates/page.html` is the Instrument register built to this guide.
+One system, four registers, and a topic motif on top. Choose the register from the content, then let the subject tint it (Topic motif below). The scale, components, and polish pass apply to all of them. `templates/page.html` is the Instrument register built to this guide.
 
 ## Registers
 
@@ -26,18 +26,34 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 | Editorial · light | `#fbfbf9 #f1f0ec #e2e0da #8c8a85 #111111 #5a5853 #cc3418 #1d7443 #836000 #a01d48 #1b6a94` |
 | Editorial · dark | `#0f0f0f #1a1a19 #2b2a28 #696763 #f2f0eb #a4a19b #ff6e50 #6cc492 #e3b94d #f57fa2 #7cb8e8` |
 
+Effect tokens, per scheme. Dark: `--node-top: color-mix(in srgb, var(--text) 7%, var(--surface)); --lift: rgb(0 0 0 / .45); --halo: 32%`. Light: `--node-top: var(--surface); --lift: rgb(18 22 20 / .12); --halo: 22%`.
+
 `--accent-dim` = the accent at 12–16% alpha. Blueprint grid: `background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 24px 24px` at about 50% opacity.
 
 ## Visual principles
 
 1. **Quiet ground, one signal.** About 90% of the page is neutral. The accent marks only what the reader must look at now: the key node, the hot path, the active control, the one number that matters.
-2. **The figure is the interface.** A term in the prose and its element in the figure are linked. Hover either one, or focus the prose term, and both light up (`diagrams.md` → Linked highlighting). Data elements show their exact value on hover or focus.
-3. **Overview, then detail.** The full picture comes first. The reader zooms, steps, or expands to get detail. Raw material goes in `<details>`.
+2. **The figure is the interface.** A term in the prose and its element in the figure are linked. Hover either one, or focus the prose term, and both light up (`diagrams.md` → Linked highlighting).
+3. **Overview, then detail.** The full picture comes first. The reader steps, hovers, or expands to get detail. Raw material goes in `<details>`.
 4. **Label in place.** Put labels next to lines, bars, and areas. Use a legend only when in-place labels do not fit.
-5. **Space before lines, lines before boxes.** Group with space first. Use a 1px rule when space is not enough. Use a frame only when the content is one unit.
-6. **Numbers are first-class.** Tabular figures, the unit smaller and in `--text-dim`, deltas with a sign and a direction, and the comparison stated (`from 5,600`, `vs. last week`).
-7. **Motion shows change.** Draw an edge in, fade in a step, or move an element from its old place to its new one. Never move something only to decorate.
-8. **Every mark carries data.** No gradient blobs, glass, glow, noise, or illustrative icons. Shadows only on overlays.
+5. **Space before lines, lines before boxes.** Group with space first, then a 1px rule, then a frame.
+6. **Every number gets a picture.** A waffle, bar, or sparkline beside it. Tabular figures, the unit smaller and in `--text-dim`, and the comparison stated (`from 5,600`).
+7. **Motion shows change or flow.** Blocks rise in once. Dots move along edges at the real rate. Steps reveal parts. Nothing loops for its own sake.
+8. **Craft is part of the meaning.** Nodes sit raised on a dot-grid stage. Shapes say what a thing is (a cylinder is a store). The one focal element gets a soft halo, the hot path a glow. No glassmorphism, neon, gradient text or backgrounds, blobs, clip-art, or emoji.
+
+## Topic motif
+
+The register sets the base. The subject adds a light touch of its own, so a page about Postgres does not look like a page about audio. Take the motif from the subject and use it in 2–3 places at most.
+
+| Lever | Rule | Examples |
+|---|---|---|
+| Accent hue | The subject's own color (brand, material, convention), adjusted to 4.5:1 on `--bg` and `--surface` in both schemes. Keep the register accent if the hue reads as a status color (red ≈ risk, green ≈ ok). | Postgres blue · Rust orange · Kubernetes blue · Redis red → keep the register accent |
+| Stage texture | Dot grid by default. 24px line grid for systems and plans, ruled lines for writing, isometric grid for hardware and 3D. Texture at 15% contrast or less. | |
+| Glyphs | Node glyphs from the domain's own symbols, line-drawn. | circuit symbols · map pins · waveform · git branch |
+| Type detail | One typographic habit of the domain. | price columns for finance · mono timestamps for incidents · small caps for specs · superscript citations for research |
+| Shape language | The domain's own diagram convention. | swimlanes for processes · ledger for accounting · timing staff for protocols · floor plan for physical layout |
+
+Test each touch: if removing it makes the page no harder to read and no less specific to the topic, cut it. No puns, mascots, or illustration.
 
 ## Scale
 
@@ -45,7 +61,7 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 :root {
   color-scheme: light dark;
   --t-label: .75rem; --t-small: .875rem; --t-body: 1rem; --t-lead: 1.25rem;
-  --t-h2: 1.625rem; --t-h1: clamp(2.25rem, 5vw, 3.5rem); --t-hero: clamp(3rem, 9vw, 6.5rem);
+  --t-h2: 1.625rem; --t-h1: clamp(2.25rem, 5.5vw, 4rem); --t-hero: clamp(3rem, 9vw, 6.5rem);
   --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem;
   --s-5: 1.5rem; --s-6: 2rem; --s-7: 3rem; --s-8: 4.5rem;
   --r-1: 4px; --r-2: 10px;
@@ -60,18 +76,20 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 | Labels | Mono, `--t-label`, `--text-dim`. Uppercase with `.08em` tracking only for 3 words or fewer. |
 | Radius | `r-1` for chips, buttons, inputs, and inline highlights. `r-2` for frames, tables, and overlays. Nothing else is rounded. Blueprint uses `r-1` everywhere. |
 | Accent | One accent, on 10% of the screen or less. Status colors (`ok warn risk info`) only mean status. |
-| Motion | Move and reveal only with `transform`, `opacity`, and `stroke-dashoffset`. Color changes on hover and highlight may fade at `fast`. `med` for state, `slow` for steps. Always `--ease`. |
+| Motion | Move and reveal only with `transform`, `opacity`, and `stroke-dashoffset`. Color changes on hover and highlight may fade at `fast`. `med` for state, `slow` for steps and entrances, 900ms for count-ups and bar growth. Always `--ease`. |
+| Effects | Shadow (`--lift`): raised diagram nodes and overlays only. Glow: the key node (`--halo`) and the hot edge only. |
 | Layout | Column max 64rem. Text max 68ch. Figures use the full column. Card grids: `repeat(auto-fit, minmax(13rem, 1fr))`. |
 
 ## Components
 
 | Component | Spec |
 |---|---|
-| Page header | Eyebrow label → `h1` that states the answer → lead (`t-lead`, `--text-dim`, one bold phrase in `--text`). `s-4` between them. |
-| Figure | `<figure>` → `.frame` (surface, 1px border, `r-2`, padding `s-5`) → `<figcaption>` (`t-body`, `--text-dim`) that starts with `Fig. N` in mono and states the claim. |
+| Page header | Eyebrow label with a short accent rule → `h1` that states the answer → lead (`t-lead`, `--text-dim`, one bold phrase in `--text`, a sentence or two). If the answer is a number, the number leads the `h1` in accent. `s-4` between them. |
+| Figure | `<figure>` → `.frame` (stage: `--bg` with the motif texture, 1px border, `r-2`, padding `s-5`) → `<figcaption>` (`t-body`, `--text-dim`) that starts with `Fig. N` in mono and states the claim. |
 | Dimming | To focus part of a figure, fade shapes and lines to 15–25% opacity. Never fade text: dimmed labels change to `--text-dim`, and labels of future steps are hidden. Never put accent-colored text on `--accent-dim`; use `--text` there. |
-| Diagram | Node: `--bg` fill, 1.5 `--border-bright` stroke, rx 6. Key node: 2.5 `--accent`. Edge: 1.75 `--text-dim`. Hot edge: 2.75 `--accent`. Async: dash `6 5`. Edge labels: mono, 14 units, 9 units above the line. Identical in every figure. |
-| KPI strip | One frame. Cells split by 1px rules (`gap:1px` over a `--border` background). Each cell: label → value (2.4rem, 600, tabular, −0.03em) → signed delta or sparkline. |
+| Diagram | Node: `#ve-node` gradient fill, 1.5 `--border-bright` stroke, rx 6, `--lift` shadow. Key node: accent tint fill, 2 `--accent` stroke, halo. Edge: 1.75 `--text-dim`. Hot edge: 2.75 `--accent` with a 5px glow. Async: dash `6 5`. One arrowhead marker with `context-stroke`. Edge labels: mono, 14 units, 9 units above the line, `--bg` halo. Identical in every figure. |
+| KPI strip | One frame. Cells split by 1px rules (flex-wrap, `gap:1px` over a `--border` background, cells `flex:1 1 14rem` so a wrapped row stretches). Each cell: label → value (2.75rem, 600, tabular, −0.04em, counts up) → its picture (waffle, bars, or sparkline). |
+| Small multiples | Cards in `repeat(auto-fit, minmax(14.5rem, 1fr))`: chip → short title → mini diagram. The changed part takes the case's status color. Replaces a table when rows are scenarios. |
 | Chip | Mono `t-label` 600, 1px `currentColor` border, `r-1`. Shape and word: ● ok · ▲ warn · ■ risk · ◆ info. |
 | Table | Header: surface, label style. Cells: `t-body`, padding `s-3 s-4`. Row rules only. Numbers right-aligned and tabular. Inside `.table-scroll` with an `r-2` frame. |
 | Button | Mono `t-small`, surface, 1px `--border-bright`, `r-1`, padding `s-2 s-3`. Hover and focus: accent border. |
@@ -86,4 +104,4 @@ Token order: `--bg --surface --border --border-bright --text --text-dim --accent
 - `::selection` uses `--accent-dim`. Sections get `scroll-margin-top` under a sticky nav.
 - Hover and focus look the same. Every control has a visible focus ring.
 - Nothing shifts on load: every SVG has a `viewBox`, and every image has a width and height.
-- `@media print`: switch to the light-scheme values on a white ground, hide controls, and show every step fully drawn.
+- `@media print`: switch to the light-scheme values on a white ground, hide controls and moving dots, drop shadows and glows, show every step fully drawn, and keep figures and cards from splitting across pages.
