@@ -501,18 +501,19 @@ plugins/
     ├── mcp/               ← local stdio MCP server
     ├── pptx/              ← best-effort static PPTX exporter
     ├── references/        ← read on demand
-    │   ├── diagrams.md    (hand-drawn SVG kit, stepper/scene player, small charts)
+    │   ├── style-guide.md (four registers, tokens, scale, components, polish pass)
+    │   ├── diagrams.md    (hand-drawn SVG kit, linked highlighting, stepper/scene player)
     │   ├── mermaid.md     (when auto-layout pays + zoom/pan shell)
     │   ├── slides.md      (deck budget, engine contract, delivery check)
     │   └── themes.md      (11 palettes + runtime theme/font picker)
     └── templates/
-        ├── page.html      (figure-first reference page)
+        ├── page.html      (figure-first reference page, Instrument register)
         └── slide-deck.html (slide engine + reference deck)
 ```
 
 **Output:** `~/.agent/diagrams/filename.html` → opens in browser. When you explicitly request AI-readable output or a source brief, the agent can also write `~/.agent/diagrams/filename.md` as a concise companion. It asks before replacing an existing companion. HTML remains the final visual output; the Markdown companion is not its source. In Pi package installs, agents can offer `visual_explainer` with `action: "prepare"` after generating or reviewing a substantial plan, architecture, diff, or implementation when a visual explanation would help, then call it with `action: "render"` as the final write/open step. MCP hosts use the separate `visual-explainer-mcp` stdio server and default render tools to `open: false`.
 
-Pages are figure-first: the first screen shows the answer as a picture and one sentence. Most diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when automatic layout pays off (sequence, ER, large graphs). Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
+Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Most diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when automatic layout pays off (sequence, ER, large graphs). Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 
 ## Limitations
 

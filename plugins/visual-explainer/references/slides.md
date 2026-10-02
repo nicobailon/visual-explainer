@@ -29,6 +29,8 @@ A source with 7 sections usually needs 18–25 slides, not 10. Test: a reader wh
 
 - One focal point per slide. The heading states the slide's takeaway. Body text 18px or larger, in the sans; keep the display face for headings. Contrast higher than on pages.
 - Prefer a figure to bullets. A slide with only bullets should be the exception.
+- Figures use the `diagrams.md` kit at slide scale: node text 24, edge labels 18, strokes 2.5 (hot 3.5), arrowheads 16 in `userSpaceOnUse`, `max-height: 56dvh`. Below 768px wide, give the SVG `min-width: 720px` inside a scroll wrapper so labels never shrink.
+- Decks default to the Editorial register (`style-guide.md`). A deck about metrics or architecture may use Instrument or Blueprint.
 - Never put three centered slides in a row.
 - Keep type in `clamp(px, vw, px)`, not `rem`. Reduce padding and hide decoration at `max-height: 700/600/500px`.
 

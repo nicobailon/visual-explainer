@@ -8,32 +8,27 @@ A theme is one fixed palette, not a light/dark pair. The picker is the reader's 
 
 Columns map to tokens. `-dim` variants are the same hex at about 12% alpha (`#rrggbb1f`). Use `rgba(255,255,255,.08)` for `--border` on dark themes and `rgba(0,0,0,.08)` on light themes.
 
+`--text` and `--text-dim` reach 4.5:1 on both `--bg` and `--surface`. The `--text-dim` values are lifted from the original palettes so they pass. The other colors are the canonical palette values, and some fall below 4.5:1. Use them for strokes, fills, and chip markers. Keep text in `--text` or `--text-dim`.
+
 | id | mode | --bg | --surface | --text | --text-dim | --accent | --node-a | --node-b | --node-c | --green | --red | --orange |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| dracula | dark | #282a36 | #44475a | #f8f8f2 | #6272a4 | #bd93f9 | #8be9fd | #50fa7b | #ff79c6 | #50fa7b | #ff5555 | #ffb86c |
-| nord | dark | #2e3440 | #3b4252 | #eceff4 | #4c566a | #88c0d0 | #88c0d0 | #a3be8c | #b48ead | #a3be8c | #bf616a | #d08770 |
-| one-dark | dark | #282c34 | #2c313a | #abb2bf | #5c6370 | #61afef | #61afef | #98c379 | #c678dd | #98c379 | #e06c75 | #e5c07b |
-| catppuccin-mocha | dark | #1e1e2e | #313244 | #cdd6f4 | #6c7086 | #cba6f7 | #89b4fa | #a6e3a1 | #f5c2e7 | #a6e3a1 | #f38ba8 | #fab387 |
-| tokyo-night | dark | #1a1b26 | #24283b | #a9b1d6 | #565f89 | #7aa2f7 | #7aa2f7 | #9ece6a | #bb9af7 | #9ece6a | #f7768e | #ff9e64 |
-| gruvbox-dark | dark | #282828 | #3c3836 | #ebdbb2 | #a89984 | #fe8019 | #83a598 | #b8bb26 | #d3869b | #b8bb26 | #fb4934 | #fe8019 |
+| dracula | dark | #282a36 | #44475a | #f8f8f2 | #adb6d0 | #bd93f9 | #8be9fd | #50fa7b | #ff79c6 | #50fa7b | #ff5555 | #ffb86c |
+| nord | dark | #2e3440 | #3b4252 | #eceff4 | #a9aeb7 | #88c0d0 | #88c0d0 | #a3be8c | #b48ead | #a3be8c | #bf616a | #d08770 |
+| one-dark | dark | #282c34 | #2c313a | #abb2bf | #9398a1 | #61afef | #61afef | #98c379 | #c678dd | #98c379 | #e06c75 | #e5c07b |
+| catppuccin-mocha | dark | #1e1e2e | #313244 | #cdd6f4 | #989baa | #cba6f7 | #89b4fa | #a6e3a1 | #f5c2e7 | #a6e3a1 | #f38ba8 | #fab387 |
+| tokyo-night | dark | #1a1b26 | #24283b | #a9b1d6 | #898fac | #7aa2f7 | #7aa2f7 | #9ece6a | #bb9af7 | #9ece6a | #f7768e | #ff9e64 |
+| gruvbox-dark | dark | #282828 | #3c3836 | #ebdbb2 | #afa18e | #fe8019 | #83a598 | #b8bb26 | #d3869b | #b8bb26 | #fb4934 | #fe8019 |
 | synthwave-84 | dark | #262335 | #241b2f | #ffffff | #848bbd | #ff7edb | #36f9f6 | #72f1b8 | #fede5d | #72f1b8 | #fe4450 | #ff8b39 |
 | solarized-light | light | #fdf6e3 | #eee8d5 | #526970 | #526970 | #00629b | #00629b | #859900 | #d33682 | #859900 | #dc322f | #cb4b16 |
 | github-light | light | #ffffff | #f6f8fa | #1f2328 | #656d76 | #0969da | #0969da | #1a7f37 | #8250df | #1a7f37 | #cf222e | #bc4c00 |
-| catppuccin-latte | light | #eff1f5 | #ccd0da | #4c4f69 | #9ca0b0 | #8839ef | #1e66f5 | #40a02b | #ea76cb | #40a02b | #d20f39 | #fe640b |
-| gruvbox-light | light | #fbf1c7 | #ebdbb2 | #3c3836 | #7c6f64 | #af3a03 | #076678 | #79740e | #8f3f71 | #79740e | #9d0006 | #af3a03 |
+| catppuccin-latte | light | #eff1f5 | #ccd0da | #4c4f69 | #54565f | #8839ef | #1e66f5 | #40a02b | #ea76cb | #40a02b | #d20f39 | #fe640b |
+| gruvbox-light | light | #fbf1c7 | #ebdbb2 | #3c3836 | #6b5f56 | #af3a03 | #076678 | #79740e | #8f3f71 | #79740e | #9d0006 | #af3a03 |
 
 Font pairs (id → body / mono): `dm` DM Sans / Fira Code · `instrument` Instrument Sans / JetBrains Mono · `plex` IBM Plex Sans / IBM Plex Mono · `bricolage` Bricolage Grotesque / JetBrains Mono · `jakarta` Plus Jakarta Sans / Azeret Mono. Load all of them in one Google Fonts link, at every weight the page uses. A display serif for headings goes in its own `--font-display` and does not change with the picker.
 
 ## Picker contract
 
-```
-┌ picker-bar (fixed, top-right) ─────────────────────┐
-│ ● ● ● ● ● ● ● ● ● ● ●   │  Aa Aa Aa Aa Aa           │
-│ theme dots: fill=surface │  font chips: set in own   │
-│ ring=accent, aria-pressed│  family, aria-pressed     │
-└────────────────────────────────────────────────────┘
-```
-
+- Put one fixed bar at the top right: theme dots (fill `--surface`, ring `--accent`), a divider, then `Aa` font chips, each set in its own family. Every control uses `aria-pressed`.
 - Build the dots and chips from the `THEMES` / `FONT_PAIRS` data. Never hand-write them, so a control cannot drift from the value it sets.
 - Put the default theme and font in `:root` as plain CSS. Then the page renders correctly without JS, and you do not need to apply anything on load.
 - `applyTheme(id)` sets each token with `root.style.setProperty`. `applyFont(id)` sets `--font-body` and `--font-mono`. Both are `async`, update `aria-pressed`, and then `await window.rerenderDiagrams()` (`mermaid.md`). Re-render after a font change too, because Mermaid measures labels at render time.

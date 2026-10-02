@@ -22,9 +22,9 @@ Climb as high as the request allows. The default output is one HTML page whose s
 ## Deliver
 
 - Write `~/.agent/diagrams/<descriptive-name>.html`, or the path the user gives. One complete file: inline CSS, JS, and SVG favicon. CDN only for fonts and libraries.
-- Pi: `visual_explainer` with `action:"prepare"` to plan, then `action:"render"` with `filename` + complete `html` to write and open. Ask before `prepare` unless the user asked for a visual. MCP hosts: `visual-explainer-mcp`; render tools default to `open:false`. Other harnesses: write the file and open it. Use `viewer:"glimpse"` only on request; `"auto"` may fall back to the browser.
+- Pi: `visual_explainer` `prepare` → `render` (ask before `prepare` unless a visual was requested). MCP: render tools default to `open:false`. Elsewhere: write the file and open it. Use `viewer:"glimpse"` only on request.
 - If a terminal table would have 4+ rows or 3+ columns, render HTML and reply with one summary line.
-- Write a Markdown companion (`<name>.md` beside the HTML) only when the user asks for AI-readable output. HTML stays the source. Ask before you overwrite one.
+- Write a Markdown companion (`<name>.md` beside the HTML) only when the user asks for AI-readable output or a source brief. HTML stays the source. Ask before you overwrite one.
 - Quick mode: only for a literal `--quick` on `/generate-web-diagram`, `/diff-review`, `/plan-review`, `/project-recap`. Do the same research, read `./quick/README.md` and `./quick/schema.json`, emit the JSON spec, and render with `action:"render_quick"` (Pi) or `node ./quick/render.mjs spec.json out.html`. If the content does not fit or rendering fails, use full HTML.
 
 ## Show, don't tell
@@ -47,7 +47,7 @@ Climb as high as the request allows. The default output is one HTML page whose s
 | A process that changes over time | Stepper or scene player → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
 
-Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. For a starting point, copy the structure of `templates/page.html`, not its palette.
+Mermaid is the exception. Use it only when automatic layout saves real work. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. `templates/page.html` is the reference build: copy its structure and swap in the register the content needs.
 
 ## Words
 
@@ -62,17 +62,25 @@ Write about 80% of the way to ASD-STE100 (Simplified Technical English):
 
 ## Look
 
-Precedence: the user's words → the project's design system (tokens, theme files) → this skill.
+Aim for the standard of the best research and engineering pages: exact, calm, and dense with meaning. The reader should feel that someone who understands the system drew every line on purpose.
 
-- **Calibrate.** Reviews, audits, and recaps are polished-utilitarian. Showcases and narratives are editorial. An over-designed page is a failure too.
-- **Plan before HTML.** Choose 4–6 hex values, a font pair, and a one-sentence layout concept from the domain: CLI → terminal, metrics → instrument panel, plans → blueprint, prose → paper and ink. Ask "would I make this for any page?" and revise the generic parts.
-- **Banned when you choose freely:** Inter, Roboto, Arial, or system-ui as the only body font; violet or fuchsia Tailwind accents (`#8b5cf6 #7c3aed #a78bfa #d946ef`); cyan-magenta neon; gradient blobs; purple-to-blue heroes; emoji section markers; centered everything; the same large radius on everything; an accent bar on a rounded card; `01/02/03` markers when order does not matter; continuous glow or pulse.
-- **Font pairs:** DM Sans + Fira Code · Instrument Sans + JetBrains Mono · IBM Plex Sans + IBM Plex Mono · Bricolage Grotesque + JetBrains Mono · Plus Jakarta Sans + Azeret Mono. A display serif (Instrument Serif, Fraunces) is fine for headings, not for reading text. Load every weight you use.
-- **Tokens:** `--bg --surface --border --text --text-dim` plus 3–5 accents. Keep semantic colors (added, removed, risk) separate from the brand accent. Tint neutrals toward the accent.
-- **Two schemes:** tokens on `:root`; `@media (prefers-color-scheme: light)` redefines tokens only. Choose the second scheme's values; do not invert. One theme is fine for one-shot pages.
-- **Type on scrollable pages:** `html{font-size:17px}` (16–18) and `rem` everywhere else. Minimums: body 16px, labels 12px, mono 13px, SVG labels 12px *as rendered*. Line height 1.5–1.7. Measure 45–70ch. Left-aligned, never justified. `text-wrap: balance` on headings. `tabular-nums` in number columns. Slides keep their `clamp()` px scale.
-- **Easy to read:** text contrast ≥ 4.5:1, including dim text and colored labels. Lines and icons ≥ 3:1. Use off-white on near-black, never `#fff` on `#000`. No italics beyond a few words. Uppercase only for labels of 3 words or fewer. Space between paragraphs ≥ 0.75em, and more between sections than within them.
-- **Keep attention:** one focal point per viewport. No motion the reader did not start. Show where the reader is: section nav on long pages, `2 / 5` on steps. Hover effects also work on focus.
+Always read `references/style-guide.md` before HTML. Precedence: the user's words → the project's design system → the style guide.
+
+```
+content ──► register ──────────► fonts + palette + signature, used exactly
+reviews, audits, metrics     Instrument   Geist · near-black · amber signal
+architecture, flows, plans   Blueprint    IBM Plex · blue-black grid · safety orange
+concepts, long reading       Paper        Newsreader + Atkinson Hyperlegible · ink blue
+recaps, narratives, decks    Editorial    Instrument Serif + Sans · vermilion
+```
+
+- **Quiet ground, one signal.** Neutrals carry the page. The accent marks only what the reader must look at now.
+- **The figure is the interface.** Prose terms and figure elements light up together. Values appear on hover or focus. Overview first, detail on demand.
+- **Precision is the decoration.** Exact alignment, one stroke weight per role, labels in place, tabular numbers with smaller units. Nothing that carries no data.
+- **Stay on the scale.** No sizes, gaps, radii, or colors outside the style guide. Consistency is what makes a page look finished.
+- **Two schemes:** tokens on `:root`, and `prefers-color-scheme` redefines tokens only. One theme is fine for a one-shot page.
+- **Never:** Inter, Roboto, Arial, or system-ui as the only font; violet or fuchsia Tailwind accents; neon; gradient blobs or heroes; glass, glow, or pulse; emoji markers; centered everything; an accent bar on a rounded card; `01/02/03` when order does not matter.
+- **Reading comfort:** `html{font-size:17px}`, `rem` elsewhere. Body ≥ 16px, labels ≥ 12px, SVG labels ≥ 12px as rendered. 45–68ch, left-aligned. Text ≥ 4.5:1, lines ≥ 3:1. Italics and uppercase only for a few words. One focal point per viewport. No motion the reader did not start. Show position (`2 / 5`, section nav). Slides keep their `clamp()` px scale.
 - **Themes:** switchable themes or fonts, or a named palette (Dracula, Nord…) → `references/themes.md`.
 
 ## Known traps
@@ -106,12 +114,14 @@ Optional. If `surf` or another image tool is available, you can embed generated 
 □ one complete HTML file at the path; opens with no console errors
 □ first viewport: main idea as a picture + one sentence
 □ figures outnumber prose paragraphs
-□ each figure: <figure> + claim figcaption; role="img" + aria-label on the drawing (the SVG, or the Mermaid shell)
+□ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing (the SVG, or the Mermaid shell)
+□ 2–4 key terms per figure linked with data-ref
 □ no horizontal overflow at 1280px or 390px wide
 □ both color schemes work (or one theme was deliberate)
 □ type in rem; body ≥16px, labels ≥12px; all text ≥4.5:1 in both schemes; visible keyboard focus
 □ headings state takeaways; no paragraph over 3 sentences
 □ any Mermaid uses the zoom/pan shell
-□ would not pass for a generic dark/violet template
+□ every size, gap, and radius is on the style-guide scale; polish pass done
+□ register fonts and palette used exactly; would not pass for a generic dark/violet template
 □ slides: each fits, nav chrome works, all source items covered, delivery check passes
 ```

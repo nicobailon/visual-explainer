@@ -4,50 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>API Gateway Redesign — Reference Deck</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1729'/%3E%3Cpath d='M18 40V24l14-8 14 8v16l-14 8-14-8Z' fill='none' stroke='%23d4a73a' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
-<!-- Reference deck. Copy CHROME + ENGINE + DELIVERY CHECK as they are; restyle everything else. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Cpath d='M18 44V20h16a8 8 0 0 1 0 16H18' fill='none' stroke='%23ff6e50' stroke-width='5'/%3E%3C/svg%3E">
+<!-- Reference deck in the Editorial register. Copy ENGINE, CHROME, and DELIVERY CHECK as they are; restyle the rest. -->
 <script>document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
+    color-scheme: light dark;
     --font-display: 'Instrument Serif', Georgia, serif; /* headings only; reading text stays sans */
     --font-body: 'Instrument Sans', 'Segoe UI', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --bg: #0f1729; --surface: #162040; --surface2: #1d2b52;
-    --border: rgba(200,180,140,.10); --border-bright: rgba(200,180,140,.20);
-    --text: #ece8dc; --text-dim: #a8a292;
-    --accent: #d4a73a; --accent-dim: rgba(212,167,58,.12);
-    --ok: #4ade80; --risk: #f87171; --info: #60a5fa;
+    --bg: #fbfbf9; --surface: #f1f0ec; --border: #e2e0da; --border-bright: #c6c3bb;
+    --text: #111111; --text-dim: #5a5853; --accent: #cc3418; --accent-dim: rgba(204,52,24,.10);
+    --ok: #1d7443; --risk: #a01d48;
   }
-  @media (prefers-color-scheme: light) {
+  @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #faf8f2; --surface: #ffffff; --surface2: #f3eee2;
-      --border: rgba(30,30,50,.10); --border-bright: rgba(30,30,50,.20);
-      --text: #1a1814; --text-dim: #5f5a4e;
-      --accent: #85600a; --accent-dim: rgba(133,96,10,.10);
-      --ok: #15803d; --risk: #b91c1c; --info: #1d4ed8;
+      --bg: #0f0f0f; --surface: #1a1a19; --border: #2b2a28; --border-bright: #403e3a;
+      --text: #f2f0eb; --text-dim: #a4a19b; --accent: #ff6e50; --accent-dim: rgba(255,110,80,.14);
+      --ok: #6cc492; --risk: #f57fa2;
     }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: var(--font-body); color: var(--text); background: var(--bg); overflow: hidden; }
+  body { font-family: var(--font-body); color: var(--text); background: var(--bg); overflow: hidden; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent-dim); }
 
-  /* ===== ENGINE: deck + slide + transitions ===== */
+  /* ===== ENGINE ===== */
   .deck { height: 100dvh; overflow-y: auto; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
   .slide {
     height: 100dvh; scroll-snap-align: start; overflow: hidden; position: relative; isolation: isolate;
-    display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 2vh, 24px);
-    padding: clamp(40px, 6vh, 80px) clamp(40px, 8vw, 120px);
+    display: flex; flex-direction: column; justify-content: center; gap: clamp(16px, 2.5vh, 28px);
+    padding: clamp(40px, 7vh, 88px) clamp(32px, 8vw, 128px);
     transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
   }
-  .js .slide { opacity: 0; transform: translateY(40px) scale(.98); }
+  .js .slide { opacity: 0; transform: translateY(32px); }
   .slide.visible { opacity: 1; transform: none; }
-  .js .slide .reveal { opacity: 0; transform: translateY(16px); transition: opacity .5s, transform .5s; }
+  .js .slide .reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s; }
   .slide.visible .reveal { opacity: 1; transform: none; }
-  .slide.visible .reveal:nth-child(2) { transition-delay: .1s; }
-  .slide.visible .reveal:nth-child(3) { transition-delay: .2s; }
-  .slide.visible .reveal:nth-child(4) { transition-delay: .3s; }
+  .slide.visible .reveal:nth-child(2) { transition-delay: .08s; }
+  .slide.visible .reveal:nth-child(3) { transition-delay: .16s; }
+  .slide.visible .reveal:nth-child(4) { transition-delay: .24s; }
 
   /* ===== DELIVERY CHECK: reduced motion doubles as the fit test ===== */
   @media (prefers-reduced-motion: reduce) {
@@ -57,159 +55,94 @@
     .slide[data-slide-check="auto-fit"] { outline-color: var(--accent); }
     .slide[data-slide-check]::after {
       content: attr(data-slide-check-label); position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-      z-index: 20; padding: 6px 10px; border-radius: 4px; color: var(--bg); background: var(--risk);
-      font: 600 11px/1.2 var(--font-mono); pointer-events: none;
+      z-index: 20; padding: 6px 10px; border-radius: 4px; color: var(--bg); background: var(--risk); font: 600 12px/1.2 var(--font-mono); pointer-events: none;
     }
     .slide[data-slide-check="auto-fit"]::after { background: var(--accent); }
   }
 
   /* ===== CHROME ===== */
-  .deck-progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 100; transition: width .3s; pointer-events: none; }
+  .deck-progress { position: fixed; top: 0; left: 0; height: 2px; background: var(--accent); z-index: 100; transition: width .3s; pointer-events: none; }
   .deck-dots {
     position: fixed; right: clamp(12px, 2vw, 24px); top: 50%; transform: translateY(-50%); z-index: 100;
-    display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding: 8px; width: 36px;
-    max-height: min(70dvh, 560px); overflow-y: auto; border-radius: 20px;
-    background: color-mix(in srgb, var(--bg) 60%, transparent); backdrop-filter: blur(4px);
-    transition: width .2s;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 6px; width: 32px;
+    max-height: min(70dvh, 560px); overflow-y: auto; border-radius: 16px;
+    background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(6px); transition: width .2s;
   }
-  .deck-dots:hover, .deck-dots:focus-within { align-items: stretch; width: min(240px, calc(100vw - 32px)); }
+  .deck-dots:hover, .deck-dots:focus-within { align-items: stretch; width: min(260px, calc(100vw - 32px)); border: 1px solid var(--border); }
   .deck-dot {
     display: grid; grid-template-columns: 8px minmax(0,1fr); align-items: center; gap: 0; width: 20px; min-height: 24px;
-    padding: 7px 6px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim);
-    font: 500 11px/1.2 var(--font-mono); text-align: left; cursor: pointer; opacity: .72;
+    padding: 6px; border: 0; border-radius: 4px; background: transparent; color: var(--text-dim);
+    font: 500 12px/1.2 var(--font-mono); text-align: left; cursor: pointer;
   }
-  .deck-dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .5; }
+  .deck-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .55; justify-self: center; }
   .deck-dot-label { max-width: 0; overflow: hidden; opacity: 0; white-space: nowrap; text-overflow: ellipsis; transition: max-width .2s, opacity .2s; }
   .deck-dots:hover .deck-dot, .deck-dots:focus-within .deck-dot { gap: 10px; width: 100%; }
-  .deck-dots:hover .deck-dot-label, .deck-dots:focus-within .deck-dot-label { max-width: 180px; opacity: .9; }
-  .deck-dot[aria-current="true"] { background: var(--accent-dim); color: var(--accent); opacity: 1; }
-  .deck-dot[aria-current="true"]::before { opacity: 1; transform: scale(1.35); }
+  .deck-dots:hover .deck-dot-label, .deck-dots:focus-within .deck-dot-label { max-width: 200px; opacity: 1; }
+  .deck-dot:hover { color: var(--text); }
+  .deck-dot[aria-current="true"] { color: var(--accent); }
+  .deck-dot[aria-current="true"]::before { opacity: 1; transform: scale(1.4); }
   .deck-dot:focus-visible, .deck-panel__button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .deck-counter, .deck-hints { position: fixed; bottom: clamp(12px, 2vh, 24px); z-index: 100; font: 12px var(--font-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
-  .deck-counter { right: clamp(12px, 2vw, 24px); }
-  .deck-hints { left: 50%; transform: translateX(-50%); opacity: .7; transition: opacity .5s; white-space: nowrap; }
+  .deck-counter, .deck-hints { position: fixed; bottom: clamp(12px, 2vh, 24px); z-index: 100; font: 500 12px var(--font-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .deck-counter { right: clamp(16px, 2vw, 28px); }
+  .deck-hints { left: 50%; transform: translateX(-50%); transition: opacity .5s; white-space: nowrap; }
   .deck-hints.faded { opacity: 0; pointer-events: none; }
-  .deck-overlay { position: fixed; inset: 0; z-index: 200; display: none; place-items: center; padding: 24px; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); }
+  .deck-overlay { position: fixed; inset: 0; z-index: 200; display: none; place-items: center; padding: 24px; background: rgba(0,0,0,.45); backdrop-filter: blur(4px); }
   .deck-overlay.open { display: grid; }
-  .deck-panel { width: min(560px, 86vw); max-height: 80dvh; overflow: auto; padding: 18px 14px; border: 1px solid var(--border-bright); border-radius: 14px; background: var(--surface); font-family: var(--font-mono); }
+  .deck-panel { width: min(560px, 86vw); max-height: 80dvh; overflow: auto; padding: 16px 12px; border: 1px solid var(--border-bright); border-radius: 10px; background: var(--bg); font-family: var(--font-mono); box-shadow: 0 24px 64px rgba(0,0,0,.25); }
   .deck-panel:focus { outline: none; }
-  .deck-panel__header { margin: 2px 8px 12px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); }
-  .deck-panel__button { display: flex; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 13px/1.3 var(--font-mono); text-align: left; cursor: pointer; }
+  .deck-panel__header { margin: 2px 10px 10px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+  .deck-panel__button { display: flex; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: 14px/1.3 var(--font-body); text-align: left; cursor: pointer; }
   .deck-panel__button:hover, .deck-panel__button[aria-current="true"] { background: var(--accent-dim); color: var(--accent); }
-  .deck-panel__number { min-width: 22px; opacity: .5; }
+  .deck-panel__number { min-width: 22px; font: 500 12px/1.6 var(--font-mono); color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .deck-help-row { display: flex; justify-content: space-between; gap: 24px; padding: 7px 10px; font-size: 13px; }
-  .deck-help-row kbd { padding: 2px 8px; border-radius: 5px; background: var(--surface2); font: inherit; }
+  .deck-help-row kbd { padding: 2px 8px; border: 1px solid var(--border-bright); border-radius: 4px; font: inherit; }
 
-  /* ===== RESTYLE FREELY BELOW ===== */
-  .slide__display { font: 400 clamp(48px, 10vw, 120px)/.95 var(--font-display); letter-spacing: -2px; text-wrap: balance; }
-  .slide__heading { font: 400 clamp(30px, 5vw, 54px)/1.1 var(--font-display); text-wrap: balance; }
-  .slide__body { font-size: clamp(18px, 2.2vw, 24px); line-height: 1.5; color: var(--text-dim); max-width: 40ch; }
-  .slide__subtitle, .slide__label { font: 500 clamp(12px, 1.4vw, 16px) var(--font-mono); letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-dim); }
-  .slide__label { color: var(--accent); }
-  .slide--title { align-items: center; text-align: center; background: radial-gradient(ellipse at 50% 30%, var(--accent-dim), transparent 55%); }
-  .slide--title .slide__display { color: var(--accent); }
-  /* Absolute children past the bottom edge count toward scrollHeight (and fail the check); anchor big decoration to the top. */
-  .slide--divider .slide__number { position: absolute; right: 6vw; top: 4vh; font: clamp(120px, 26vw, 320px)/.8 var(--font-display); color: var(--accent); opacity: .08; pointer-events: none; }
+  /* ===== SKIN: restyle freely ===== */
+  .slide__hero { font: 400 clamp(56px, 11vw, 148px)/.92 var(--font-display); letter-spacing: -.035em; text-wrap: balance; max-width: 12ch; }
+  .slide__heading { font: 400 clamp(32px, 5vw, 60px)/1.05 var(--font-display); letter-spacing: -.02em; text-wrap: balance; max-width: 28ch; }
+  .slide__body { font-size: clamp(18px, 2vw, 24px); line-height: 1.45; color: var(--text-dim); max-width: 38ch; text-wrap: pretty; }
+  .slide__label { font: 600 clamp(12px, 1.2vw, 14px) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .slide__meta { display: flex; gap: 24px; padding-top: 16px; border-top: 1px solid var(--border-bright); font: 500 clamp(12px, 1.2vw, 14px) var(--font-mono); color: var(--text-dim); }
+  .slide--title { justify-content: flex-end; }
+  .slide__number { position: absolute; right: clamp(32px, 8vw, 128px); top: 6vh; font: clamp(120px, 24vw, 300px)/.8 var(--font-display); color: var(--accent); }
 
-  .fig { width: 100%; max-height: 62dvh; }
-  .fig .n rect { fill: var(--surface); stroke: var(--border-bright); stroke-width: 2; }
-  .fig .n.key rect { stroke: var(--accent); stroke-width: 3; }
-  .fig .n text { fill: var(--text); font: 500 22px var(--font-body); text-anchor: middle; dominant-baseline: central; }
-  .fig .e { fill: none; stroke: var(--text-dim); stroke-width: 2.5; }
-  .fig .e.hot { stroke: var(--accent); stroke-width: 3.5; }
-  .fig .el { fill: var(--text-dim); font: 15px var(--font-mono); text-anchor: middle; paint-order: stroke; stroke: var(--bg); stroke-width: 6px; }
-  .fig-cap { font: 500 clamp(14px, 1.6vw, 18px) var(--font-mono); color: var(--text-dim); }
-
-  .slide--split { padding: 0; display: grid; grid-template-columns: 1fr 1fr; }
-  .slide__panel { padding: clamp(40px, 6vh, 80px) clamp(32px, 4vw, 64px); display: flex; flex-direction: column; justify-content: center; gap: 16px; min-width: 0; }
-  .slide__panel + .slide__panel { background: var(--surface); }
-  .slide__bullets { list-style: none; display: grid; gap: 12px; font-size: clamp(18px, 2vw, 24px); color: var(--text-dim); }
-  .slide__bullets li { padding-left: 24px; position: relative; }
-  .slide__bullets li::before { content: ''; position: absolute; left: 0; top: .6em; width: 8px; height: 8px; border-radius: 2px; background: var(--mark, var(--accent)); }
-
-  .slide__kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
-  .kpi { padding: clamp(16px, 2.5vh, 28px); border: 1px solid var(--border); border-radius: 10px; background: var(--surface); min-width: 0; }
-  .slide__kpi-val { font-size: clamp(40px, 6vw, 72px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .slide__kpi-label { font: 500 13px var(--font-mono); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
-  .delta { font: 600 13px var(--font-mono); color: var(--ok); }
-
-  .slide--quote { align-items: flex-start; }
-  .slide--quote blockquote { font: 400 clamp(32px, 5vw, 60px)/1.15 var(--font-display); max-width: 22ch; }
-  .slide--quote cite { font: 500 14px var(--font-mono); color: var(--text-dim); font-style: normal; }
+  .slide__kpis { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1px; background: var(--border-bright); border-block: 1px solid var(--border-bright); }
+  .kpi { background: var(--bg); padding: clamp(16px, 3vh, 32px) clamp(12px, 2vw, 28px) clamp(16px, 3vh, 32px) 0; min-width: 0; }
+  .kpi + .kpi { padding-left: clamp(12px, 2vw, 28px); }
+  .slide__kpi-val { font: 400 clamp(44px, 6vw, 80px)/1 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .kpi:first-child .slide__kpi-val { font-size: clamp(72px, 12vw, 168px); color: var(--accent); letter-spacing: -.03em; }
+  .slide__kpi-val small { font: 500 .3em var(--font-mono); color: var(--text-dim); letter-spacing: 0; }
+  .slide__kpi-label { margin-top: 12px; font: 500 clamp(12px, 1.2vw, 14px) var(--font-mono); color: var(--text-dim); }
+  .slide__kpi-label b { color: var(--ok); font-weight: 600; }
 
   @media (max-height: 600px) { .slide { padding: 24px clamp(24px, 6vw, 64px); } .slide__number { display: none; } }
   @media (max-height: 500px) { .deck-dots { display: none; } }
-  @media (max-width: 768px) { .slide--split, .slide__kpis { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .slide__kpis { grid-template-columns: 1fr; } .kpi + .kpi { padding-left: 0; } }
 </style>
 </head>
 <body>
 <div class="deck">
 
   <section class="slide slide--title">
-    <p class="slide__subtitle reveal">Engineering review · Q1</p>
-    <h1 class="slide__display reveal">API Gateway Redesign</h1>
-    <p class="slide__body reveal">From one proxy process to edge routing</p>
+    <p class="slide__label reveal">Engineering review</p>
+    <h1 class="slide__hero reveal">The gateway moves to the edge</h1>
+    <p class="slide__meta reveal"><span>API platform</span><span>Q1 review</span></p>
   </section>
 
   <section class="slide slide--divider">
     <span class="slide__number" aria-hidden="true">01</span>
     <p class="slide__label reveal">The problem</p>
     <h2 class="slide__heading reveal">Every request waits on one process.</h2>
-  </section>
-
-  <section class="slide slide--diagram">
-    <h2 class="slide__heading reveal">The new request path skips the origin on a cache hit</h2>
-    <svg class="fig reveal" viewBox="0 0 1000 340" role="img" aria-label="Client to edge worker; edge checks auth cache; on hit it returns; on miss it routes to API then database">
-      <defs>
-        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
-        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker>
-      </defs>
-      <g class="n" transform="translate(20 60)"><rect width="180" height="80" rx="8"/><text x="90" y="40">Client</text></g>
-      <g class="n key" transform="translate(300 60)"><rect width="180" height="80" rx="8"/><text x="90" y="40">Edge worker</text></g>
-      <g class="n" transform="translate(300 230)"><rect width="180" height="80" rx="8"/><text x="90" y="40">Auth cache</text></g>
-      <g class="n" transform="translate(580 60)"><rect width="180" height="80" rx="8"/><text x="90" y="40">API</text></g>
-      <g class="n" transform="translate(820 60)"><rect width="160" height="80" rx="8"/><text x="80" y="40">Database</text></g>
-      <path class="e hot" d="M200 100H300" marker-end="url(#ah)"/><text class="el" x="250" y="86">request</text>
-      <path class="e hot" d="M390 140V230" marker-end="url(#ah)"/><text class="el" x="420" y="190">check</text>
-      <path class="e" d="M480 100H580" marker-end="url(#a)"/><text class="el" x="530" y="86">miss</text>
-      <path class="e" d="M760 100H820" marker-end="url(#a)"/>
-    </svg>
-    <p class="fig-cap reveal">Hits return from the edge in ~8 ms. Only misses reach the API.</p>
-  </section>
-
-  <section class="slide slide--split">
-    <div class="slide__panel">
-      <p class="slide__label reveal" style="color:var(--risk)">Before</p>
-      <h2 class="slide__heading reveal">Monolith proxy</h2>
-      <ul class="slide__bullets reveal" style="--mark:var(--risk)">
-        <li>In-memory rate limits per instance</li>
-        <li>Synchronous JWT check: +40 ms</li>
-        <li>No circuit breaker</li>
-      </ul>
-    </div>
-    <div class="slide__panel">
-      <p class="slide__label reveal" style="color:var(--ok)">After</p>
-      <h2 class="slide__heading reveal">Edge native</h2>
-      <ul class="slide__bullets reveal" style="--mark:var(--ok)">
-        <li>Distributed rate limits</li>
-        <li>Cached keys: +2 ms</li>
-        <li>Automatic circuit breakers</li>
-      </ul>
-    </div>
+    <p class="slide__body reveal">Rate limits, auth, and routing all run in a single proxy. One slow upstream stalls everything.</p>
   </section>
 
   <section class="slide slide--dashboard">
-    <h2 class="slide__heading reveal">Results after two weeks</h2>
+    <h2 class="slide__heading reveal">Two weeks in, p50 latency is down 81%</h2>
     <div class="slide__kpis reveal">
-      <div class="kpi"><div class="slide__kpi-val">8ms</div><div class="slide__kpi-label">p50 latency</div><div class="delta">−81%</div></div>
-      <div class="kpi"><div class="slide__kpi-val">99.99</div><div class="slide__kpi-label">uptime %</div><div class="delta">+0.4</div></div>
-      <div class="kpi"><div class="slide__kpi-val">0</div><div class="slide__kpi-label">cascade outages</div><div class="delta">from 3</div></div>
+      <div class="kpi"><div class="slide__kpi-val">8<small> ms</small></div><div class="slide__kpi-label">p50 latency · <b>−81%</b></div></div>
+      <div class="kpi"><div class="slide__kpi-val">99.99<small>%</small></div><div class="slide__kpi-label">uptime · <b>+0.4</b></div></div>
+      <div class="kpi"><div class="slide__kpi-val">0</div><div class="slide__kpi-label">cascade outages · from 3</div></div>
     </div>
-  </section>
-
-  <section class="slide slide--quote">
-    <blockquote class="reveal">The fastest request is the one that never leaves the edge.</blockquote>
-    <cite class="reveal">Design principle</cite>
   </section>
 
 </div>
@@ -262,7 +195,7 @@
     this.buildChrome(); this.bindEvents(); this.observe(); this.restore(); this.update();
   }
   SlideEngine.prototype.titleOf = function(i) {
-    var el = this.slides[i].querySelector('.slide__display,.slide__heading,blockquote');
+    var el = this.slides[i].querySelector('.slide__hero,.slide__heading,blockquote');
     var t = el ? el.textContent.trim().replace(/\s+/g, ' ') : 'Slide ' + (i + 1);
     return t.length > 58 ? t.slice(0, 56) + '…' : t;
   };
@@ -287,7 +220,8 @@
     this.overlay.addEventListener('click', function(e) { if (e.target === self.overlay) self.closeOverlay(); });
   };
   SlideEngine.prototype.openOverlay = function(mode) {
-    var self = this; this.panel.replaceChildren(this.make('div', 'deck-panel__header', mode === 'help' ? 'Keyboard' : 'Outline'));
+    var self = this, title = mode === 'help' ? 'Keyboard' : 'Outline';
+    this.panel.replaceChildren(this.make('div', 'deck-panel__header', title)); this.panel.setAttribute('aria-label', title);
     if (mode === 'help') {
       [['next', '→ / ↓ / Space'], ['previous', '← / ↑'], ['first / last', 'Home / End'], ['outline', 'O'], ['help', '?'], ['close', 'Esc']].forEach(function(r) {
         var row = self.make('div', 'deck-help-row'); row.append(self.make('span', '', r[0]), self.make('kbd', '', r[1])); self.panel.appendChild(row);
@@ -309,7 +243,7 @@
   SlideEngine.prototype.bindEvents = function() {
     var self = this;
     document.addEventListener('keydown', function(e) {
-      if (e.target.closest('.diagram-shell,.table-scroll,.code-scroll,input,textarea,select,[contenteditable]')) return;
+      if (e.target.closest('.diagram-shell,.fig-scroll,.table-scroll,.code-scroll,input,textarea,select,[contenteditable]')) return;
       var open = self.overlay.classList.contains('open');
       if (e.key === 'Escape' && open) { e.preventDefault(); self.closeOverlay(); return; }
       if (e.key === 'o' || e.key === 'O' || e.key === '?') { e.preventDefault(); open ? self.closeOverlay() : self.openOverlay(e.key === '?' ? 'help' : 'outline'); return; }

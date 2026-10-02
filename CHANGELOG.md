@@ -5,11 +5,14 @@
 ### Changed
 - Rewrote the skill to be figure-first and about 72% smaller (85% fewer lines). The first screen shows the answer as a picture plus one sentence, figures lead every section, and prose follows a Simplified Technical English style.
 - Hand-drawn inline SVG is now the default diagram. Mermaid is reserved for sequence, ER, class, git graph, and large graphs where automatic layout helps.
+- Added a style guide with four registers (Instrument, Blueprint, Paper, Editorial). Each register fixes its fonts and a light and dark palette where all text meets 4.5:1 contrast. All registers share one spacing, type, radius, and motion scale, plus component specs and a polish pass.
+- Added linked highlighting: hovering or focusing a term in the text lights up the matching figure elements and table rows.
+- Theme palettes now lift `--text-dim` where the original value was below 4.5:1 contrast.
 - Added a stepper and scene player pattern for step-by-step and animated explainers, plus guidance for narrated video when the user asks for it.
-- Replaced `css-patterns.md`, `libraries.md`, `responsive-nav.md`, and `slide-patterns.md` with `diagrams.md`, `mermaid.md`, and `slides.md`. Replaced the architecture, Mermaid, and data-table templates with one `page.html` reference page.
+- Replaced `css-patterns.md`, `libraries.md`, `responsive-nav.md`, and `slide-patterns.md` with `style-guide.md`, `diagrams.md`, `mermaid.md`, and `slides.md`. Replaced the architecture, Mermaid, and data-table templates with one `page.html` reference page.
 
 ### Fixed
-- Slide resume no longer stops between slides, because the jump is instant instead of smooth. Saving the resume position no longer depends on `history.replaceState`, which fails on `file://` pages.
+- Slide resume no longer stops between slides, because the jump is instant instead of smooth. Saving the resume position no longer depends on `history.replaceState`, which fails on `file://` pages. The outline and help dialog has an accessible name again.
 
 ## [0.11.0] - 2026-08-28
 

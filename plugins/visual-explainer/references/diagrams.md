@@ -26,9 +26,9 @@ y:210                  ┌──▼───┐
 ```html
 <figure class="ve-fig">
   <svg class="ve-svg" viewBox="0 0 800 300" role="img" aria-label="API reads cache; a miss falls through to DB">
-    <defs><!-- markers do not inherit the path's color: one marker per edge color -->
-      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
-      <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>
+    <defs><!-- markers do not inherit the path's color: one per color. userSpaceOnUse keeps every head the same size. -->
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--text-dim)"/></marker>
+      <marker id="ah-hot" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>
     <g class="ve-n" transform="translate(40 60)"><rect width="160" height="60" rx="6"/><text x="80" y="30">Client</text></g>
     <g class="ve-n is-key" transform="translate(280 60)"><rect width="160" height="60" rx="6"/><text x="80" y="30">API</text></g>
     <path class="ve-e" d="M200 90H280" marker-end="url(#ah)"/><text class="ve-el" x="240" y="80">GET /u</text>
@@ -38,39 +38,31 @@ y:210                  ┌──▼───┐
 ```
 
 ```css
-.ve-svg { width:100%; height:auto; display:block; font:500 15px var(--font-body); }
-.ve-n rect { fill:var(--surface); stroke:var(--border-bright); stroke-width:1.5; }
-.ve-n text { fill:var(--text); text-anchor:middle; dominant-baseline:central; }
+/* values from style-guide.md → Diagram; keep them identical in every figure */
+.ve-svg { width:100%; height:auto; display:block; font:500 17px var(--font-body); }
+.ve-n rect { fill:var(--bg); stroke:var(--border-bright); stroke-width:1.5; }
+.ve-n text { fill:var(--text); font-weight:600; text-anchor:middle; dominant-baseline:central; }
 .ve-n.is-key rect { stroke:var(--accent); stroke-width:2.5; }
 .ve-e { fill:none; stroke:var(--text-dim); stroke-width:1.75; }
-.ve-e.is-async { stroke-dasharray:5 5; }
-.ve-e.is-hot { stroke:var(--accent); stroke-width:2.5; }
-.ve-el { fill:var(--text-dim); font:500 12px var(--font-mono); text-anchor:middle;
-         paint-order:stroke; stroke:var(--bg); stroke-width:5px; stroke-linejoin:round; }
-figcaption { font-size:.9375rem; color:var(--text-dim); margin-top:.75rem; }
+.ve-e.is-async { stroke-dasharray:6 5; }
+.ve-e.is-hot { stroke:var(--accent); stroke-width:2.75; }
+.ve-el { fill:var(--text-dim); font:500 14px var(--font-mono); text-anchor:middle; }
+.ve-el.halo { paint-order:stroke; stroke:var(--surface); stroke-width:6px; stroke-linejoin:round; } /* only where a label must cross a line */
 ```
 
 Edge language: solid = sync call · dashed = async or optional · thick accent = the path this figure is about · red ✕ = blocked.
 
-## Highlight a path
+## Linked highlighting
 
-Readers hover or focus a legend item, and every element on that path lights up while the others dim.
+Any element with `data-ref` is linked to every other element with the same ref: a term in the prose, a node or edge in the figure, a table row, a legend button. Hover or focus one, and all of them light up while the rest of that figure dims. One element can carry several refs (`data-ref="hit miss"`).
 
 ```html
-<div class="ve-legend"><button data-p="hit">Cache hit</button><button data-p="miss">Cache miss</button></div>
-<!-- tag drawing parts: <path class="ve-e" data-p="miss" ...> ; one element can carry "hit miss" -->
+<p>The API asks <span class="ve-ref" data-ref="redis" tabindex="0">Redis</span> first.</p>
+<g class="ve-n" data-ref="redis">…</g>  <path class="ve-e" data-ref="redis hit" …/>
+<button data-ref="miss">Cache miss</button>
 ```
-```css
-.ve-fig[data-active] [data-p] { opacity:.25; transition:opacity .2s; }
-.ve-fig[data-active="hit"] [data-p~="hit"], .ve-fig[data-active="miss"] [data-p~="miss"] { opacity:1; }
-```
-```js
-for (const b of document.querySelectorAll('.ve-legend [data-p]')) {
-  const fig = b.closest('.ve-fig');
-  const on = () => fig.dataset.active = b.dataset.p, off = () => delete fig.dataset.active;
-  b.onmouseenter = b.onfocus = on; b.onmouseleave = b.onblur = off;
-}
-```
+
+Copy the `.ve-ref` CSS and the `data-ref` script from `templates/page.html` as they are. Link 2–4 key terms per figure, not every noun.
 
 ## Stepper and scene player
 
@@ -88,6 +80,7 @@ This is the most useful interaction for teaching. The full drawing appears faint
     <input type="range" min="0" value="0" aria-label="Scene">
     <button data-go="1" aria-label="Next step">→</button>
   </div>
+  <figcaption>(the claim, one sentence)</figcaption>
 </figure>
 ```
 Copy the `.ve-steps` CSS and script from `templates/page.html` as they are. A part with `data-s="N"` stays faint until step N, then turns `.on`. The current step's parts also get `.now`. A path with `pathLength="1"` draws itself in.
@@ -113,16 +106,8 @@ For static before/after, put two panels side by side with the same scale. Red ma
 
 ## Small charts
 
-```html
-<div class="ve-bar" style="--v:.72" role="img" aria-label="72%"></div>
-<!-- sparkline: 100×24 box; scale points into it -->
-<svg viewBox="0 0 100 24" class="ve-spark"><polyline points="0,20 20,14 40,16 60,8 80,10 100,3"/></svg>
-```
-```css
-.ve-bar { height:.5rem; background:var(--border); border-radius:99px; }
-.ve-bar::before { content:''; display:block; height:100%; width:calc(var(--v)*100%); background:var(--accent); border-radius:inherit; }
-.ve-spark { width:6rem; height:1.5rem; } .ve-spark polyline { fill:none; stroke:var(--accent); stroke-width:1.5; vector-effect:non-scaling-stroke; }
-```
+- **Sparkline:** a `0 0 100 24` SVG with one `polyline` and `vector-effect: non-scaling-stroke`. See the KPI row in `templates/page.html`.
+- **Bar:** a track `div` whose `::before` has `width: calc(var(--v) * 100%)`. Give it `role="img"` and an `aria-label` with the value.
 
 ## Page structure for 4+ sections
 
@@ -132,5 +117,3 @@ Use a two-column grid: a sticky `<nav>` table of contents on the left and conten
 
 - **File map:** nested `<ul>` in mono. Each path gets a status chip (added, modified, deleted) and a `+12 −3` count.
 - **Timeline:** a CSS grid with one rail line and dated nodes. The newest item gets the accent.
-- **KPI row:** big tabular number, a label, a delta chip, and a sparkline.
-- **Reference material** (full tables, raw logs): put it in `<details>` so it does not compete with the figures.
