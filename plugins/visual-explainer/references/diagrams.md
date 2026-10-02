@@ -45,7 +45,7 @@ Moving dots show direction and volume at a glance. Use them on the main figure w
 <g class="ve-dots" aria-hidden="true"></g>                                   <!-- after edges, before nodes -->
 ```
 
-Routes pass through node centers. The dots move under the opaque nodes, so they enter one box and leave the next. One moving layer per page. The script runs dots only while the figure is on screen, hides them mid-step, and never runs them under reduced motion.
+Routes pass through node centers. The dots move under the opaque nodes, so they enter one box and leave the next. One moving layer per page. The script runs dots only while the figure is on screen and the stepper shows the full picture, and never under reduced motion.
 
 ## Linked highlighting
 

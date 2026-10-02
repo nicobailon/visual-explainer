@@ -322,6 +322,7 @@
       for (const el of parts) { el.classList.toggle('on', +el.dataset.s <= i + 1); el.classList.toggle('now', +el.dataset.s === i + 1); }
       caps.forEach((c, j) => c.hidden = j !== i);
       root.classList.toggle('is-full', i === n - 1);
+      root.dispatchEvent(new Event('ve:step'));
       if (range) range.value = i;
     };
     const stop = () => { clearInterval(timer); timer = null; if (play) play.textContent = 'Play'; };
@@ -338,13 +339,14 @@
 
   if (!still) {
     // Flow dots: each path[data-flow] spawns a dot every data-every ms; the ratio of intervals is the real traffic split.
-    // Runs only while the figure is on screen.
+    // Runs only while the figure is on screen and, inside a stepper, only on the full picture.
     for (const svg of document.querySelectorAll('svg:has([data-flow])')) {
-      const layer = svg.querySelector('.ve-dots');
+      const layer = svg.querySelector('.ve-dots'), steps = svg.closest('.ve-steps');
       const routes = [...svg.querySelectorAll('[data-flow]')].map((p) => ({ p, len: p.getTotalLength(), every: +p.dataset.every, next: 0 }));
-      let dots = [], visible = false;
+      let dots = [], visible = false, running = false;
+      const live = () => visible && (!steps || steps.classList.contains('is-full'));
       const tick = (t) => {
-        if (!visible) return;
+        if (!live()) { running = false; for (const d of dots) d.c.remove(); dots = []; return; }
         for (const r of routes) if (t >= r.next) {
           r.next = t + r.every;
           const c = document.createElementNS(svg.namespaceURI, 'circle');
@@ -360,7 +362,9 @@
         });
         requestAnimationFrame(tick);
       };
-      new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) requestAnimationFrame(tick); }).observe(svg);
+      const start = () => { if (!running && live()) { running = true; requestAnimationFrame(tick); } };
+      steps?.addEventListener('ve:step', start);
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; start(); }).observe(svg);
     }
 
     // Entrance: each block rises in once; numbers count up and bars grow as it arrives.
