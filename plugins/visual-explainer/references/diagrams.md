@@ -109,7 +109,7 @@ Use 3D only when depth carries data: embeddings and point clouds, physical or sp
 
 ## Page structure for 4+ sections
 
-Sticky `<nav>` table of contents on the left, content on the right; below 1000px it becomes a sticky top bar. Mark the active section with an `IntersectionObserver` (`rootMargin:'-10% 0px -80% 0px'`). Wrap `history.replaceState` in `try/catch`, because it throws on `file://` pages.
+Sticky `<nav>` table of contents on the left, content on the right; below 1000px it becomes a sticky top bar. In the top bar, only the link list scrolls sideways: hide its scrollbar (`scrollbar-width:none`, `::-webkit-scrollbar{display:none}`), fade its right edge with `mask-image`, and keep buttons outside it. Mark the active section with an `IntersectionObserver` (`rootMargin:'-10% 0px -80% 0px'`). Wrap `history.replaceState` in `try/catch`, because it throws on `file://` pages.
 
 ## Other shapes
 

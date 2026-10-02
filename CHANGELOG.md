@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+- Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.
+- Sources at the end of a page are now always visible. They were hidden in a small grey toggle that readers easily missed, so they now sit in their own section at full size.
+
 ## [0.12.0] - 2026-10-02
 
 ### Highlights

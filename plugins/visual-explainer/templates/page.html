@@ -151,6 +151,8 @@
 
   details { border-top: 1px solid var(--border); padding-top: var(--s-4); color: var(--text-dim); font-size: var(--t-body); }
   summary { cursor: pointer; font: 500 var(--t-label) var(--font-mono); margin-bottom: var(--s-2); }
+  /* sources stay visible: readers check them without hunting for a toggle */
+  .sources { border-top: 1px solid var(--border); padding-top: var(--s-4); display: grid; gap: var(--s-2); }
 
   /* entrance: blocks rise in once; bars grow as their block arrives (JS adds .js-motion only when motion is allowed) */
   .js-motion main > * { transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease); }
@@ -286,10 +288,10 @@
     </figure>
   </section>
 
-  <details>
-    <summary>Sources</summary>
+  <section class="sources" aria-label="Sources">
+    <p class="kicker">Sources</p>
     <p><code>src/cache/user.ts:14–52</code> · <code>src/routes/user.ts:30</code> · dashboard "user-service read path", last 7 days.</p>
-  </details>
+  </section>
 
 </main>
 <script>
