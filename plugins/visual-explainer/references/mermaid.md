@@ -102,4 +102,4 @@ window.rerenderDiagrams().catch((err) => console.error('Mermaid render failed:',
 
 Mermaid themes cannot read CSS variables, so `config()` resolves them from computed style. A `prefers-color-scheme` change needs a reload or a `matchMedia` listener that calls `rerenderDiagrams()`.
 
-Style Mermaid output only through the shell. Never add a bare page-level rule for a class Mermaid emits (`.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, `.commit`); prefix page classes with `ve-`. The leak looks deliberate in a screenshot, so check it: a rendered `.nodeLabel` must keep the 16px `fontSize` from `config()`, `text-transform: none`, and `letter-spacing: normal`.
+Style Mermaid output only through the shell. Never add a bare page-level rule for a class Mermaid emits (`.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, `.commit`); give such a class a `ve-` prefix instead. The leak looks deliberate in a screenshot, so check it: a rendered `.nodeLabel` must keep the 16px `fontSize` from `config()`, `text-transform: none`, and `letter-spacing: normal`.

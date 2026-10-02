@@ -103,7 +103,7 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 
 - Set `min-width:0` on grid/flex children, `grid-template-columns:minmax(0,1fr)` on single-column grids, and `overflow-wrap:anywhere` on paths. Put wide tables, code, and SVG in a scroll container.
 - Do not put `display:flex` on `<li>` when its markers matter.
-- Prefix page classes with `ve-` (`.ve-label`, `.ve-card`). Mermaid's SVG uses bare `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, and `.commit`, and a page rule on any of them restyles every diagram.
+- Never give a page class a name Mermaid's SVG also uses: `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, `.commit`. A page rule on any of them restyles every diagram; add a `ve-` prefix instead (`.ve-label`).
 - Wrap `history.replaceState` in `try/catch`. It throws on `file://` pages.
 - Add section navigation (sticky TOC with scroll-spy) only for 4+ sections.
 - Respect `prefers-reduced-motion`: copy the template's `.js-motion` pattern, so the final state shows without JS, in print, and under reduced motion.
