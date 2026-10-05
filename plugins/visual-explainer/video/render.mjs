@@ -95,7 +95,7 @@ async function withDeck(input, fn) {
 
 // Stills show each scene's last sentence as a caption, so captions can be checked against the layout.
 async function stills({ page, scenes, shot, failed }, dir) {
-  const part = `${dir}.partial`;
+  const part = `${dir}.${process.pid}.partial`;
   rmSync(part, { recursive: true, force: true });
   mkdirSync(part, { recursive: true });
   let t = 0;
@@ -132,7 +132,8 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
 
   const tmp = mkdtempSync(join(tmpdir(), "ve-video-"));
   // Encode beside the output and move into place on success, so a failed render keeps the last good MP4.
-  const part = `${out}.partial.mp4`;
+  // The pid keeps two renders of the same deck from writing one partial file.
+  const part = `${out}.${process.pid}.partial.mp4`;
   let enc = null;
   try {
     const audio = clips ? join(tmp, "voice.wav") : null;
