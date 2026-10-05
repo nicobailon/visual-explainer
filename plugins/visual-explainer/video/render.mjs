@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -34,7 +34,6 @@ async function main() {
   if (!existsSync(input)) throw new Error(`No such file: ${input}`);
   const stem = input.replace(/\.[^./]+$/, "");
   const out = home(positionals[1] ?? `${stem}.mp4`);
-  if (!existsSync(dirname(out))) throw new Error(`Output folder does not exist: ${dirname(out)}`);
   const fps = Number(values.fps ?? 30);
   if (!Number.isInteger(fps) || fps < 1 || fps > 120) throw new Error("--fps must be a whole number from 1 to 120");
 
@@ -44,6 +43,7 @@ async function main() {
     return;
   }
   if (values.stills) return await withDeck(input, (deck) => stills(deck, `${stem}.stills`));
+  if (!existsSync(dirname(out))) throw new Error(`Output folder does not exist: ${dirname(out)}`);
   requireFfmpeg();
   const voice = values.voice ? home(values.voice) : null;
   await withDeck(input, (deck) => render(deck, { out, fps, voice, captions: values.captions || !voice }));
@@ -135,14 +135,13 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
     t = (s.lines.length ? at - GAP + TAIL : t + BARE) + s.hold;
   }
 
-  const tmp = mkdtempSync(join(tmpdir(), "ve-video-"));
-  // Encode in a fresh folder beside the output and rename into place on success, so a failed render
-  // keeps the last good MP4 and two renders never share a partial file.
+  // One fresh folder beside the output holds the voice track and the partial MP4. The MP4 is renamed
+  // into place on success, so a failed render keeps the last good one and two renders never share files.
   const partDir = mkdtempSync(join(dirname(out), ".ve-partial-"));
   const part = join(partDir, basename(out));
   let enc = null;
   try {
-    const audio = clips ? join(tmp, "voice.wav") : null;
+    const audio = clips ? join(partDir, "voice.wav") : null;
     if (audio) writeTrack(audio, track, t);
     enc = encoder(part, { fps, audio });
     const frames = Math.ceil(t * fps);
@@ -167,7 +166,6 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
     throw e;
   } finally {
     rmSync(partDir, { recursive: true, force: true });
-    rmSync(tmp, { recursive: true, force: true });
   }
 }
 
