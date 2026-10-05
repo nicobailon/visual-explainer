@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir, tmpdir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { duration, encoder, lineId, lineLength, loadVoice, requireFfmpeg, writeTrack } from "./media.mjs";
@@ -34,6 +34,7 @@ async function main() {
   if (!existsSync(input)) throw new Error(`No such file: ${input}`);
   const stem = input.replace(/\.[^./]+$/, "");
   const out = home(positionals[1] ?? `${stem}.mp4`);
+  if (!existsSync(dirname(out))) throw new Error(`Output folder does not exist: ${dirname(out)}`);
   const fps = Number(values.fps ?? 30);
   if (!Number.isInteger(fps) || fps < 1 || fps > 120) throw new Error("--fps must be a whole number from 1 to 120");
 
@@ -95,8 +96,8 @@ async function withDeck(input, fn) {
 
 // Stills show each scene's last sentence as a caption, so captions can be checked against the layout.
 async function stills({ page, scenes, shot, failed }, dir) {
-  const part = `${dir}.${process.pid}.partial`;
-  mkdirSync(part, { recursive: true });
+  // A fresh, uniquely named folder per run: no stale files, no clash with another run.
+  const part = mkdtempSync(`${dir}.partial-`);
   try {
     let t = 0;
     for (const [i, s] of scenes.entries()) {
@@ -135,9 +136,10 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
   }
 
   const tmp = mkdtempSync(join(tmpdir(), "ve-video-"));
-  // Encode beside the output and move into place on success, so a failed render keeps the last good MP4.
-  // The pid keeps two renders of the same deck from writing one partial file.
-  const part = `${out}.${process.pid}.partial.mp4`;
+  // Encode in a fresh folder beside the output and rename into place on success, so a failed render
+  // keeps the last good MP4 and two renders never share a partial file.
+  const partDir = mkdtempSync(join(dirname(out), ".ve-partial-"));
+  const part = join(partDir, basename(out));
   let enc = null;
   try {
     const audio = clips ? join(tmp, "voice.wav") : null;
@@ -162,9 +164,9 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
     renameSync(part, out);
   } catch (e) {
     enc?.kill();
-    rmSync(part, { force: true });
     throw e;
   } finally {
+    rmSync(partDir, { recursive: true, force: true });
     rmSync(tmp, { recursive: true, force: true });
   }
 }
