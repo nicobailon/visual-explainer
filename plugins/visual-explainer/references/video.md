@@ -58,16 +58,16 @@ CSS animations and transitions, the Web Animations API, timers, `requestAnimatio
 
 ## Check, then render
 
-1. `visual-explainer-video deck.html --stills` writes one PNG per scene, fully played, to `deck.stills/`. Read every one. Fix clipped, overlapping, crowded, or empty scenes, then run it again.
+1. `visual-explainer-video deck.html --stills` writes one PNG per scene, fully played and with its last sentence as a caption, to `deck.stills/`. Read every one. Fix clipped, overlapping, crowded, or empty scenes, then run it again.
 2. Voice: if a speech API key is set, make one clip per line (below). If none is set, skip voice: the video is silent with captions burned in. Never print a key.
 3. `visual-explainer-video deck.html [out.mp4] [--voice clips/]`. Add `--captions` to burn in captions with a voice too.
 4. Report the MP4 path, its length, and the voice used, or "silent with captions".
 
-Write the deck to `~/.agent/diagrams/<name>.html`; the MP4 goes beside it. The renderer needs `ffmpeg` and either Google Chrome or `npx playwright-core install chromium-headless-shell`. From a checkout, run `npm install` and use `node <this skill's directory>/video/render.mjs`.
+Write the deck to `~/.agent/diagrams/<name>.html`; the MP4 goes beside it. The renderer needs `ffmpeg` and either Google Chrome or `npx playwright-core install chromium-headless-shell`. If `visual-explainer-video` is not on PATH (a copied skill folder has no npm dependencies), run `npx -y -p visual-explainer visual-explainer-video` with the same arguments. From a repository checkout, run `npm install` and use `node plugins/visual-explainer/video/render.mjs`.
 
 ## Voice clips
 
-`--lines` prints `<id><TAB><text>` for every sentence. Save each clip as `<clips>/<id>.mp3`. The id hashes the text, so after an edit only changed lines need new clips.
+`--lines` prints `<id><TAB><text>` for every sentence. Save each clip as `<clips>/<id>.mp3` (`.wav`, `.m4a`, `.ogg`, `.flac`, and `.aiff` also work; other files are ignored). The id hashes the text, so after an edit only changed lines need new clips.
 
 | Provider | Key | Request | Reply |
 |---|---|---|---|

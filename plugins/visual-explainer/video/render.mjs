@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir, tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
@@ -17,10 +17,10 @@ every frame lands on time. See references/video.md.
 
 Options:
   --lines          Print "<id><TAB><text>" for each narration line, then stop.
-  --voice <dir>    Narrate with <dir>/<id>.mp3 (or any audio ffmpeg reads). Without it the
-                   video is silent with captions.
+  --voice <dir>    Narrate with <dir>/<id>.mp3 (or .wav, .m4a, .ogg, .flac, .aiff). Without it
+                   the video is silent with captions.
   --captions       Burn in captions with a voice too.
-  --stills         Write one PNG per scene, fully played, to <name>.stills/, then stop.
+  --stills         Write one PNG per scene, fully played and captioned, to <name>.stills/, then stop.
   --fps <n>        Frames per second (default 30).`;
 
 async function main() {
@@ -56,7 +56,8 @@ async function withDeck(input, fn) {
     ({ chromium } = await import("playwright-core"));
   } catch (e) {
     if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
-    throw new Error(`playwright-core is not installed. Run npm install in ${resolve(fileURLToPath(import.meta.url), "../../../..")}, or install the visual-explainer npm package.`);
+    // Copied skill folders carry this script without its npm dependencies.
+    throw new Error("playwright-core is not installed beside this script. Run the packaged CLI instead: npx -y -p visual-explainer visual-explainer-video <deck.html> …\nIn a repository checkout, run npm install first.");
   }
   let browser;
   try {
@@ -92,21 +93,25 @@ async function withDeck(input, fn) {
   }
 }
 
+// Stills show each scene's last sentence as a caption, so captions can be checked against the layout.
 async function stills({ page, scenes, shot, failed }, dir) {
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+  const part = `${dir}.partial`;
+  rmSync(part, { recursive: true, force: true });
+  mkdirSync(part, { recursive: true });
   let t = 0;
   for (const [i, s] of scenes.entries()) {
     for (let b = 0; b <= s.lines.length; b++) {
-      await page.evaluate(([i, b, t]) => { __ve.cue(t, i, b, ""); __ve.tick(t + 1500); }, [i, b, t]);
+      await page.evaluate(([i, b, t, text]) => { __ve.cue(t, i, b, text, true); __ve.tick(t + 1500); }, [i, b, t, s.lines[b - 1] ?? ""]);
       t += 1500;
     }
     await page.evaluate((t) => __ve.tick(t), t += 3000);
     failed();
-    const file = join(dir, `scene-${String(i + 1).padStart(2, "0")}.png`);
-    writeFileSync(file, await shot("png"));
-    console.log(file);
+    writeFileSync(join(part, `scene-${String(i + 1).padStart(2, "0")}.png`), await shot("png"));
   }
+  // Replace the previous stills only once every new one exists.
+  rmSync(dir, { recursive: true, force: true });
+  renameSync(part, dir);
+  console.log(`wrote ${scenes.length} stills to ${dir}`);
 }
 
 async function render({ page, scenes, shot, failed }, { out, fps, voice, captions }) {
@@ -126,11 +131,13 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
   }
 
   const tmp = mkdtempSync(join(tmpdir(), "ve-video-"));
+  // Encode beside the output and move into place on success, so a failed render keeps the last good MP4.
+  const part = `${out}.partial.mp4`;
   let enc = null;
   try {
     const audio = clips ? join(tmp, "voice.wav") : null;
     if (audio) writeTrack(audio, track, t);
-    enc = encoder(out, { fps, audio });
+    enc = encoder(part, { fps, audio });
     const frames = Math.ceil(t * fps);
     let next = 0, shown = 0;
     for (let f = 0; f < frames; f++) {
@@ -147,9 +154,10 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
       if (pct > shown) { shown = pct; console.log(`rendered ${pct}%`); }
     }
     await enc.done();
+    renameSync(part, out);
   } catch (e) {
     enc?.kill();
-    rmSync(out, { force: true });
+    rmSync(part, { force: true });
     throw e;
   } finally {
     rmSync(tmp, { recursive: true, force: true });

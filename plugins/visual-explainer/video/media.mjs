@@ -5,6 +5,7 @@ import { join, parse } from "node:path";
 
 const RATE = 48000;
 const WPS = 2.5; // caption reading speed in words per second
+const AUDIO = /\.(mp3|wav|m4a|aac|ogg|opus|flac|aiff?)$/i;
 
 // A narration line's clip is <id>.<ext> in the voice folder. The id hashes the text, so an edited
 // line needs a new clip and an unchanged line keeps its old one.
@@ -12,7 +13,8 @@ export const lineId = (text) => createHash("sha256").update(text).digest("hex").
 
 // Line text -> mono 16-bit PCM. Every line must have a clip.
 export function loadVoice(dir, lines) {
-  const files = new Map(readdirSync(dir).map((f) => [parse(f).name, join(dir, f)]));
+  // Only finished audio files count, so a leftover download such as <id>.tmp never stands in for a clip.
+  const files = new Map(readdirSync(dir).filter((f) => AUDIO.test(f)).map((f) => [parse(f).name, join(dir, f)]));
   const missing = [...new Set(lines)].filter((t) => !files.has(lineId(t)));
   if (missing.length) {
     throw new Error(`${missing.length} line(s) have no clip in ${dir}. Make <id>.mp3 (or .wav) for each:\n${missing.map((t) => `  ${lineId(t)}\t${t}`).join("\n")}`);
@@ -45,13 +47,19 @@ export function encoder(out, { fps, audio }) {
   if (audio) args.push("-i", audio, "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "192k");
   args.push("-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:v", "libx264", "-preset", "medium", "-tune", "animation", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out);
   const ff = spawn("ffmpeg", args, { stdio: ["pipe", "inherit", "inherit"] });
+  let failure = null;
   const exited = new Promise((resolve, reject) => {
     ff.on("error", reject);
     ff.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg exited with code ${code}`))));
   });
-  exited.catch(() => {}); // done() rethrows
+  exited.catch((e) => { failure = e; });
+  ff.stdin.on("error", () => {}); // EPIPE once ffmpeg has exited; its exit code carries the failure
   return {
-    write: (buf) => (ff.stdin.write(buf) ? null : new Promise((r) => ff.stdin.once("drain", r))),
+    async write(buf) {
+      if (failure) throw failure;
+      // A drain never comes from an ffmpeg that has exited, so wait on either.
+      if (!ff.stdin.write(buf)) await Promise.race([new Promise((r) => ff.stdin.once("drain", r)), exited]);
+    },
     async done() { ff.stdin.end(); await exited; },
     kill() { ff.kill("SIGKILL"); },
   };
