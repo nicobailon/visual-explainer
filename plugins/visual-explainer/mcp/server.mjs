@@ -68,6 +68,7 @@ const promptFiles = [
   "diff-review.md",
   "fact-check.md",
   "generate-slides.md",
+  "generate-video.md",
   "generate-visual-plan.md",
   "generate-web-diagram.md",
   "plan-review.md",

@@ -57,6 +57,7 @@ The server exposes the bundled command templates as MCP prompts:
 - `generate-web-diagram`
 - `generate-visual-plan`
 - `generate-slides`
+- `generate-video`
 - `diff-review`
 - `plan-review`
 - `project-recap`

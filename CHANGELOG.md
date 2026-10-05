@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- `/generate-video` makes a narrated MP4. The agent writes a video deck, an HTML file whose scenes carry their narration. `visual-explainer-video` then records it at 1080p on a virtual clock, so motion never stutters and each sentence's picture appears with its voice. Narration uses clips from ElevenLabs, Seed Audio, OpenAI, or xAI when a key is set. Without a key, the video is silent with captions. `--stills` saves one picture per scene to check before rendering. The same command can record a walkthrough of a live web app.
+
 
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.

@@ -34,7 +34,9 @@
     "plan-review",
     "slides",
     "pptx",
-    "powerpoint"
+    "powerpoint",
+    "video",
+    "mp4"
   ],
   "files": [
     "plugins/visual-explainer",
@@ -48,11 +50,13 @@
   ],
   "bin": {
     "visual-explainer-mcp": "./plugins/visual-explainer/mcp/server.mjs",
-    "visual-explainer-pptx": "./plugins/visual-explainer/pptx/export.mjs"
+    "visual-explainer-pptx": "./plugins/visual-explainer/pptx/export.mjs",
+    "visual-explainer-video": "./plugins/visual-explainer/video/render.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
     "node-html-parser": "^9.0.1",
+    "playwright-core": "^1.63.0",
     "pptxgenjs": "^4.0.1",
     "zod": "^4.4.3"
   },

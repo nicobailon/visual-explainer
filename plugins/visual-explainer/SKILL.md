@@ -1,6 +1,6 @@
 ---
 name: visual-explainer
-description: Generate self-contained HTML visual explanations for systems, code changes, plans, data, and technical concepts. Use for diagrams, architecture overviews, diff or plan reviews, project recaps, comparison tables, slide decks, animated explainers, and other visual explanations.
+description: Generate self-contained HTML visual explanations for systems, code changes, plans, data, and technical concepts. Use for diagrams, architecture overviews, diff or plan reviews, project recaps, comparison tables, slide decks, animated explainers, narrated MP4 videos, and other visual explanations.
 license: MIT
 compatibility: Requires a browser to view generated HTML files. Optional surf-cli for AI image generation.
 metadata:
@@ -113,7 +113,7 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 When the user asks for an animated explainer or a video:
 
 - **Default:** an HTML scene player. SVG scenes with play, pause, scrub, and captions, all in one file. See `references/diagrams.md`.
-- **Real video (3Blue1Brown style):** first check which tools are installed. Use Manim, Remotion, or Motion Canvas for visuals and ffmpeg to mux. For narration, use ElevenLabs if the user gives a key. If not, use local TTS (macOS `say`, Piper, Kokoro). Do not install tools or spend API credit without asking.
+- **Video file (`/generate-video`, MP4, "make a video"):** read `references/video.md`. Build a video deck and render it with `visual-explainer-video` (or `node <this skill's directory>/video/render.mjs`). Narrate only when a speech API key is set; otherwise the video is silent with captions. To record a live web app, follow its tutorial section.
 - **Script first.** One claim per scene, a sentence or two of narration, and the picture changes with every sentence.
 
 ## Slides and PPTX
