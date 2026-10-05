@@ -98,7 +98,8 @@ async function stills({ page, scenes, shot, failed }, dir) {
   let t = 0;
   for (const [i, s] of scenes.entries()) {
     for (let b = 0; b <= s.lines.length; b++) {
-      await page.evaluate(([i, b, t]) => { __ve.cue(i, b, ""); __ve.tick(t); }, [i, b, t += 1500]);
+      await page.evaluate(([i, b, t]) => { __ve.cue(t, i, b, ""); __ve.tick(t + 1500); }, [i, b, t]);
+      t += 1500;
     }
     await page.evaluate((t) => __ve.tick(t), t += 3000);
     failed();
@@ -133,9 +134,13 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
     const frames = Math.ceil(t * fps);
     let next = 0, shown = 0;
     for (let f = 0; f < frames; f++) {
-      let c = null;
-      while (next < cues.length && cues[next].t <= f / fps) c = cues[next++];
-      await page.evaluate(([c, ms, captions]) => { if (c) __ve.cue(c.scene, c.beat, c.text, captions); __ve.tick(ms); }, [c, (f / fps) * 1000, captions]);
+      // Each cue runs at its own time between frames, so what it starts is timed from the cue.
+      const due = [];
+      while (next < cues.length && cues[next].t <= f / fps) due.push(cues[next++]);
+      await page.evaluate(([due, ms, captions]) => {
+        for (const c of due) __ve.cue(c.t * 1000, c.scene, c.beat, c.text, captions);
+        __ve.tick(ms);
+      }, [due, (f / fps) * 1000, captions]);
       failed();
       await enc.write(await shot());
       const pct = Math.floor(((f + 1) / frames) * 10) * 10;
