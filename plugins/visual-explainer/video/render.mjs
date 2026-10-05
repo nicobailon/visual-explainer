@@ -96,17 +96,21 @@ async function withDeck(input, fn) {
 // Stills show each scene's last sentence as a caption, so captions can be checked against the layout.
 async function stills({ page, scenes, shot, failed }, dir) {
   const part = `${dir}.${process.pid}.partial`;
-  rmSync(part, { recursive: true, force: true });
   mkdirSync(part, { recursive: true });
-  let t = 0;
-  for (const [i, s] of scenes.entries()) {
-    for (let b = 0; b <= s.lines.length; b++) {
-      await page.evaluate(([i, b, t, text]) => { __ve.cue(t, i, b, text, true); __ve.tick(t + 1500); }, [i, b, t, s.lines[b - 1] ?? ""]);
-      t += 1500;
+  try {
+    let t = 0;
+    for (const [i, s] of scenes.entries()) {
+      for (let b = 0; b <= s.lines.length; b++) {
+        await page.evaluate(([i, b, t, text]) => { __ve.cue(t, i, b, text, true); __ve.tick(t + 1500); }, [i, b, t, s.lines[b - 1] ?? ""]);
+        t += 1500;
+      }
+      await page.evaluate((t) => __ve.tick(t), t += 3000);
+      failed();
+      writeFileSync(join(part, `scene-${String(i + 1).padStart(2, "0")}.png`), await shot("png"));
     }
-    await page.evaluate((t) => __ve.tick(t), t += 3000);
-    failed();
-    writeFileSync(join(part, `scene-${String(i + 1).padStart(2, "0")}.png`), await shot("png"));
+  } catch (e) {
+    rmSync(part, { recursive: true, force: true });
+    throw e;
   }
   // Replace the previous stills only once every new one exists.
   rmSync(dir, { recursive: true, force: true });
