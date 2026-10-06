@@ -1,5 +1,5 @@
 // Injected before deck scripts by render.mjs.
-// 1. Virtual time: timers, requestAnimationFrame, performance.now, Date.now, and every CSS or Web
+// 1. Virtual time: timers, requestAnimationFrame, performance.now, Date, and every CSS or Web
 //    Animation advance only when the renderer moves the clock, so a slow frame never drops or skews time.
 // 2. Scene state: __ve.cue() sets the attributes and events that the deck's own CSS and JS react to.
 (() => {
@@ -9,6 +9,11 @@
   const epoch = Date.now();
   performance.now = () => now;
   Date.now = () => epoch + now;
+  // new Date() and Date() read the virtual clock too; explicit arguments behave natively.
+  window.Date = new Proxy(Date, {
+    construct: (D, args, nt) => Reflect.construct(D, args.length ? args : [epoch + now], nt),
+    apply: (D) => new D(epoch + now).toString(),
+  });
   const run = (fn, args) => (typeof fn === 'function' ? fn(...args) : (0, eval)(String(fn)));
   window.setTimeout = (fn, ms, ...args) => { const id = nextId++; timers.set(id, { at: now + Math.max(0, +ms || 0), fn, args }); return id; };
   window.setInterval = (fn, ms, ...args) => { const every = Math.max(1, +ms || 0), id = nextId++; timers.set(id, { at: now + every, fn, args, every }); return id; };
@@ -26,7 +31,18 @@
       if (a.playState !== 'paused') a.pause();
     }
   };
-  // Run due timers in order, each at its own time.
+  // Move every adopted animation to the current virtual time.
+  const sync = () => {
+    for (const a of document.getAnimations()) {
+      const t0 = started.get(a);
+      if (t0 == null || a.playState === 'finished') continue; // not adopted yet, or page-controlled
+      const t = (now - t0) * a.playbackRate;
+      // finish() fires finish and animationend events, which a paused animation never would.
+      if (t >= a.effect.getComputedTiming().endTime) a.finish();
+      else a.currentTime = t;
+    }
+  };
+  // Run due timers in order, each at its own time and seeing animations at that time.
   const advance = (target) => {
     if (target < now) throw new Error(`clock cannot go back: ${target} < ${now}`);
     for (;;) {
@@ -35,10 +51,12 @@
       if (!due) break;
       now = due.at;
       if (due.every) due.at += due.every; else timers.delete(id);
+      sync();
       run(due.fn, due.args);
       adopt();
     }
     now = target;
+    sync();
   };
 
   const scenes = () => [...document.querySelectorAll('[data-say]')];
@@ -75,16 +93,9 @@
       advance(target);
       const batch = frames;
       frames = new Map();
-      for (const cb of batch.values()) cb(now);
       adopt();
-      for (const a of document.getAnimations()) {
-        const t0 = started.get(a);
-        if (t0 === null || a.playState === 'finished') continue;
-        const t = (now - t0) * a.playbackRate;
-        // finish() fires finish and animationend events, which a paused animation never would.
-        if (t >= a.effect.getComputedTiming().endTime) a.finish();
-        else a.currentTime = t;
-      }
+      for (const cb of batch.values()) { cb(now); adopt(); }
+      sync();
     },
   };
 })();

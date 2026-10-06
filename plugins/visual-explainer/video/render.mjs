@@ -29,6 +29,7 @@ async function main() {
     options: { lines: { type: "boolean" }, voice: { type: "string" }, captions: { type: "boolean" }, stills: { type: "boolean" }, fps: { type: "string" }, help: { type: "boolean", short: "h" } },
   });
   if (values.help || !positionals.length) return console.log(USAGE);
+  if (positionals.length > 2) throw new Error(`Too many arguments: ${positionals.slice(2).join(" ")}\n\n${USAGE}`);
   const home = (p) => resolve(p.replace(/^~(?=\/)/, homedir()));
   const input = home(positionals[0]);
   if (!existsSync(input)) throw new Error(`No such file: ${input}`);
@@ -141,10 +142,10 @@ async function render({ page, scenes, shot, failed }, { out, fps, voice, caption
   const part = join(partDir, basename(out));
   let enc = null;
   try {
-    const audio = clips ? join(partDir, "voice.wav") : null;
-    if (audio) writeTrack(audio, track, t);
-    enc = encoder(part, { fps, audio });
     const frames = Math.ceil(t * fps);
+    const audio = clips ? join(partDir, "voice.wav") : null;
+    if (audio) writeTrack(audio, track, frames / fps); // as long as the video, so neither stream ends early
+    enc = encoder(part, { fps, audio });
     let next = 0, shown = 0;
     for (let f = 0; f < frames; f++) {
       // Each cue runs at its own time between frames, so what it starts is timed from the cue.

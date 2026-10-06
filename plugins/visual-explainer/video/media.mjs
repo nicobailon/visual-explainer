@@ -23,7 +23,7 @@ export function loadVoice(dir, lines) {
     try { return execFileSync("ffmpeg", ["-v", "error", "-i", file, "-f", "s16le", "-ac", "1", "-ar", String(RATE), "pipe:1"], { maxBuffer: 1 << 30, stdio: ["ignore", "pipe", "pipe"] }); }
     catch (e) { throw new Error(`Not a readable audio clip: ${file}\n${e.stderr?.toString().trim()}`); }
   };
-  return new Map(lines.map((t) => [t, decode(files.get(lineId(t)))]));
+  return new Map([...new Set(lines)].map((t) => [t, decode(files.get(lineId(t)))]));
 }
 
 // Seconds a line lasts: its clip, or the time a viewer needs to read it as a caption.
