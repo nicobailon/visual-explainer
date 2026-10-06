@@ -433,7 +433,7 @@ Use `configs/copilot/AGENTS.md` as custom instructions or rules guidance. For VS
 | Command | What it does |
 |---------|-------------|
 | `/generate-web-diagram` | Generate an HTML diagram for any topic |
-| `/generate-visual-plan` | Generate a visual implementation plan for a feature or extension |
+| `/generate-visual-plan` | An implementation plan you answer in the page: the change drawn, a short tree of claims, decisions with suggested defaults, then one response to paste back. After the build, the same page shows what was built |
 | `/generate-slides` | Generate a magazine-quality slide deck |
 | `/diff-review` | Visual diff review with architecture comparison and code review |
 | `/plan-review` | Compare a plan against the codebase with risk assessment |

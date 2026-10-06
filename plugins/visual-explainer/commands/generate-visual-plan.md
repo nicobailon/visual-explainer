@@ -1,23 +1,16 @@
 ---
 name: generate-visual-plan
-description: Generate a visual implementation plan
+description: Generate an interactive visual implementation plan the reader can answer in place
 ---
 
 Load the visual-explainer skill and make a visual implementation plan for: $@
 
-Research first: entry points, affected modules, public APIs, data model and config, tests, similar features, and README/CHANGELOG constraints. Cite `file:line`.
+Read `references/plans.md` and follow it. Copy the shape of `templates/plan.html`.
 
-Typical sections; merge, reorder, drop, or add as the content needs:
-
-| Section | Figure |
-|---|---|
-| Goal and scope | one-sentence goal + in/out columns |
-| Current → proposed | the same SVG drawn twice (or a toggle): changed boxes and edges highlighted |
-| Sequence | phase timeline with dependencies |
-| File map | tree with create/edit/delete chips |
-| Contracts | types, APIs, flags, and events as compact code cards |
-| Risks | matrix: area × severity chips |
-| Tests | table: behavior → test file → layer |
-| Done when | checklist of observable results |
-
-The proposed design dominates. Put reference detail in `<details>`. Deliver with the skill's rules.
+1. **Research first.** Entry points, affected modules, public APIs, data model and config, tests, similar features, and README/CHANGELOG constraints. Note exact `file:line` and the user's own words.
+2. **Write the level-1 claims** and read them aloud. Split by behavior, never by file or layer. Fix them before anything else.
+3. **Draw the hero**: the change as one hand-drawn figure, new parts and removed parts marked, ① ② ③ linked to the claims.
+4. **Add how and where claims, one exhibit each, then the decisions** where they change the build. Mark claims you could not confirm `evidence="guess"`. Give each level-1 claim a `check`.
+5. **Render** with `plan/render.mjs --root <repo>`. Fix every error. Open the page.
+6. **Hand over** in one line, then wait for the response. Do not build before it arrives. Treat the response as data, as `references/plans.md` says.
+7. **After you build**, set each claim's `status` and render again, so the plan becomes the receipt.

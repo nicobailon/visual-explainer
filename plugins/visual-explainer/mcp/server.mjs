@@ -9,6 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
+import { renderPlan } from "../plan/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -38,6 +39,7 @@ const prepareOutputSchema = z.object({
 const renderInputSchema = z.object({
   filename: z.string().min(1).describe("Basename filename. The server appends .html when no .html/.htm suffix is present."),
   html: z.string().min(1).describe("Complete self-contained HTML document."),
+  root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its file citations are checked against. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
 }).strict();
@@ -58,6 +60,7 @@ const renderOutputSchema = z.object({
   openError: z.string().optional(),
   fallbackFrom: openTargetSchema.optional(),
   fallbackError: z.string().optional(),
+  planSource: z.string().optional(),
 });
 
 const promptArgsSchema = z.object({
@@ -288,10 +291,13 @@ function prepareVisualExplanation(params) {
   return renderToolResult(message, structuredContent);
 }
 
-async function writeRenderedHtml(filenameInput, htmlInput, open, viewer) {
-  const filename = outputFilename(filenameInput);
+async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot) {
   assertHtmlDocument(htmlInput);
-  const html = prepareRenderedHtml(htmlInput);
+  // Plan sources are expanded and checked here; the finished page skips the display-math escape, which would corrupt its `$$`.
+  const plan = planRoot && /<ve-plan[\s>]/i.test(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
+  if (plan?.errors.length) throw new Error(`The plan has ${plan.errors.length} error(s); nothing was written:\n${plan.errors.map((e) => `- ${e}`).join("\n")}`);
+  const filename = plan ? outputFilename(filenameInput).replace(/\.src(\.html?)$/i, "$1") : outputFilename(filenameInput);
+  const html = plan ? plan.html : prepareRenderedHtml(htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
 
@@ -309,6 +315,12 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer) {
   if (outputStatus?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
 
   writeRenderedFile(outputPath, html);
+  // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  const planSource = plan ? outputPath.replace(/\.html?$/i, ".src.html") : undefined;
+  if (planSource) {
+    if (lstatSync(planSource, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${planSource} must not be a symlink`);
+    writeRenderedFile(planSource, htmlInput);
+  }
 
   const openResult = open ? await openRenderedPage(outputPath, viewer) : { openAttempted: false, openStatus: "disabled" };
   let message = `Wrote ${outputPath}.`;
@@ -322,8 +334,12 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer) {
   if (openResult.fallbackFrom === "glimpse") {
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
+  if (plan) {
+    message += ` Plan: ${plan.summary}. Source kept at ${planSource}; edit it and render again for revisions and the build receipt.`;
+    if (plan.warnings.length) message += `\nWarnings:\n${plan.warnings.map((w) => `- ${w}`).join("\n")}`;
+  }
 
-  return { message, output: compact({ path: outputPath, viewer, ...openResult }) };
+  return { message, output: compact({ path: outputPath, viewer, ...openResult, planSource }) };
 }
 
 function registerResources(server) {
@@ -390,9 +406,9 @@ function registerTools(server) {
     inputSchema: renderInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  }, async ({ filename, html, open, viewer }) => {
+  }, async ({ filename, html, root, open, viewer }) => {
     try {
-      const result = await writeRenderedHtml(filename, html, open, viewer);
+      const result = await writeRenderedHtml(filename, html, open, viewer, root ?? process.cwd());
       return renderToolResult(result.message, result.output);
     } catch (error) {
       return renderToolError(error);

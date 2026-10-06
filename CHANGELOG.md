@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+- `/generate-visual-plan` makes a plan you answer in the page instead of a page you only read. It opens on the change as a drawing whose numbered parts match a short tree of claims. You pick options for the decisions the agent cannot make alone, mark its guesses right or wrong, and comment on any words you select. Then you approve or request changes and paste one response back. Changing an option redraws the figure and updates the file count. Keyboard shortcuts and saved answers make long plans quick to get through.
+- After the build, the same plan becomes a receipt: each claim shows whether it was built, changed, or dropped, next to the check that proves it.
+- Plans are written with a few short tags and rendered by `plan/render.mjs`, which has no dependencies. It reads cited code from your repository, stops on file paths and line numbers that do not exist, and adds the page's styles and script, so agents write about a quarter of what a hand-built plan page needs. The Pi `visual_explainer` tool and the MCP render tool render plan tags too.
+
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.
 - Sources at the end of a page are now always visible. They were hidden in a small grey toggle that readers easily missed, so they now sit in their own section at full size.

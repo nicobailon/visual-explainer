@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
+import { renderPlan } from "./plan/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -56,6 +57,7 @@ type RenderDetails = OpenResult & {
   action: "render" | "render_quick";
   path: string;
   viewer: Viewer;
+  planSource?: string;
 };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
@@ -331,12 +333,17 @@ async function writeRenderedHtml(
   open: boolean | undefined,
   viewer: Viewer,
   signal?: AbortSignal,
+  planRoot?: string,
 ): Promise<AgentToolResult<VisualExplainerDetails>> {
   signal?.throwIfAborted();
 
-  const filename = outputFilename(filenameInput);
   assertHtmlDocument(htmlInput);
-  const html = prepareRenderedHtml(htmlInput);
+  // Plan sources (<ve-plan>) are expanded and checked here, so a plan passed to render never ships raw tags.
+  const plan = planRoot && /<ve-plan[\s>]/i.test(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
+  if (plan?.errors.length) throw new Error(`The plan has ${plan.errors.length} error(s); nothing was written:\n${plan.errors.map((e: string) => `- ${e}`).join("\n")}`);
+  const filename = plan ? outputFilename(filenameInput).replace(/\.src(\.html?)$/i, "$1") : outputFilename(filenameInput);
+  // The plan page is already complete, and its script uses `$$`, which the display-math escape would corrupt.
+  const html = plan ? plan.html! : prepareRenderedHtml(htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
   if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
@@ -344,18 +351,24 @@ async function writeRenderedHtml(
   if (configured && realpathSync(outputDir) !== outputDir) {
     throw new Error(`${outputDir} must not contain symlinks and must resolve to itself`);
   }
-  const existing = lstatSync(outputPath, { throwIfNoEntry: false });
-  if (existing?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
+  const writeAtomically = (path: string, content: string) => {
+    const existing = lstatSync(path, { throwIfNoEntry: false });
+    if (existing?.isSymbolicLink()) throw new Error(`${path} must not be a symlink`);
+    const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
+    try {
+      writeFileSync(temporaryPath, content, { encoding: "utf8", flag: "wx" });
+      if (existing) chmodSync(temporaryPath, existing.mode & 0o7777);
+      renameSync(temporaryPath, path);
+    } finally {
+      rmSync(temporaryPath, { force: true });
+    }
+  };
 
   signal?.throwIfAborted();
-  const temporaryPath = `${outputPath}.${process.pid}.${randomUUID()}.tmp`;
-  try {
-    writeFileSync(temporaryPath, html, { encoding: "utf8", flag: "wx" });
-    if (existing) chmodSync(temporaryPath, existing.mode & 0o7777);
-    renameSync(temporaryPath, outputPath);
-  } finally {
-    rmSync(temporaryPath, { force: true });
-  }
+  writeAtomically(outputPath, html);
+  // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  const planSource = plan ? outputPath.replace(/\.html?$/i, ".src.html") : undefined;
+  if (planSource) writeAtomically(planSource, htmlInput);
 
   signal?.throwIfAborted();
 
@@ -374,10 +387,14 @@ async function writeRenderedHtml(
   if (openResult.fallbackFrom === "glimpse") {
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
+  if (plan) {
+    message += ` Plan: ${plan.summary}. Source kept at ${planSource}; edit it and render again for revisions and the build receipt.`;
+    if (plan.warnings.length) message += `\nWarnings:\n${plan.warnings.map((w: string) => `- ${w}`).join("\n")}`;
+  }
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action, path: outputPath, viewer, ...openResult },
+    details: { action, path: outputPath, viewer, ...openResult, ...(planSource ? { planSource } : {}) },
   };
 }
 
@@ -389,10 +406,10 @@ function validateRenderOptions(params: VisualExplainerParams): asserts params is
   }
 }
 
-async function renderVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+async function renderVisualExplanation(params: VisualExplainerParams, cwd: string, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
   validateRenderOptions(params);
   if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
-  return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal);
+  return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal, cwd);
 }
 
 async function renderQuickVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
@@ -415,17 +432,18 @@ export default function (pi: ExtensionAPI) {
       "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then synthesize complete HTML and finish with visual_explainer action=render.",
       "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set). Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
       "Use action=render_quick only when --quick is explicit on generate-web-diagram, diff-review, plan-review, or project-recap. Pass the compact schema spec. If it fails or does not fit, use the full HTML workflow and action=render.",
+      "For an implementation plan, pass the plan source (<ve-plan> tags, see the skill's references/plans.md) to action=render. It checks the plan against the session's cwd, writes the page, and keeps the source beside it as <name>.src.html.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",
-    async execute(_toolCallId: string, params: VisualExplainerParams, signal?: AbortSignal) {
+    async execute(_toolCallId: string, params: VisualExplainerParams, signal: AbortSignal | undefined, _onUpdate: unknown, ctx: { cwd: string }) {
       if (params.action !== "prepare" && params.action !== "render" && params.action !== "render_quick") {
         throw new Error("action must be 'prepare', 'render', or 'render_quick'");
       }
 
       if (params.action === "prepare") return prepareVisualExplanation(pi, params);
       if (params.action === "render_quick") return await renderQuickVisualExplanation(params, signal);
-      return await renderVisualExplanation(params, signal);
+      return await renderVisualExplanation(params, ctx.cwd, signal);
     },
   });
 }

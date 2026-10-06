@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<!-- Plan source. Tags are listed in references/plans.md. Render it with:
+     node <skill>/plan/render.mjs <name>.src.html --root <repo>
+     The file paths below belong to a sample app, so this example renders only against a matching checkout. -->
+<html lang="en">
+<head>
+<title>Trash for Deleted Projects</title>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Plan · plot-app</p>
+  <h1>Trash for Deleted Projects</h1>
+  <p class="lead">Delete stops being final. A project waits in <b>Trash for 30 days</b>, then a nightly job removes it.</p>
+  <ve-files>
+    + migrations/0042_trash.sql   # deleted_at and an index
+    + server/trash/purge.ts       # the nightly job
+    + web/trash/TrashView.tsx     # the new view
+    ~ server/projects/delete.ts   # UPDATE, not DELETE
+    ~ server/projects/scope.ts    # skips trashed rows
+    - server/projects/cascade.ts  # no longer used
+  </ve-files>
+  <ve-why>
+    <ve-quote via="prompt" from="you">add a trash for deleted projects. people delete the wrong one and then email support</ve-quote>
+    <ve-quote via="support" from="ticket #4182" at="Sep 30">I deleted Q3 launch by mistake. Is there any way to get it back?</ve-quote>
+  </ve-why>
+</header>
+
+<!-- The hero is the answer as a picture. Each ① ② ③ is a level-1 claim: data-ref="claim-N" links it to the tree. -->
+<figure class="hero">
+  <div class="frame">
+    <svg class="ve-svg" viewBox="0 0 560 340" role="img" aria-label="Settings sends DELETE to the API. The API now sets deleted_at on the projects row instead of a cascade delete. The new Trash view lists trashed projects and restores them. A new nightly purge job deletes rows older than 30 days and their files.">
+      <path class="ve-e" d="M166 52H250"/>
+      <text class="ve-el" x="208" y="43">DELETE</text>
+      <path class="ve-e is-gone" d="M400 52H452"/>
+      <text class="ve-x" x="426" y="52">✕</text>
+      <path class="ve-e is-hot" data-ref="claim-1" d="M325 84V136"/>
+      <text class="ve-el r" data-ref="claim-1" x="333" y="114">UPDATE deleted_at</text>
+      <path class="ve-e" data-ref="claim-1" d="M250 162H166"/>
+      <text class="ve-el" data-ref="claim-1" x="208" y="153">lists</text>
+      <path class="ve-e is-new" data-ref="claim-2" d="M166 190H250"/>
+      <text class="ve-el" data-ref="claim-2" x="208" y="207">restore</text>
+      <path class="ve-e is-async is-new" data-ref="claim-3" d="M325 262V212"/>
+      <text class="ve-el r" data-ref="claim-3" x="333" y="240">DELETE &gt; 30 d</text>
+      <g data-if="files=purge">
+        <path class="ve-e is-async is-new" data-ref="claim-3" d="M400 294H452"/>
+        <text class="ve-el" data-ref="claim-3" x="426" y="285">files</text>
+      </g>
+
+      <g class="ve-n" transform="translate(16 20)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Settings</text><text class="sub" x="75" y="46">Delete project</text></g>
+      <g class="ve-n is-key" data-ref="claim-1" transform="translate(250 20)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">API</text><text class="sub" x="75" y="46">deleteProject()</text></g>
+      <g class="ve-n is-gone" transform="translate(452 20)"><rect class="sh" width="100" height="64" rx="6"/><text x="50" y="25">Cascade</text><text class="sub" x="50" y="46">removed</text></g>
+      <g class="ve-n is-new" data-ref="claim-1 claim-2" transform="translate(16 140)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Trash</text><text class="sub" x="75" y="46">new view</text></g>
+      <g class="ve-n" data-ref="claim-1" transform="translate(250 136)"><path class="sh" d="M0 10V66A75 10 0 0 0 150 66V10"/><ellipse class="sh lid" cx="75" cy="10" rx="75" ry="10"/><text x="75" y="40">projects</text><text class="sub" x="75" y="59">+ deleted_at</text></g>
+      <g class="ve-n is-new" data-ref="claim-3" transform="translate(250 262)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Purge job</text><text class="sub" x="75" y="46">nightly</text></g>
+      <g class="ve-n" data-ref="claim-3" transform="translate(452 262)"><rect class="sh" width="100" height="64" rx="6"/><text x="50" y="25">Files</text><text class="sub" x="50" y="46" data-if="files=purge">purged</text><text class="sub" x="50" y="46" data-if="files=keep">kept</text></g>
+
+      <g class="ve-co" data-ref="claim-1" transform="translate(250 20)"><circle r="11"/><text>1</text></g>
+      <g class="ve-co" data-ref="claim-2" transform="translate(16 140)"><circle r="11"/><text>2</text></g>
+      <g class="ve-co" data-ref="claim-3" transform="translate(250 262)"><circle r="11"/><text>3</text></g>
+    </svg>
+  </div>
+  <figcaption><span class="fig-n">Fig. 1</span>Delete becomes an UPDATE. A nightly job does the real delete.</figcaption>
+</figure>
+
+<ve-plan>
+
+  <ve-claim check="The e2e test deletes a project and finds it in Trash with 30 days left.">
+    <p>Delete moves a project to Trash for 30 days.</p>
+    <ve-mock w="420" label="Settings › Trash">
+      <div class="ui">
+        <div class="hd">Trash <small>2 projects</small></div>
+        <div class="row"><span><b>Q3 launch</b><br><span class="muted small">Deleted by Dana · 29 days left</span></span><span class="btn" data-pin="1">Restore</span></div>
+        <div class="row"><span><b>Old roadmap</b><br><span class="muted small">Deleted by you · 3 days left</span></span><span class="btn">Restore</span></div>
+      </div>
+      <ve-pin n="1">Restore brings back members and tasks too. See claim 2.</ve-pin>
+    </ve-mock>
+    <ve-ask id="retention" q="How long does a project stay in Trash?">
+      <ve-opt value="30" default>30 days</ve-opt>
+      <ve-opt value="7">7 days</ve-opt>
+      <ve-opt value="90">90 days</ve-opt>
+    </ve-ask>
+
+    <ve-claim>
+      <p>Delete sets <code>deleted_at</code>. It removes no rows.</p>
+      <ve-calls title="Delete">
+<script type="text/plain">
+~ deleteProject(id, userId)            @ server/projects/delete.ts:10
++   **markDeleted**(id, now)           @ server/projects/delete.ts:12   -- one UPDATE
+-   cascadeDelete(id)                  @ server/projects/cascade.ts:4
+?   audit.log("project.trashed")       @ server/audit.ts:14             -- strike it if not wanted
+</script>
+      </ve-calls>
+    </ve-claim>
+
+    <ve-claim evidence="guess" check="The scope test passes with a trashed project in the fixture.">
+      <p>Every project read skips trashed rows.</p>
+      <ve-code src="server/projects/scope.ts" lines="3-10" hl="8">
+        <ve-pin line="8">Add <code>AND p.deleted_at IS NULL</code> here. I found no read that skips this scope, but I did not open all 14 callers.</ve-pin>
+      </ve-code>
+    </ve-claim>
+  </ve-claim>
+
+  <ve-claim check="Restoring brings back the same members and task count.">
+    <p>Restore puts a project back with its members and tasks.</p>
+    <ve-code title="server/trash/restore.ts · sketch" lang="sql">
+<script type="text/plain">
+UPDATE projects SET deleted_at = NULL
+WHERE id = $1 AND deleted_at IS NOT NULL
+RETURNING id;   -- no row back: already purged, tell the user
+</script>
+    </ve-code>
+    <ve-ask id="restore" q="Who can restore a project?">
+      <ve-opt value="owner" default>The owner</ve-opt>
+      <ve-opt value="admins" changed="1" note="one more permission check">The owner and workspace admins</ve-opt>
+    </ve-ask>
+  </ve-claim>
+
+  <ve-claim check="A project trashed 31 days ago is gone after the job runs.">
+    <p>A nightly job deletes projects older than 30 days.</p>
+    <ve-calls title="Purge">
+<script type="text/plain">
++ **purgeTrash**(now)                    @ server/trash/purge.ts:5
++   select ids where deleted_at < now − 30 d
++   cascadeDelete(id)                    @ server/projects/cascade.ts:4   -- reused, not changed
++   files.remove(keys)                   @ server/files/store.ts:12
+</script>
+    </ve-calls>
+    <ve-ask id="files" q="Delete the project's files from storage too?">
+      <ve-opt value="purge" default>Yes, in the same run</ve-opt>
+      <ve-opt value="keep" removes="3.1" note="storage keeps growing">No, keep the files</ve-opt>
+    </ve-ask>
+
+    <ve-claim evidence="inferred">
+      <p>The job removes the project's files from storage.</p>
+      <ve-code src="server/files/store.ts" lines="12-17">
+        <ve-pin line="15">Batches of 1,000 keys, the S3 limit for one request.</ve-pin>
+      </ve-code>
+    </ve-claim>
+  </ve-claim>
+
+  <ve-claim aux="shared">
+    <p>Shared: one column and one index.</p>
+    <ve-code title="migrations/0042_trash.sql · sketch" lang="sql">
+<script type="text/plain">
+ALTER TABLE projects ADD COLUMN deleted_at timestamptz;
+CREATE INDEX projects_trash ON projects (deleted_at) WHERE deleted_at IS NOT NULL;
+</script>
+    </ve-code>
+  </ve-claim>
+
+  <ve-claim aux="scope">
+    <p>Not changing: billing, exports, and API keys.</p>
+    <ul>
+      <li>A trashed project still counts toward the plan limit until it is purged.</li>
+      <li>Exports of a trashed project keep working for its owner.</li>
+      <li>API keys scoped to the project stop working at once.</li>
+    </ul>
+  </ve-claim>
+
+</ve-plan>
+
+</body>
+</html>
