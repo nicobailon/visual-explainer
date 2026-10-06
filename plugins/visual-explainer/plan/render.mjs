@@ -488,7 +488,8 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       nodeSvg.push(`<g${ifAttrs(k, flags(k, "ve-n"))}${refOf(k)} transform="translate(${x} ${y})">${shape}<text x="${W / 2}" y="${ty}">${esc(title)}</text>${subSvg}</g>`);
       // each claim gets one numbered callout, on the first box that names it
       const fresh = (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no));
-      fresh.forEach((no, i) => { called.add(no); callouts.push(`<g class="ve-co" data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`); });
+      // the callout shows and hides with its box
+      fresh.forEach((no, i) => { called.add(no); callouts.push(`<g${ifAttrs(k, "ve-co")} data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`); });
     }
     const width = Math.max(...[...boxes.values()].map((b) => b.x)) + W + PAD, height = Math.max(...[...boxes.values()].map((b) => b.y)) + H + PAD;
     return `<div class="frame"><svg class="ve-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(n.attrs.label || "")}">${edgeSvg.join("")}${nodeSvg.join("")}${callouts.join("")}</svg></div>`;
