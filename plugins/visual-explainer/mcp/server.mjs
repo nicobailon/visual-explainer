@@ -313,13 +313,14 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   const outputStatus = lstatSync(outputPath, { throwIfNoEntry: false });
   if (outputStatus?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
 
-  writeRenderedFile(outputPath, html);
   // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  // The source goes first, so a failed write never leaves a new page beside an old source.
   const planSource = page?.source ? join(outputDir, page.source) : undefined;
   if (planSource) {
     if (lstatSync(planSource, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${planSource} must not be a symlink`);
     writeRenderedFile(planSource, htmlInput);
   }
+  writeRenderedFile(outputPath, html);
 
   const openResult = open ? await openRenderedPage(outputPath, viewer) : { openAttempted: false, openStatus: "disabled" };
   let message = `Wrote ${outputPath}.`;

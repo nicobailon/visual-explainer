@@ -93,10 +93,11 @@
   const receipt = claims.some((c) => c.dataset.status);
   // own-property reads: a decision id like "constructor" must not find Object.prototype
   const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
-  const stateOf = (a) => (changed(a) ? "changed" : receipt ? "settled" : own(S.seen, a.dataset.ask) ? "kept" : "todo");
+  // an option can remove the claim a decision sits in; that decision no longer needs an answer
+  const stateOf = (a) => (a.closest("details.claim.is-removed") ? "removed" : changed(a) ? "changed" : receipt ? "settled" : own(S.seen, a.dataset.ask) ? "kept" : "todo");
   const todo = (a) => stateOf(a) === "todo";
-  const STATE_NOTE = { changed: "", settled: "  _(settled before the build)_", kept: "  _(kept as proposed)_", todo: "  _(not opened; default kept)_" };
-  const STATE_LABEL = { changed: "changed", settled: "settled", kept: "as proposed", todo: "to answer" };
+  const STATE_NOTE = { removed: "  _(its claim was removed; ignore)_", changed: "", settled: "  _(settled before the build)_", kept: "  _(kept as proposed)_", todo: "  _(not opened; default kept)_" };
+  const STATE_LABEL = { removed: "claim removed", changed: "changed", settled: "settled", kept: "as proposed", todo: "to answer" };
   const labelOf = (a, v) => inputs(a).find((i) => i.value === v)?.closest("label").querySelector(".opt-label").textContent.trim().replace(/\s+/g, " ") ?? v;
   const pickOf = (a, v = read(a)) => (Array.isArray(v) ? v.map((x) => labelOf(a, x)).join(", ") || "none" : v == null ? "no answer" : labelOf(a, v));
   const claimOf = (el) => el?.closest("details.claim");
@@ -185,7 +186,8 @@
   /* a decision counts as opened once 40% of it stays on screen for 0.9 s, or the reader touches it */
   const markSeen = (a) => { if (!own(S.seen, a.dataset.ask)) { S.seen[a.dataset.ask] = 1; refresh(); } };
   const watch = new IntersectionObserver((entries) => {
-    for (const e of entries) { clearTimeout(e.target._seen); if (e.isIntersecting) e.target._seen = setTimeout(() => markSeen(e.target), 900); }
+    // isIntersecting stays true below the threshold while any part shows, so test the ratio
+    for (const e of entries) { clearTimeout(e.target._seen); if (e.intersectionRatio >= 0.4) e.target._seen = setTimeout(() => markSeen(e.target), 900); }
   }, { threshold: 0.4 });
   for (const a of asks) {
     watch.observe(a);
@@ -247,7 +249,9 @@
       const quote = sel.toString().trim().replace(/\s+/g, " ");
       if (quote.length < 2 || quote.length > 400) return;
       const range = sel.getRangeAt(0);
-      const node = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+      const inside = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+      // text in a UI mock lives in a shadow root; its host is what sits in the page
+      const node = inside.getRootNode() instanceof ShadowRoot ? inside.getRootNode().host : inside;
       if (!node.closest("main") || node.closest("textarea, input, .ve-pop")) return;
       const rect = range.getBoundingClientRect();
       selBtn = h("button", { type: "button", class: "ve-sel" }, "Comment");

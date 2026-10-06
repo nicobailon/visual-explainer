@@ -374,10 +374,11 @@ async function writeRenderedHtml(
   };
 
   signal?.throwIfAborted();
-  writeAtomically(outputPath, html);
   // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  // The source goes first, so a failed write never leaves a new page beside an old source.
   const planSource = page?.source ? join(outputDir, page.source) : undefined;
   if (planSource) writeAtomically(planSource, htmlInput);
+  writeAtomically(outputPath, html);
 
   signal?.throwIfAborted();
 

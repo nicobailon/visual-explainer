@@ -237,7 +237,9 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     if (c.attrs.at) {
       const [path, line] = c.attrs.at.split(":");
       const r = readFile(path);
-      if (r.error && !r.missing) errors.push(`${c.label}: at="${c.attrs.at}": ${r.error}`);
+      // a path alone may name a file the plan creates; a line must exist
+      if (line !== undefined && !/^[1-9]\d*$/.test(line)) errors.push(`${c.label}: at="${c.attrs.at}"; write at="path" or at="path:line" with a line number from 1`);
+      else if (r.error && (!r.missing || line)) errors.push(`${c.label}: at="${c.attrs.at}": ${r.error}`);
       else if (!r.missing && line && +line > r.text.split("\n").length) errors.push(`${c.label}: at="${c.attrs.at}", but ${path} has ${r.text.split("\n").length} lines`);
       c.atAbs = r.abs;
     }
@@ -338,6 +340,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       let excerpt = "", abs = null;
       if (r.loc) {
         const [path, lineStr] = r.loc.split(":");
+        if (lineStr !== undefined && !/^[1-9]\d*$/.test(lineStr)) errors.push(`${at}: "${r.body}" @ ${r.loc}; write @ path:line with a line number from 1`);
         const line = +lineStr || 0;
         const f = readFile(path);
         if (f.missing && (r.mark === "+" || r.mark === "?")) { /* a new file */ }
@@ -422,7 +425,10 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       const m = raw.trim().match(/^([+~-])\s+(\S+)(?:\s+#\s+(.*))?$/);
       if (!m) { errors.push(`${where(n)}: "${raw.trim()}"; write "+ path", "~ path", or "- path", with an optional "# note"`); continue; }
       counts[m[1]]++;
-      if (m[1] !== "+" && readFile(m[2]).missing) errors.push(`${where(n)}: ${m[1]} ${m[2]}: not found under ${realRoot}`);
+      const f = readFile(m[2]);
+      // a new file need not exist yet, but every path must stay inside the repository
+      if (relative(realRoot, resolve(realRoot, m[2])).startsWith("..") || /outside/.test(f.error ?? "")) errors.push(`${where(n)}: ${m[1]} ${m[2]}: outside ${realRoot}`);
+      else if (m[1] !== "+" && f.missing) errors.push(`${where(n)}: ${m[1]} ${m[2]}: not found under ${realRoot}`);
       items.push(`<li class="${{ "+": "add", "~": "mod", "-": "rem" }[m[1]]}"><span class="mk">${m[1] === "-" ? "−" : m[1]}</span><span class="path">${esc(m[2])}</span>${m[3] ? `<span class="note">${esc(m[3])}</span>` : ""}</li>`);
     }
     const total = counts["+"] + counts["~"] + counts["-"];
