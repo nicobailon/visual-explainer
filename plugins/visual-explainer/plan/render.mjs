@@ -28,7 +28,6 @@ function parseHtml(html) {
   const stack = [root];
   const top = () => stack[stack.length - 1];
   const text = (raw) => raw && top().children.push({ text: raw });
-  const lower = html.toLowerCase();
   let last = 0;
   let m;
   TAG.lastIndex = 0;
@@ -46,7 +45,10 @@ function parseHtml(html) {
     top().children.push(node);
     if (node.selfClose) continue;
     if (RAW_TEXT.has(name)) {
-      const end = lower.indexOf(`</${name}`, last);
+      // only "</script" followed by space, / or > ends the text; "</scripture>" inside a string does not
+      const closer = new RegExp(`</${name}(?=[\\s/>])`, "gi");
+      closer.lastIndex = last;
+      const end = closer.exec(html)?.index ?? -1;
       const stop = end < 0 ? html.length : end;
       node.children.push({ text: html.slice(last, stop) });
       node.closeRaw = end < 0 ? "" : html.slice(end).match(/^<\/[^>]*>/)[0];
@@ -69,6 +71,9 @@ const textOf = (n) => (n.text !== undefined ? (n.comment ? "" : decode(n.text)) 
 const rawText = (n) => n.children.map((c) => c.text ?? "").join("");
 const words = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 const hasClass = (n, c) => (n.attrs?.class ?? "").split(/\s+/).includes(c);
+
+/** True when the page holds a real <ve-plan> element, not one mentioned in a comment, script, or style. */
+export const hasPlan = (html) => find(parseHtml(html), (n) => n.name === "ve-plan").length > 0;
 function addClass(n, cls) {
   const m = n.openRaw.match(/\sclass\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
   n.openRaw = m ? n.openRaw.replace(m[0], ` class="${esc(`${m[1] ?? m[2]} ${cls}`.trim())}"`) : n.openRaw.replace(/\s*(\/?)>$/, ` class="${cls}"$1>`);
@@ -129,10 +134,12 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     if (fileCache.has(path)) return fileCache.get(path);
     let out;
     try {
+      const requested = relative(realRoot, resolve(realRoot, path)).split(sep).join("/");
       const real = realpathSync(resolve(realRoot, path));
       const rel = relative(realRoot, real);
       if (rel.startsWith("..") || rel.startsWith(sep) || /^[a-z]:/i.test(rel)) out = { error: `${path} is outside ${realRoot}` };
-      else if (SECRET_NAME.test(rel.split(sep).join("/"))) out = { error: `${path} looks like a secrets file; not reading it` };
+      // check the cited name and the link target both, so a link named .env cannot pass as config.txt
+      else if (SECRET_NAME.test(requested) || SECRET_NAME.test(rel.split(sep).join("/"))) out = { error: `${path} looks like a secrets file; not reading it` };
       else if (!statSync(real).isFile()) out = { error: `${path} is not a file` };
       else out = { text: readFileSync(real, "utf8").replace(/\r\n/g, "\n"), abs: real };
     } catch {
@@ -191,6 +198,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     }
   };
   numberClaims(plan, "", 1);
+  for (const c of find(doc, (n) => n.name === "ve-claim" && n.level === undefined)) errors.push(`${where(c)}: a <ve-claim> must sit directly inside <ve-plan> or another <ve-claim>`);
   const claimNos = new Set(claims.map((c) => c.no).filter(Boolean));
   const asks = find(doc, (n) => n.name === "ve-ask");
   asks.forEach((a, i) => { a.k = i + 1; });
@@ -391,7 +399,6 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       for (const no of (o.attrs.removes || "").split(/\s+/).filter(Boolean)) if (!claimNos.has(no)) errors.push(`${where(o)}: removes="${no}", but there is no claim ${no}`);
       if (o.attrs.note && words(o.attrs.note) > 12) warnings.push(`${where(o)}: note is ${words(o.attrs.note)} words; keep it to about 12`);
     }
-    n.values = values;
     const row = opts.every((o) => textOf(o).trim().length <= 18 && !o.attrs.note && !o.attrs.removes);
     const body = opts.map((o) => {
       const cost = [];
@@ -432,22 +439,24 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
 
   const CHIP = { built: ["ok", "Built"], changed: ["warn", "Changed"], dropped: ["risk", "Dropped"] };
   function expandClaim(c) {
+    if (c.level === undefined) return ""; // misplaced; reported above
     const own = [], sub = [];
     for (const k of c.children) (k.name === "ve-claim" ? sub : own).push(k);
     if (c.p) c.p.html = "";
     const askCount = find(c, (n) => n.name === "ve-ask").length;
     const { evidence, status, rev, check, aux } = c.attrs;
+    const chip = CHIP[status]; // undefined for an invalid status, which was already reported
     const chips = [
       evidence === "guess" ? '<span class="chip warn">guess</span>' : evidence === "inferred" ? '<span class="chip info">inferred</span>' : "",
       rev ? `<span class="chip info">changed in v${esc(rev)}</span>` : "",
-      status ? `<span class="chip ${CHIP[status][0]}">${CHIP[status][1]}</span>` : "",
+      chip ? `<span class="chip ${chip[0]}">${chip[1]}</span>` : "",
       askCount ? `<span class="c-asks">${askCount} decision${askCount === 1 ? "" : "s"}</span>` : "",
     ].join("");
     const claimHtml = c.p ? inner(c.p).trim() : `<code>${esc(c.attrs.at)}</code>`;
     const atLine = c.attrs.at && c.p ? `<p class="c-at">${fileLink(c.attrs.at, c.atAbs, c.attrs.at.split(":")[1])}</p>` : c.attrs.at && c.atAbs ? `<p class="c-at">${fileLink("open in editor", c.atAbs, c.attrs.at.split(":")[1])}</p>` : "";
     const guess = evidence === "guess" ? `<fieldset class="guess" data-guess="${esc(c.no)}"><legend>I could not confirm this in the code. Is it right?</legend><label><input type="radio" name="guess:${esc(c.no)}" value="right"> Right</label><label><input type="radio" name="guess:${esc(c.no)}" value="wrong"> Wrong</label></fieldset>` : "";
     const checkLine = check ? `<p class="c-check"><span class="ve-label">Done when</span> ${esc(check).replace(/`([^`]+)`/g, "<code>$1</code>")}</p>` : "";
-    const statusLine = status && (c.attrs.note || c.attrs.ref) ? `<p class="c-status"><span class="chip ${CHIP[status][0]}">${CHIP[status][1]}</span> ${esc(c.attrs.note || "")}${c.attrs.ref ? ` <code>${esc(c.attrs.ref)}</code>` : ""}</p>` : "";
+    const statusLine = chip && (c.attrs.note || c.attrs.ref) ? `<p class="c-status"><span class="chip ${chip[0]}">${chip[1]}</span> ${esc(c.attrs.note || "")}${c.attrs.ref ? ` <code>${esc(c.attrs.ref)}</code>` : ""}</p>` : "";
     const id = `claim-${(c.no || aux).replace(/\./g, "-")}`;
     const data = [["no", c.no], ["l", c.level], ["aux", aux], ["evidence", evidence], ["status", status], ["rev", rev]].filter(([, v]) => v).map(([k, v]) => ` data-${k}="${esc(v)}"`).join("");
     const num = aux === "scope" ? "—" : aux ? "∗" : c.no;
@@ -455,11 +464,9 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   }
 
   const EXPAND = { "ve-code": expandCode, "ve-calls": expandCalls, "ve-mock": expandMock, "ve-ask": expandAsk, "ve-files": expandFiles, "ve-quote": expandQuote, "ve-why": expandWhy, "ve-revision": expandRevision, "ve-claim": expandClaim };
-  const ves = find(doc, (n) => n.name.startsWith("ve-"));
-  for (const n of ves) if (!(n.name in EXPAND) && !["ve-plan", "ve-pin", "ve-opt"].includes(n.name)) errors.push(`${where(n)}: unknown tag; known: ${Object.keys(EXPAND).concat("ve-plan", "ve-pin", "ve-opt").join(" ")}`);
-  for (const n of ves.slice().reverse()) if (EXPAND[n.name]) n.html = EXPAND[n.name](n);
 
-  /* answers shown or hidden by data-if start in the state the defaults give */
+  /* answers shown or hidden by data-if start in the state the defaults give. This runs before expansion,
+     because expansion freezes each subtree into a string. */
   const defaultsOf = Object.fromEntries(asks.map((a) => [a.attrs.id, kids(a).filter((o) => o.name === "ve-opt" && "default" in o.attrs).map((o) => o.attrs.value)]));
   for (const n of find(doc, (x) => "data-if" in x.attrs)) {
     const conds = n.attrs["data-if"].split(/\s*&&\s*/);
@@ -469,12 +476,27 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       if (!m) { errors.push(`${where(n)}: data-if="${cond}"; write data-if="decision=value" (or !=, joined with &&)`); continue; }
       const ask = asks.find((a) => a.attrs.id === m[1]);
       if (!ask) { errors.push(`${where(n)}: data-if names "${m[1]}", but no <ve-ask id="${m[1]}"> exists`); continue; }
-      if (!ask.values.has(m[3].trim())) errors.push(`${where(n)}: data-if value "${m[3].trim()}" is not an option of "${m[1]}"`);
+      if (!kids(ask).some((o) => o.name === "ve-opt" && o.attrs.value === m[3].trim())) errors.push(`${where(n)}: data-if value "${m[3].trim()}" is not an option of "${m[1]}"`);
       const hit = defaultsOf[m[1]].includes(m[3].trim());
       if (m[2] === "=" ? !hit : hit) on = false;
     }
-    if (!on) addClass(n, "is-if-off");
+    if (n.name.startsWith("ve-")) n.ifOff = !on;
+    else if (!on) addClass(n, "is-if-off");
   }
+  // a tag's data-if moves onto the element it expands to, so the reader's answers can still show or hide it
+  const carryIf = (n, html) => {
+    const cond = n.attrs["data-if"];
+    if (!cond || !html) return html;
+    return html.replace(/^<([a-z][\w-]*)([^>]*)>/i, (_, tag, rest) => {
+      const off = n.ifOff ? " is-if-off" : "";
+      const cls = rest.match(/\sclass="([^"]*)"/);
+      const attrs = cls ? rest.replace(cls[0], ` class="${cls[1]}${off}"`) : `${rest}${off ? ' class="is-if-off"' : ""}`;
+      return `<${tag} data-if="${esc(cond)}"${attrs}>`;
+    });
+  };
+  const ves = find(doc, (n) => n.name.startsWith("ve-"));
+  for (const n of ves) if (!(n.name in EXPAND) && !["ve-plan", "ve-pin", "ve-opt"].includes(n.name)) errors.push(`${where(n)}: unknown tag; known: ${Object.keys(EXPAND).concat("ve-plan", "ve-pin", "ve-opt").join(" ")}`);
+  for (const n of ves.slice().reverse()) if (EXPAND[n.name]) n.html = carryIf(n, EXPAND[n.name](n));
 
   /* hero: the answer as a picture, its callouts linked to the claims */
   const hero = find(doc, (n) => n.name === "figure" && hasClass(n, "hero"))[0];
@@ -581,6 +603,7 @@ const MOCK_CSS = `:host{all:initial;display:block}*,*::before,*::after{box-sizin
 .muted{color:#6b7280}.small{font-size:12.5px}.ok{color:#1c7443;font-weight:600}.bad{color:#b0341e;font-weight:600}
 .btn{display:inline-block;font-weight:600;font-size:13px;padding:6px 11px;border-radius:7px;border:1px solid #d9dde3;background:#fff;color:#17191c}.btn.pri{background:#17191c;color:#fff;border-color:#17191c}.btn.danger{color:#b0341e}
 .ft{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid #eceef1;background:#f8f9fa}
+.is-if-off{display:none!important}
 [data-pin]{position:relative}[data-pin]::after{content:attr(data-pin);position:absolute;top:-11px;right:-11px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--accent,#c06a00);color:var(--bg,#fff);font:600 12px/20px ui-monospace,monospace;text-align:center;box-shadow:0 0 0 2px var(--surface,#fff)}`;
 
 /* ── CLI ── */

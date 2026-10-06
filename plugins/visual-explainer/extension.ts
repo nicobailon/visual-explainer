@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
-import { renderPlan } from "./plan/render.mjs";
+import { hasPlan, renderPlan } from "./plan/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -339,7 +339,7 @@ async function writeRenderedHtml(
 
   assertHtmlDocument(htmlInput);
   // Plan sources (<ve-plan>) are expanded and checked here, so a plan passed to render never ships raw tags.
-  const plan = planRoot && /<ve-plan[\s>]/i.test(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
+  const plan = planRoot && hasPlan(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
   if (plan?.errors.length) throw new Error(`The plan has ${plan.errors.length} error(s); nothing was written:\n${plan.errors.map((e: string) => `- ${e}`).join("\n")}`);
   const filename = plan ? outputFilename(filenameInput).replace(/\.src(\.html?)$/i, "$1") : outputFilename(filenameInput);
   // The plan page is already complete, and its script uses `$$`, which the display-math escape would corrupt.

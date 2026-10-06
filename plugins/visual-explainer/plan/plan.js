@@ -119,7 +119,12 @@
   const changed = (a) => !same(read(a), defaults[a.dataset.ask]);
   // once claims carry a build status the page is a receipt, and its decisions are settled
   const receipt = claims.some((c) => c.dataset.status);
-  const todo = (a) => !receipt && !S.seen[a.dataset.ask] && !changed(a);
+  // own-property reads: a decision id like "constructor" must not find Object.prototype
+  const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
+  const stateOf = (a) => (changed(a) ? "changed" : receipt ? "settled" : own(S.seen, a.dataset.ask) ? "kept" : "todo");
+  const todo = (a) => stateOf(a) === "todo";
+  const STATE_NOTE = { changed: "", settled: "  _(settled before the build)_", kept: "  _(kept as proposed)_", todo: "  _(not opened; default kept)_" };
+  const STATE_LABEL = { changed: "changed", settled: "settled", kept: "as proposed", todo: "to answer" };
   const labelOf = (a, v) => inputs(a).find((i) => i.value === v)?.closest("label").querySelector(".opt-label").textContent.trim().replace(/\s+/g, " ") ?? v;
   const pickOf = (a, v = read(a)) => (Array.isArray(v) ? v.map((x) => labelOf(a, x)).join(", ") || "none" : v == null ? "no answer" : labelOf(a, v));
   const claimOf = (el) => el?.closest("details.claim");
@@ -163,7 +168,9 @@
   const files = $(".files");
   function refresh() {
     const ans = answers();
-    for (const el of $$("[data-if]")) el.classList.toggle("is-if-off", !test(el.dataset.if, ans));
+    // mock UI lives in shadow roots, so look inside them too
+    const conditional = [...$$("[data-if]"), ...$$(".mock-host").flatMap((m) => (m.shadowRoot ? [...m.shadowRoot.querySelectorAll("[data-if]")] : []))];
+    for (const el of conditional) el.classList.toggle("is-if-off", !test(el.dataset.if, ans));
     const gone = new Set($$("fieldset.ask input:checked[data-removes]").flatMap((i) => i.dataset.removes.split(/\s+/)));
     for (const c of claims) c.classList.toggle("is-removed", gone.has(c.dataset.no));
     if (files) {
@@ -178,7 +185,7 @@
       $('[data-k="total"]', files).textContent = `${total} file${total === 1 ? "" : "s"}`;
     }
     asks.forEach((a, k) => {
-      const st = changed(a) ? "changed" : S.seen[a.dataset.ask] ? "kept" : "todo";
+      const st = stateOf(a);
       a.dataset.state = st;
       $("legend", a).innerHTML = `Decision <b>${k + 1}</b> of ${asks.length}${st === "todo" ? " · to answer" : st === "changed" ? " · changed" : ""}`;
     });
@@ -204,7 +211,7 @@
   }
 
   /* a decision counts as opened once 40% of it stays on screen for 0.9 s, or the reader touches it */
-  const markSeen = (a) => { if (!S.seen[a.dataset.ask]) { S.seen[a.dataset.ask] = 1; refresh(); } };
+  const markSeen = (a) => { if (!own(S.seen, a.dataset.ask)) { S.seen[a.dataset.ask] = 1; refresh(); } };
   const watch = new IntersectionObserver((entries) => {
     for (const e of entries) { clearTimeout(e.target._seen); if (e.isIntersecting) e.target._seen = setTimeout(() => markSeen(e.target), 900); }
   }, { threshold: 0.4 });
@@ -222,7 +229,7 @@
   const needsMe = () => {
     for (const c of claims) c.open = false;
     asks.filter(todo).forEach(reveal);
-    claims.filter((c) => (c.dataset.evidence === "guess" && !S.guesses[c.dataset.no]) || c.dataset.rev).forEach(reveal);
+    claims.filter((c) => (c.dataset.evidence === "guess" && !own(S.guesses, c.dataset.no)) || c.dataset.rev).forEach(reveal);
     (asks.find(todo) || claims[0]).scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
   };
   const tools = $(".plan-meta .tools");
@@ -289,8 +296,7 @@
       L.push("## Decisions");
       asks.forEach((a, k) => {
         const id = a.dataset.ask, ch = changed(a);
-        const state = ch ? "" : S.seen[id] ? "  _(kept as proposed)_" : "  _(not opened; default kept)_";
-        L.push(`${k + 1}. [ask:${id} · claim ${claimRef(claimOf(a))}] ${question(a)}${state}`);
+        L.push(`${k + 1}. [ask:${id} · claim ${claimRef(claimOf(a))}] ${question(a)}${STATE_NOTE[stateOf(a)]}`);
         L.push(`   → **${pickOf(a)}** \`${JSON.stringify(read(a))}\`${ch ? `  ✎ (was: ${pickOf(a, defaults[id])})` : ""}`);
       });
       L.push("");
@@ -298,7 +304,7 @@
     if (guesses.length) {
       L.push("## Guesses");
       for (const g of guesses) {
-        const no = g.dataset.guess, v = S.guesses[no];
+        const no = g.dataset.guess, v = own(S.guesses, no);
         L.push(`- [claim ${no}] ${claimText(claimOf(g))} → ${v ? `**${v}**` : "_(not checked)_"}`);
       }
       L.push("");
@@ -334,13 +340,13 @@
     const verdicts = h("fieldset", { class: "verdict" }, ...["Approve", "Request changes", "Comment"].map((v) =>
       h("label", {}, h("input", { type: "radio", name: "ve-verdict", value: v, checked: v === verdict, onchange: () => { verdict = v; update(); } }), v)));
     const row = (k, main, sub, cls, st, onclick) => h("button", { type: "button", class: `r-row ${cls}`, onclick }, h("span", { class: "k" }, k), h("span", {}, main, h("small", {}, sub)), h("span", { class: "st" }, st));
-    const decisions = asks.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, left.length ? `Decisions · ${left.length} to answer` : "Decisions · all opened"),
+    const decisions = asks.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, receipt ? "Decisions · settled before the build" : left.length ? `Decisions · ${left.length} to answer` : "Decisions · all opened"),
       ...asks.map((a, k) => {
-        const st = changed(a) ? "changed" : S.seen[a.dataset.ask] ? "kept" : "todo";
-        return row(String(k + 1), question(a), `claim ${claimRef(claimOf(a))} · ${pickOf(a)}`, st, st === "todo" ? "to answer" : st === "kept" ? "as proposed" : "changed", () => { dialog.close(); goTo(a); markSeen(a); });
+        const st = stateOf(a);
+        return row(String(k + 1), question(a), `claim ${claimRef(claimOf(a))} · ${pickOf(a)}`, st, STATE_LABEL[st], () => { dialog.close(); goTo(a); markSeen(a); });
       })) : null;
     const guessSec = guesses.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, "Guesses to check"),
-      ...guesses.map((g) => { const v = S.guesses[g.dataset.guess]; return row("▲", claimText(claimOf(g)), `claim ${g.dataset.guess}`, v ? "" : "todo", v || "not checked", () => { dialog.close(); goTo(g); }); })) : null;
+      ...guesses.map((g) => { const v = own(S.guesses, g.dataset.guess); return row("▲", claimText(claimOf(g)), `claim ${g.dataset.guess}`, v ? "" : "todo", v || "not checked", () => { dialog.close(); goTo(g); }); })) : null;
     const commentSec = S.comments.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, `Comments · ${S.comments.length}`),
       ...S.comments.map((c) => h("p", { class: "r-row" }, h("span", { class: "k" }, "›"), h("span", {}, c.text, h("small", {}, `${c.claim === "page" ? "page" : `claim ${c.claim}`}${c.quote ? ` · “${c.quote}”` : ""}`)),
         h("button", { type: "button", onclick: () => { S.comments = S.comments.filter((x) => x !== c); refresh(); openRespond(verdict); } }, "Remove")))) : null;

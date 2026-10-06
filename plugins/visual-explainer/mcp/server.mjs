@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { renderPlan } from "../plan/render.mjs";
+import { hasPlan, renderPlan } from "../plan/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -294,7 +294,7 @@ function prepareVisualExplanation(params) {
 async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot) {
   assertHtmlDocument(htmlInput);
   // Plan sources are expanded and checked here; the finished page skips the display-math escape, which would corrupt its `$$`.
-  const plan = planRoot && /<ve-plan[\s>]/i.test(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
+  const plan = planRoot && hasPlan(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
   if (plan?.errors.length) throw new Error(`The plan has ${plan.errors.length} error(s); nothing was written:\n${plan.errors.map((e) => `- ${e}`).join("\n")}`);
   const filename = plan ? outputFilename(filenameInput).replace(/\.src(\.html?)$/i, "$1") : outputFilename(filenameInput);
   const html = plan ? plan.html : prepareRenderedHtml(htmlInput);
