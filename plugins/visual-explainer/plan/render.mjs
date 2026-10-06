@@ -73,7 +73,7 @@ const words = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 const hasClass = (n, c) => (n.attrs?.class ?? "").split(/\s+/).includes(c);
 
 /** True when the page holds a real <ve-plan> element, not one mentioned in a comment, script, or style. */
-export const hasPlan = (html) => find(parseHtml(html), (n) => n.name === "ve-plan").length > 0;
+const hasPlan = (html) => find(parseHtml(html), (n) => n.name === "ve-plan").length > 0;
 function addClass(n, cls) {
   const m = n.openRaw.match(/\sclass\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
   n.openRaw = m ? n.openRaw.replace(m[0], ` class="${esc(`${m[1] ?? m[2]} ${cls}`.trim())}"`) : n.openRaw.replace(/\s*(\/?)>$/, ` class="${cls}"$1>`);
@@ -120,7 +120,7 @@ function dedent(text) {
 const EDITORS = { vscode: "vscode://file", cursor: "cursor://file", windsurf: "windsurf://file", zed: "zed://file" };
 
 /* ── the renderer ── */
-export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode" } = {}) {
+export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode", sendBack = false } = {}) {
   const errors = [], warnings = [];
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
@@ -213,7 +213,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   const firstAux = tops.findIndex((c) => c.attrs.aux);
   if (firstAux >= 0 && tops.slice(firstAux).some((c) => !c.attrs.aux)) warnings.push("put the aux claims (shared, not changing) after the numbered claims");
   if (!tops.some((c) => c.attrs.aux === "scope")) warnings.push('no <ve-claim aux="scope">; end with what is not changing');
-  const EXHIBIT = new Set(["figure", "ve-code", "ve-calls", "ve-mock", "table", "pre", "svg"]);
+  const EXHIBIT = new Set(["figure", "ve-code", "ve-calls", "ve-mock", "ve-flow", "table", "pre", "svg"]);
   for (const c of claims) {
     const els = kids(c);
     const p = els[0]?.name === "p" ? els[0] : null;
@@ -437,6 +437,63 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   };
   const expandRevision = (n) => `<section class="revision" aria-label="What changed"><p class="ve-label caps">Version ${esc(n.attrs.v || "2")} · changed since your answers</p><ul>${inner(n).trim()}</ul></section>`;
 
+  /* a diagram from boxes on a grid and arrows between them; the layout is computed here, so no coordinates are written by hand */
+  const W = 140, H = 64, GX = 84, GY = 56, PAD = 16; // three columns come out near the 560×340 hero
+  const ifAttrs = (k, cls = "") => `${k.attrs["data-if"] ? ` data-if="${esc(k.attrs["data-if"])}"` : ""}${cls || k.ifOff ? ` class="${cls}${k.ifOff ? `${cls ? " " : ""}is-if-off` : ""}"` : ""}`;
+  const flags = (k, base) => [base, ...["key", "new", "gone", "hot", "async"].filter((f) => f in k.attrs).map((f) => `is-${f}`)].join(" ");
+  const refOf = (k) => {
+    const nos = (k.attrs.claim || "").split(/\s+/).filter(Boolean);
+    for (const no of nos) if (!claimNos.has(no)) errors.push(`${where(k)}: claim="${no}", but there is no claim ${no}`);
+    return nos.length ? ` data-ref="${nos.map((no) => `claim-${esc(no)}`).join(" ")}"` : "";
+  };
+  function expandFlow(n) {
+    const boxes = new Map(), edges = [];
+    for (const k of kids(n)) {
+      if (k.name === "ve-node") {
+        const m = (k.attrs.at || "").match(/^(\d+(?:\.5)?)[\s,]+(\d+(?:\.5)?)$/);
+        if (!k.attrs.id || !m) errors.push(`${where(k)}: needs id="name" and at="column row", for example at="2 1"`);
+        else if (boxes.has(k.attrs.id)) errors.push(`${where(k)}: id="${k.attrs.id}" is used twice`);
+        else boxes.set(k.attrs.id, { k, x: PAD + (m[1] - 1) * (W + GX), y: PAD + (m[2] - 1) * (H + GY) });
+      } else if (k.name === "ve-edge") edges.push(k);
+      else errors.push(`${where(k)}: only <ve-node> and <ve-edge> belong in <ve-flow>`);
+    }
+    for (const e of edges) for (const end of ["from", "to"]) if (!boxes.has(e.attrs[end])) errors.push(`${where(e)}: ${end}="${e.attrs[end] ?? ""}" names no <ve-node>`);
+    if (!n.attrs.label) warnings.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
+    if (!boxes.size) { errors.push(`${where(n)}: needs at least one <ve-node>`); return ""; }
+    const pairs = new Set(edges.map((e) => `${e.attrs.from}>${e.attrs.to}`));
+    const edgeSvg = edges.filter((e) => boxes.has(e.attrs.from) && boxes.has(e.attrs.to) && e.attrs.from !== e.attrs.to).map((e) => {
+      const a = boxes.get(e.attrs.from), b = boxes.get(e.attrs.to);
+      // two arrows between the same boxes run side by side instead of on top of each other
+      const off = pairs.has(`${e.attrs.to}>${e.attrs.from}`) ? (e.attrs.from < e.attrs.to ? -12 : 12) : 0;
+      const [ax, ay, bx, by] = [a.x + W / 2, a.y + H / 2, b.x + W / 2, b.y + H / 2];
+      const x1 = bx > ax ? a.x + W : a.x, y2 = by > ay ? b.y : b.y + H;
+      let d, mx, my, vertical = false;
+      if (ay === by) { const x2 = bx > ax ? b.x : b.x + W; d = `M${x1} ${ay + off}H${x2}`; mx = (x1 + x2) / 2; my = ay + off; }
+      else if (ax === bx) { const y1 = by > ay ? a.y + H : a.y; d = `M${ax + off} ${y1}V${y2}`; mx = ax + off; my = (y1 + y2) / 2; vertical = true; }
+      else { d = `M${x1} ${ay + off}H${bx + off}V${y2}`; mx = (x1 + bx) / 2; my = ay + off; } // out of the side, then into the top or bottom
+      const ref = refOf(e);
+      const label = e.attrs.label ? `<text class="ve-el${vertical ? " r" : ""}"${ref} x="${vertical ? mx + 8 : mx}" y="${vertical ? my + 5 : off > 0 ? my + 17 : my - 9}">${esc(e.attrs.label)}</text>` : "";
+      return `<g${ifAttrs(e)}><path class="${flags(e, "ve-e")}"${ref} d="${d}"/>${label}${"gone" in e.attrs ? `<text class="ve-x" x="${mx}" y="${my}">✕</text>` : ""}</g>`;
+    });
+    const called = new Set();
+    const nodeSvg = [], callouts = [];
+    for (const { k, x, y } of boxes.values()) {
+      const db = k.attrs.shape === "db", subs = kids(k).filter((s) => s.name === "small");
+      if (k.attrs.sub) subs.unshift({ attrs: {}, children: [{ text: esc(k.attrs.sub) }] });
+      const title = k.children.filter((c) => c.name !== "small").map(textOf).join("").trim();
+      const ty = (subs.length ? 25 : 32) + (db ? 6 : 0);
+      const shape = db ? `<path class="sh" d="M0 8V56A${W / 2} 8 0 0 0 ${W} 56V8"/><ellipse class="sh lid" cx="${W / 2}" cy="8" rx="${W / 2}" ry="8"/>` : `<rect class="sh" width="${W}" height="${H}" rx="6"/>`;
+      // <small data-if="…"> lets one box show a different line under each answer
+      const subSvg = subs.map((s) => `<text${ifAttrs(s, hasClass(s, "is-if-off") ? "sub is-if-off" : "sub")} x="${W / 2}" y="${ty + 21}">${esc(textOf(s).trim())}</text>`).join("");
+      nodeSvg.push(`<g${ifAttrs(k, flags(k, "ve-n"))}${refOf(k)} transform="translate(${x} ${y})">${shape}<text x="${W / 2}" y="${ty}">${esc(title)}</text>${subSvg}</g>`);
+      // each claim gets one numbered callout, on the first box that names it
+      const fresh = (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no));
+      fresh.forEach((no, i) => { called.add(no); callouts.push(`<g class="ve-co" data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`); });
+    }
+    const width = Math.max(...[...boxes.values()].map((b) => b.x)) + W + PAD, height = Math.max(...[...boxes.values()].map((b) => b.y)) + H + PAD;
+    return `<div class="frame"><svg class="ve-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(n.attrs.label || "")}">${edgeSvg.join("")}${nodeSvg.join("")}${callouts.join("")}</svg></div>`;
+  }
+
   const CHIP = { built: ["ok", "Built"], changed: ["warn", "Changed"], dropped: ["risk", "Dropped"] };
   function expandClaim(c) {
     if (c.level === undefined) return ""; // misplaced; reported above
@@ -463,7 +520,8 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     return `<details class="claim" id="${esc(id)}"${data}><summary${c.no ? ` data-ref="claim-${esc(c.no)}"` : ""}><span class="c-no">${esc(num)}</span><span class="c-text">${claimHtml}</span><span class="c-meta">${chips}</span></summary><div class="c-body">${atLine}${own.map(serialize).join("")}${guess}${checkLine}${statusLine}${sub.map(serialize).join("")}</div></details>`;
   }
 
-  const EXPAND = { "ve-code": expandCode, "ve-calls": expandCalls, "ve-mock": expandMock, "ve-ask": expandAsk, "ve-files": expandFiles, "ve-quote": expandQuote, "ve-why": expandWhy, "ve-revision": expandRevision, "ve-claim": expandClaim };
+  const EXPAND = { "ve-code": expandCode, "ve-calls": expandCalls, "ve-mock": expandMock, "ve-flow": expandFlow, "ve-ask": expandAsk, "ve-files": expandFiles, "ve-quote": expandQuote, "ve-why": expandWhy, "ve-revision": expandRevision, "ve-claim": expandClaim };
+  const PARTS = ["ve-plan", "ve-pin", "ve-opt", "ve-node", "ve-edge"];
 
   /* answers shown or hidden by data-if start in the state the defaults give. This runs before expansion,
      because expansion freezes each subtree into a string. */
@@ -480,29 +538,24 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
       const hit = defaultsOf[m[1]].includes(m[3].trim());
       if (m[2] === "=" ? !hit : hit) on = false;
     }
-    if (n.name.startsWith("ve-")) n.ifOff = !on;
+    if (["ve-plan", "ve-pin", "ve-opt"].includes(n.name)) errors.push(`${where(n)}: data-if does not work on <${n.name}>; put it on an element inside or around it`);
+    else if (n.name.startsWith("ve-")) n.ifOff = !on;
     else if (!on) addClass(n, "is-if-off");
   }
   // a tag's data-if moves onto the element it expands to, so the reader's answers can still show or hide it
-  const carryIf = (n, html) => {
-    const cond = n.attrs["data-if"];
-    if (!cond || !html) return html;
-    return html.replace(/^<([a-z][\w-]*)([^>]*)>/i, (_, tag, rest) => {
-      const off = n.ifOff ? " is-if-off" : "";
-      const cls = rest.match(/\sclass="([^"]*)"/);
-      const attrs = cls ? rest.replace(cls[0], ` class="${cls[1]}${off}"`) : `${rest}${off ? ' class="is-if-off"' : ""}`;
-      return `<${tag} data-if="${esc(cond)}"${attrs}>`;
-    });
-  };
+  const carryIf = (n, html) => (!n.attrs["data-if"] || !html ? html : html.replace(/^<([a-z][\w-]*)([^>]*)>/i, (_, tag, rest) => {
+    const cls = rest.match(/\sclass="([^"]*)"/);
+    return `<${tag}${ifAttrs(n, cls?.[1] ?? "")}${cls ? rest.replace(cls[0], "") : rest}>`;
+  }));
   const ves = find(doc, (n) => n.name.startsWith("ve-"));
-  for (const n of ves) if (!(n.name in EXPAND) && !["ve-plan", "ve-pin", "ve-opt"].includes(n.name)) errors.push(`${where(n)}: unknown tag; known: ${Object.keys(EXPAND).concat("ve-plan", "ve-pin", "ve-opt").join(" ")}`);
+  for (const n of ves) if (!(n.name in EXPAND) && !PARTS.includes(n.name)) errors.push(`${where(n)}: unknown tag; known: ${Object.keys(EXPAND).concat(PARTS).join(" ")}`);
   for (const n of ves.slice().reverse()) if (EXPAND[n.name]) n.html = carryIf(n, EXPAND[n.name](n));
 
   /* hero: the answer as a picture, its callouts linked to the claims */
   const hero = find(doc, (n) => n.name === "figure" && hasClass(n, "hero"))[0];
   if (!hero) warnings.push('no <figure class="hero">; open on the change as a picture with ① ② ③ linked to the claims');
   else {
-    const refs = new Set(find(hero, (n) => n.attrs["data-ref"]).flatMap((n) => n.attrs["data-ref"].split(/\s+/)).filter((r) => r.startsWith("claim-")));
+    const refs = new Set(find(hero, (n) => n.attrs["data-ref"] || n.attrs.claim).flatMap((n) => (n.attrs["data-ref"] ?? "").split(/\s+/).concat((n.attrs.claim ?? "").split(/\s+/).filter(Boolean).map((no) => `claim-${no}`))).filter((r) => r.startsWith("claim-")));
     for (const r of refs) if (!claimNos.has(r.slice(6))) errors.push(`hero: data-ref="${r}", but there is no claim ${r.slice(6)}`);
     for (const c of topClaims) if (!refs.has(`claim-${c.no}`)) warnings.push(`hero: nothing carries data-ref="claim-${c.no}"; mark the parts claim ${c.no} changes`);
     const vb = find(hero, (n) => n.name === "svg")[0]?.attrs.viewbox?.split(/[\s,]+/).map(Number);
@@ -518,13 +571,17 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
 
   const header = find(body, (n) => n.name === "header")[0];
   const take = (n) => { if (!n) return ""; const s = serialize(n); n.html = ""; return s; };
-  const headerHtml = take(header), heroHtml = take(hero), planHtml = take(plan);
+  // the claims go into the page without the <ve-plan> wrapper, so a rendered page never reads as a plan source
+  const headerHtml = take(header), heroHtml = take(hero), planHtml = inner(plan);
+  plan.html = "";
   const mainNode = kids(body).length === 1 && kids(body)[0].name === "main" ? kids(body)[0] : body;
   const rest = inner(mainNode).trim();
 
   const guesses = claims.filter((c) => c.attrs.evidence === "guess").length;
   const checked = claims.filter((c) => c.attrs.check);
   const statuses = claims.filter((c) => c.attrs.status);
+  // the saved-answers key includes this, so each revision starts clean
+  const version = Math.max(1, ...find(doc, (n) => n.name === "ve-revision").map((n) => +n.attrs.v || 2), ...claims.map((c) => +c.attrs.rev || 1));
   const proseWords = find(plan, (n) => n.name === "p" || n.name === "li").reduce((s, n) => s + words(textOf(n)), 0);
   const minutes = Math.max(1, Math.round(proseWords / 220 + asks.length * 0.3 + claims.length * 0.15));
   const meta = [
@@ -537,7 +594,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   if (statuses.length) {
     const tally = { built: 0, changed: 0, dropped: 0 };
     for (const c of statuses) tally[c.attrs.status]++;
-    const total = Math.max(checked.length, statuses.length);
+    const total = claims.filter((c) => c.attrs.check || c.attrs.status).length;
     const seg = (k) => (tally[k] ? `<i class="${k}" style="flex:${tally[k]}"></i>` : "");
     progress = `<p class="progress"><span class="bar" role="img" aria-label="${tally.built} of ${total} built, ${tally.changed} changed, ${tally.dropped} dropped">${seg("built")}${seg("changed")}${seg("dropped")}${total > statuses.length ? `<i class="todo" style="flex:${total - statuses.length}"></i>` : ""}</span>${tally.built} of ${total} built${tally.changed ? ` · ${tally.changed} changed` : ""}${tally.dropped ? ` · ${tally.dropped} dropped` : ""}</p>`;
   }
@@ -566,7 +623,7 @@ ${keepHead}
 </head>
 <body${bodyAttrs}>
 ${DEFS}
-<main class="plan-page${hero ? "" : " no-hero"}">
+<main class="plan-page${hero ? "" : " no-hero"}" data-v="${version}"${sendBack ? " data-send-back" : ""}>
 ${headerHtml}
 <div class="plan-grid">
 <div class="plan-col">
@@ -587,6 +644,21 @@ ${js}
   const count = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
   const summary = [count(claims.filter((c) => c.no).length, "claim"), count(asks.length, "decision"), count(guesses, "guess", "guesses"), count(checked.length, "check"), statuses.length ? `${statuses.length} with status` : "", `${count(filesRead.size, "file")} read`].filter(Boolean).join(" · ");
   return { html, errors, warnings, files: [...filesRead], summary };
+}
+
+/**
+ * The plan step shared by the Pi tool and the MCP server. Returns null for an ordinary page. A plan source becomes the
+ * page, renamed from <name>.src.html, with the source kept beside it. A page already rendered passes through untouched:
+ * hosts must not run their display-math escape on plan pages, because `$$` in plan.js and in cited code would break.
+ */
+export function renderPlanForHost(html, { root, filename, sendBack = false }) {
+  if (!hasPlan(html)) return /<script data-ve-plan>/.test(html) ? { html, filename, note: "" } : null;
+  const r = renderPlan(html, { root, sendBack });
+  if (r.errors.length) throw new Error(`The plan has ${r.errors.length} error(s); nothing was written:\n${r.errors.map((e) => `- ${e}`).join("\n")}`);
+  const page = filename.replace(/\.src(\.html?)$/i, "$1");
+  const source = page.replace(/\.html?$/i, ".src.html");
+  const warned = r.warnings.length ? `\nWarnings:\n${r.warnings.map((w) => `- ${w}`).join("\n")}` : "";
+  return { html: r.html, filename: page, source, note: ` Plan: ${r.summary}. Source kept beside it as ${source}; edit it and render again for revisions and the build receipt.${warned}` };
 }
 
 const FAVICON = `<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230d1520'/%3E%3Cpath d='M18 20h28M18 32h20M18 44h12' stroke='%23ffb547' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">`;

@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { hasPlan, renderPlan } from "../plan/render.mjs";
+import { renderPlanForHost } from "../plan/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -293,11 +293,10 @@ function prepareVisualExplanation(params) {
 
 async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot) {
   assertHtmlDocument(htmlInput);
-  // Plan sources are expanded and checked here; the finished page skips the display-math escape, which would corrupt its `$$`.
-  const plan = planRoot && hasPlan(htmlInput) ? renderPlan(htmlInput, { root: planRoot }) : null;
-  if (plan?.errors.length) throw new Error(`The plan has ${plan.errors.length} error(s); nothing was written:\n${plan.errors.map((e) => `- ${e}`).join("\n")}`);
-  const filename = plan ? outputFilename(filenameInput).replace(/\.src(\.html?)$/i, "$1") : outputFilename(filenameInput);
-  const html = plan ? plan.html : prepareRenderedHtml(htmlInput);
+  // MCP cannot put the reader's response into the chat, so plan pages here always copy it instead (no sendBack).
+  const page = renderPlanForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
+  const filename = page?.filename ?? outputFilename(filenameInput);
+  const html = page ? page.html : prepareRenderedHtml(htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
 
@@ -316,7 +315,7 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
 
   writeRenderedFile(outputPath, html);
   // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
-  const planSource = plan ? outputPath.replace(/\.html?$/i, ".src.html") : undefined;
+  const planSource = page?.source ? join(outputDir, page.source) : undefined;
   if (planSource) {
     if (lstatSync(planSource, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${planSource} must not be a symlink`);
     writeRenderedFile(planSource, htmlInput);
@@ -334,10 +333,7 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   if (openResult.fallbackFrom === "glimpse") {
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
-  if (plan) {
-    message += ` Plan: ${plan.summary}. Source kept at ${planSource}; edit it and render again for revisions and the build receipt.`;
-    if (plan.warnings.length) message += `\nWarnings:\n${plan.warnings.map((w) => `- ${w}`).join("\n")}`;
-  }
+  if (page) message += page.note;
 
   return { message, output: compact({ path: outputPath, viewer, ...openResult, planSource }) };
 }

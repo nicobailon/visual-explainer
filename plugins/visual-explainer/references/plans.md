@@ -30,13 +30,27 @@ hero     <figure class="hero">: the change, drawn. ① ② ③ are the level-1 c
 tree     <ve-plan>: 2–5 claims split by behavior, then shared, then not changing
 ```
 
-On wide screens the tree sits beside the sticky hero; hovering a claim lights its parts in the hero. Draw the hero by hand with the kit in `diagrams.md`, at a viewBox near `560×340`. Mark new parts `is-new`, removed parts `is-gone`, the main path `is-hot`. Put `data-ref="claim-N"` on every part claim N changes, and a callout on it: `<g class="ve-co" data-ref="claim-N" transform="translate(x y)"><circle r="11"/><text>N</text></g>`.
+On wide screens the tree sits beside the sticky hero; hovering a claim lights its parts in the hero. Draw the hero with `<ve-flow>`: boxes on a grid and arrows between them, laid out by the renderer, so you write no coordinates. Three columns and three rows fill it.
+
+```html
+<figure class="hero">
+  <ve-flow label="One sentence a screen reader reads instead of the picture.">
+    <ve-node id="api" at="2 1" sub="deleteProject()" key claim="1">API</ve-node>       <!-- at="column row"; .5 steps allowed -->
+    <ve-node id="db" at="2 2" sub="+ deleted_at" shape="db" claim="1">projects</ve-node>
+    <ve-node id="files" at="3 2" claim="3">Files<small data-if="files=keep">kept</small><small data-if="files=purge">purged</small></ve-node>
+    <ve-edge from="api" to="db" hot claim="1" label="UPDATE deleted_at"/>
+  </ve-flow>
+  <figcaption><span class="fig-n">Fig. 1</span>One sentence on what changes.</figcaption>
+</figure>
+```
+
+Flags on boxes and arrows: `new`, `gone` (an arrow also gets ✕), `key` (the one box the change centers on), `hot` (the main path), `async` (dashed). `claim="1 2"` links a part to those claims; the first box naming a claim gets its numbered callout. Arrows between boxes in one row or column are straight; others leave from the side and turn once, so place boxes to keep arrows off other boxes. The hero is a still figure: no stepper. For a shape `<ve-flow>` cannot draw, draw the SVG by hand with the kit in `diagrams.md` at a viewBox near `560×340`, with `data-ref="claim-N"` on parts and a `<g class="ve-co">` callout.
 
 ## The tree
 
 | Level | Answers | Claim | Exhibit |
 |---|---|---|---|
-| 1 | What can someone now do or see? | a behavior | `<ve-mock>`, or a hand-drawn figure |
+| 1 | What can someone now do or see? | a behavior | `<ve-mock>` or `<ve-flow>` |
 | 2 | How does it work? | one entry point, rule, or record | `<ve-calls>` or `<ve-code>` |
 | 3 | Where? | `at="path:line"` | `<ve-code>` |
 
@@ -88,7 +102,8 @@ On wide screens the tree sits beside the sticky hero; hovering a claim lights it
 
 - Marks everywhere: `+` new, `-` removed, `~` changed, `?` optional (drawn dashed). `**bold**` in a call is a new symbol. Call lines indent 2 spaces per level after the mark column.
 - `<ve-mock>` holds real markup in a shadow root at width `w` (≤ 480). Ready classes: `ui hd row ft btn btn.pri muted small ok bad`; add a `<style>` inside for more. `data-pin="N"` puts badge N on an element.
-- `data-if="retention=90"` (also `!=`, joined with `&&`) on any element or tag, including SVG parts and mock markup, shows it only under that answer. Use it so the hero and mocks redraw when an option changes the design.
+- `data-if="retention=90"` (also `!=`, joined with `&&`) on any element or tag, including flow boxes and arrows, SVG parts, and mock markup, shows it only under that answer. Use it so the hero and mocks redraw when an option changes the design.
+- File names in code link to the file in your editor: VS Code by default; set `VISUAL_EXPLAINER_EDITOR` to `cursor`, `zed`, `windsurf`, or `none`.
 - Use `<script type="text/plain">` for any code or call text that holds `<`.
 
 ## Decisions
@@ -104,7 +119,7 @@ Ask only about forks that change what gets built: 2 to 5 per plan. A decision si
 
 ## The response
 
-The reader presses Respond (or `a` to approve) and pastes one markdown block. It holds a verdict, each decision with one of three states, each guess, and each comment.
+The reader presses Respond (or `a` to approve). In a Glimpse window opened by the Pi `visual_explainer` tool (`viewer: "glimpse"`), Send to agent puts the response straight into the chat as a plan response message; anywhere else they paste one markdown block. It holds a verdict, each decision with one of three states, each guess, and each comment.
 
 - `✎ (was: …)`: the reader changed it. Apply it.
 - `(kept as proposed)`: they opened it and kept your default.

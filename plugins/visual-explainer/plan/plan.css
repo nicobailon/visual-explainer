@@ -257,23 +257,12 @@ figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(-
 [data-flow] { fill: none; stroke: none; }
 .ve-dots circle { fill: var(--text); }
 .ve-dots .hit { fill: var(--accent); filter: drop-shadow(0 0 4px var(--accent)); }
-.ve-steps:not(.is-full) .ve-dots { display: none; }
 svg [data-ref] { transition: opacity var(--med) var(--ease); }
 svg.has-lit path[data-ref]:not(.is-lit), svg.has-lit g[data-ref]:not(.is-lit):not(.ve-co) .sh { opacity: .25; }
 svg.has-lit g[data-ref]:not(.is-lit):not(.ve-co) text, svg.has-lit text[data-ref]:not(.is-lit) { fill: var(--text-dim); }
 .ve-n.is-lit .sh { stroke: var(--accent); } .ve-e.is-lit { stroke: var(--accent); } .ve-el.is-lit { fill: var(--text); }
 .ve-ref { text-decoration: underline dotted var(--text-dim) 1px; text-underline-offset: .22em; border-radius: var(--r-1); transition: background var(--fast) var(--ease); }
 .ve-ref.is-lit { background: var(--accent-dim); text-decoration-color: var(--accent); }
-.ve-steps [data-s] { transition: opacity var(--slow) var(--ease), stroke-dashoffset var(--slow) var(--ease); }
-.ve-steps [data-s]:not(.on) { opacity: .15; }
-.ve-steps g[data-s]:not(.on) text, .ve-steps text[data-s]:not(.on) { opacity: 0; }
-.ve-steps path[pathLength][data-s] { stroke-dasharray: 1; stroke-dashoffset: 1; }
-.ve-steps path[pathLength][data-s].on { stroke-dashoffset: 0; }
-.ve-steps .ve-n.now .sh { stroke: var(--accent); }
-.ve-player { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-4); }
-.ve-cap { grid-column: 1 / -1; list-style: none; padding: 0; min-height: 3.2em; }
-.ve-cap li::before { content: attr(data-n); font: 600 var(--t-label) var(--font-mono); color: var(--accent); margin-right: var(--s-3); font-variant-numeric: tabular-nums; }
-.ve-player input { accent-color: var(--accent); min-width: 0; }
 
 /* done when */
 .done { display: grid; gap: var(--s-3); }
@@ -337,7 +326,7 @@ dialog.ve-respond::backdrop { background: rgb(5 10 16 / .55); }
 @media print {
   :root { --bg: #fff; --surface: #fff; --border: #d6e0ea; --border-bright: #818f9e; --text: #0f1a26; --text-dim: #4d6074; --accent: #a34700; --accent-dim: rgba(163,71,0,.12); --ok: #1c7443; --warn: #776300; --risk: #b0341e; --info: #145f99; --node-top: #fff; --grid: transparent; }
   body { background: #fff; }
-  .ve-bar, .plan-meta .tools, .c-note-btn, .ve-player button, .ve-player input, .ve-dots, .guess input { display: none !important; }
+  .ve-bar, .plan-meta .tools, .c-note-btn, .ve-dots, .guess input { display: none !important; }
   .plan-grid { display: block; } .plan-hero { position: static; margin-bottom: var(--s-5); }
   .claim[open] > summary { position: static; box-shadow: none; }
   .frame, .ask, .code, .calls, .mock { break-inside: avoid; }

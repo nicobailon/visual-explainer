@@ -1,5 +1,5 @@
 /* Plan page runtime. plan/render.mjs inlines it; the page works without it as a static, printable plan.
-   Kit (linked highlighting, stepper, flow dots, entrance) mirrors templates/page.html. Plan parts: decisions,
+   Kit (linked highlighting, flow dots, entrance) mirrors templates/page.html. Plan parts: decisions,
    "seen" tracking, data-if, live diff stat, comments, keyboard, saved answers, and the response. */
 (() => {
   "use strict";
@@ -29,41 +29,14 @@
     el.addEventListener("blur", () => { focused = null; paint(); });
   }
 
-  /* ── kit: stepper / scene player ── */
-  for (const root of $$(".ve-steps")) {
-    const parts = $$("[data-s]", root), caps = $$(".ve-cap li", root);
-    const range = $("input[type=range]", root), play = $("[data-play]", root);
-    const n = caps.length; let i = 0, timer = null;
-    if (range) range.max = n - 1;
-    const show = (k) => {
-      i = Math.max(0, Math.min(n - 1, k));
-      for (const el of parts) { el.classList.toggle("on", +el.dataset.s <= i + 1); el.classList.toggle("now", +el.dataset.s === i + 1); }
-      caps.forEach((c, j) => { c.hidden = j !== i; });
-      root.classList.toggle("is-full", i === n - 1);
-      root.dispatchEvent(new Event("ve:step"));
-      if (range) range.value = i;
-    };
-    const stop = () => { clearInterval(timer); timer = null; if (play) play.textContent = "Play"; };
-    root.addEventListener("click", (e) => { const b = e.target.closest("[data-go]"); if (b) { stop(); show(i + +b.dataset.go); } });
-    range?.addEventListener("input", () => { stop(); show(+range.value); });
-    play?.addEventListener("click", () => {
-      if (timer) return stop();
-      if (i === n - 1) show(0);
-      play.textContent = "Pause";
-      timer = setInterval(() => (i < n - 1 ? show(i + 1) : stop()), 3500);
-    });
-    show(n - 1);
-  }
-
   if (!still) {
     /* ── kit: flow dots; the ratio of spawn intervals is the real split ── */
     for (const svg of $$("svg:has([data-flow])")) {
-      const layer = $(".ve-dots", svg), steps = svg.closest(".ve-steps");
+      const layer = $(".ve-dots", svg);
       const routes = $$("[data-flow]", svg).map((p) => ({ p, len: p.getTotalLength(), every: +p.dataset.every, next: 0 }));
       let dots = [], visible = false, running = false;
-      const live = () => visible && (!steps || steps.classList.contains("is-full"));
       const tick = (t) => {
-        if (!live()) { running = false; for (const d of dots) d.c.remove(); dots = []; return; }
+        if (!visible) { running = false; for (const d of dots) d.c.remove(); dots = []; return; }
         for (const r of routes) if (t >= r.next) {
           r.next = t + r.every;
           const c = document.createElementNS(svg.namespaceURI, "circle");
@@ -79,9 +52,7 @@
         });
         requestAnimationFrame(tick);
       };
-      const start = () => { if (!running && live()) { running = true; requestAnimationFrame(tick); } };
-      steps?.addEventListener("ve:step", start);
-      new IntersectionObserver(([e]) => { visible = e.isIntersecting; start(); }).observe(svg);
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (!running && visible) { running = true; requestAnimationFrame(tick); } }).observe(svg);
     }
     /* ── kit: entrance; without JS, in print, or under reduced motion everything shows ── */
     document.documentElement.classList.add("js-motion");
@@ -107,7 +78,8 @@
   const guesses = $$("fieldset.guess");
   if (!claims.length) return;
   const title = ($("h1")?.textContent || document.title).trim().replace(/\s+/g, " ");
-  const KEY = `ve-plan:${location.pathname}:${document.title}`;
+  // a revision starts clean, so comments the agent already handled are not sent twice
+  const KEY = `ve-plan:${location.pathname}:${document.title}:v${$("main").dataset.v || 1}`;
   const S = { seen: {}, guesses: {}, comments: [] };
 
   const inputs = (a) => $$("input", a);
@@ -215,12 +187,11 @@
   const watch = new IntersectionObserver((entries) => {
     for (const e of entries) { clearTimeout(e.target._seen); if (e.isIntersecting) e.target._seen = setTimeout(() => markSeen(e.target), 900); }
   }, { threshold: 0.4 });
-  let lastAsk = null;
   for (const a of asks) {
     watch.observe(a);
     a.addEventListener("pointerdown", () => markSeen(a));
-    a.addEventListener("focusin", () => { markSeen(a); lastAsk = a; });
-    a.addEventListener("change", () => { lastAsk = a; refresh(); });
+    a.addEventListener("focusin", () => markSeen(a));
+    a.addEventListener("change", refresh);
   }
   for (const g of guesses) g.addEventListener("change", () => { S.guesses[g.dataset.guess] = $("input:checked", g).value; refresh(); });
   const nextAsk = () => { const a = asks.find(todo); if (!a) return; goTo(a); markSeen(a); $("input:checked, input", a).focus({ preventScroll: true }); };
@@ -248,7 +219,7 @@
     const ta = h("textarea", { "aria-label": "Comment", placeholder: "Comment for the agent…" });
     const saveIt = () => {
       const text = ta.value.trim();
-      if (text) S.comments.push({ id: `${Date.now()}`, claim: claim ? claimRef(claim) : "page", quote: quote || "", text });
+      if (text) S.comments.push({ claim: claim ? claimRef(claim) : "page", quote: quote || "", text });
       closePop(); refresh();
     };
     pop = h("div", { class: "ve-pop", role: "dialog", "aria-label": "Add a comment" },
@@ -331,7 +302,8 @@
     let verdict = force || auto;
     const md = h("pre", { class: "r-md" });
     const warn = h("p", { class: "r-warn" });
-    const glimpse = window.glimpse && typeof window.glimpse.send === "function";
+    // only a page Pi opened in Glimpse has someone listening; anywhere else the response is copied
+    const glimpse = $("main").hasAttribute("data-send-back") && typeof window.glimpse?.send === "function";
     const update = () => {
       md.textContent = buildResponse(verdict);
       warn.textContent = verdict === "Approve" && left.length ? `▲ ${left.length} decision${left.length === 1 ? " was" : "s were"} never opened. Approving keeps the default${left.length === 1 ? "" : "s"}.` : "";
@@ -399,11 +371,12 @@
       to?.focus(); to?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
     } else if (k === "o" && here) here.open = !here.open;
     else if (/^[1-9]$/.test(k)) {
-      const a = document.activeElement.closest("fieldset.ask") || (here && $(":scope > .c-body > fieldset.ask", here)) || lastAsk;
+      // only the decision in focus or in the current claim, never one off screen
+      const a = document.activeElement.closest("fieldset.ask") || (here && $(":scope > .c-body > fieldset.ask", here));
       const input = a && inputs(a)[+k - 1];
       if (!input) return;
       if (input.type === "checkbox") input.checked = !input.checked; else input.checked = true;
-      lastAsk = a; markSeen(a); refresh();
+      markSeen(a); refresh();
     } else if (k === "n") nextAsk();
     else if (k === "c") openComment({ rect: (here ? $(":scope > summary", here) : document.activeElement).getBoundingClientRect(), claim: here });
     else if (k === "a") openRespond("Approve");

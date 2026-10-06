@@ -5,7 +5,11 @@
 ### Added
 - `/generate-visual-plan` makes a plan you answer in the page instead of a page you only read. It opens on the change as a drawing whose numbered parts match a short tree of claims. You pick options for the decisions the agent cannot make alone, mark its guesses right or wrong, and comment on any words you select. Then you approve or request changes and paste one response back. Changing an option redraws the figure and updates the file count. Keyboard shortcuts and saved answers make long plans quick to get through.
 - After the build, the same plan becomes a receipt: each claim shows whether it was built, changed, or dropped, next to the check that proves it.
-- Plans are written with a few short tags and rendered by `plan/render.mjs`, which has no dependencies. It reads cited code from your repository, stops on file paths and line numbers that do not exist, and adds the page's styles and script, so agents write about a quarter of what a hand-built plan page needs. The Pi `visual_explainer` tool and the MCP render tool render plan tags too.
+- Plans are written with a few short tags and rendered by `plan/render.mjs`, which has no dependencies. It reads cited code from your repository, stops on file paths and line numbers that do not exist, and adds the page's styles and script, so agents write about a quarter of what a hand-built plan page needs. Diagrams are boxes on a grid with arrows between them (`<ve-flow>`), laid out by the renderer, so agents no longer place SVG coordinates by hand. The Pi `visual_explainer` tool and the MCP render tool render plan tags too.
+- In Pi, a plan opened in Glimpse sends your response straight into the chat when you press Send to agent. No copy and paste.
+
+### Changed
+- `/plan-review` writes its review as a plan page: each finding is a claim with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.
 
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.

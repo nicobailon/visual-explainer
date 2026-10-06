@@ -436,7 +436,7 @@ Use `configs/copilot/AGENTS.md` as custom instructions or rules guidance. For VS
 | `/generate-visual-plan` | An implementation plan you answer in the page: the change drawn, a short tree of claims, decisions with suggested defaults, then one response to paste back. After the build, the same page shows what was built |
 | `/generate-slides` | Generate a magazine-quality slide deck |
 | `/diff-review` | Visual diff review with architecture comparison and code review |
-| `/plan-review` | Compare a plan against the codebase with risk assessment |
+| `/plan-review` | Check a plan against the codebase: each finding shows its evidence and a fix you accept or reject in the page |
 | `/project-recap` | Mental model snapshot for context-switching back to a project |
 | `/fact-check` | Verify accuracy of a document against actual code |
 

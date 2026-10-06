@@ -26,40 +26,25 @@
   </ve-why>
 </header>
 
-<!-- The hero is the answer as a picture. Each ① ② ③ is a level-1 claim: data-ref="claim-N" links it to the tree. -->
+<!-- The hero is the answer as a picture. claim="N" links a box or arrow to claim N; the first box naming a claim gets its numbered callout. -->
 <figure class="hero">
-  <div class="frame">
-    <svg class="ve-svg" viewBox="0 0 560 340" role="img" aria-label="Settings sends DELETE to the API. The API now sets deleted_at on the projects row instead of a cascade delete. The new Trash view lists trashed projects and restores them. A new nightly purge job deletes rows older than 30 days and their files.">
-      <path class="ve-e" d="M166 52H250"/>
-      <text class="ve-el" x="208" y="43">DELETE</text>
-      <path class="ve-e is-gone" d="M400 52H452"/>
-      <text class="ve-x" x="426" y="52">✕</text>
-      <path class="ve-e is-hot" data-ref="claim-1" d="M325 84V136"/>
-      <text class="ve-el r" data-ref="claim-1" x="333" y="114">UPDATE deleted_at</text>
-      <path class="ve-e" data-ref="claim-1" d="M250 162H166"/>
-      <text class="ve-el" data-ref="claim-1" x="208" y="153">lists</text>
-      <path class="ve-e is-new" data-ref="claim-2" d="M166 190H250"/>
-      <text class="ve-el" data-ref="claim-2" x="208" y="207">restore</text>
-      <path class="ve-e is-async is-new" data-ref="claim-3" d="M325 262V212"/>
-      <text class="ve-el r" data-ref="claim-3" x="333" y="240">DELETE &gt; 30 d</text>
-      <g data-if="files=purge">
-        <path class="ve-e is-async is-new" data-ref="claim-3" d="M400 294H452"/>
-        <text class="ve-el" data-ref="claim-3" x="426" y="285">files</text>
-      </g>
+  <ve-flow label="Settings sends DELETE to the API. The API now sets deleted_at on the projects row instead of a cascade delete. The new Trash view lists trashed projects and restores them. A new nightly purge job deletes rows older than 30 days and their files.">
+    <ve-node id="settings" at="1 1" sub="Delete project">Settings</ve-node>
+    <ve-node id="api" at="2 1" sub="deleteProject()" key claim="1">API</ve-node>
+    <ve-node id="cascade" at="3 1" sub="removed" gone>Cascade</ve-node>
+    <ve-node id="trash" at="1 2" sub="new view" new claim="1 2">Trash</ve-node>
+    <ve-node id="projects" at="2 2" sub="+ deleted_at" shape="db" claim="1">projects</ve-node>
+    <ve-node id="purge" at="2 3" sub="nightly" new claim="3">Purge job</ve-node>
+    <ve-node id="files" at="3 3" claim="3">Files<small data-if="files=purge">purged</small><small data-if="files=keep">kept</small></ve-node>
+    <ve-edge from="settings" to="api" label="DELETE"/>
+    <ve-edge from="api" to="cascade" gone/>
+    <ve-edge from="api" to="projects" hot claim="1" label="UPDATE deleted_at"/>
+    <ve-edge from="projects" to="trash" claim="1" label="lists"/>
+    <ve-edge from="trash" to="projects" new claim="2" label="restore"/>
+    <ve-edge from="purge" to="projects" async new claim="3" label="DELETE &gt; 30 d"/>
+    <ve-edge from="purge" to="files" async new claim="3" label="files" data-if="files=purge"/>
+  </ve-flow>
 
-      <g class="ve-n" transform="translate(16 20)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Settings</text><text class="sub" x="75" y="46">Delete project</text></g>
-      <g class="ve-n is-key" data-ref="claim-1" transform="translate(250 20)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">API</text><text class="sub" x="75" y="46">deleteProject()</text></g>
-      <g class="ve-n is-gone" transform="translate(452 20)"><rect class="sh" width="100" height="64" rx="6"/><text x="50" y="25">Cascade</text><text class="sub" x="50" y="46">removed</text></g>
-      <g class="ve-n is-new" data-ref="claim-1 claim-2" transform="translate(16 140)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Trash</text><text class="sub" x="75" y="46">new view</text></g>
-      <g class="ve-n" data-ref="claim-1" transform="translate(250 136)"><path class="sh" d="M0 10V66A75 10 0 0 0 150 66V10"/><ellipse class="sh lid" cx="75" cy="10" rx="75" ry="10"/><text x="75" y="40">projects</text><text class="sub" x="75" y="59">+ deleted_at</text></g>
-      <g class="ve-n is-new" data-ref="claim-3" transform="translate(250 262)"><rect class="sh" width="150" height="64" rx="6"/><text x="75" y="25">Purge job</text><text class="sub" x="75" y="46">nightly</text></g>
-      <g class="ve-n" data-ref="claim-3" transform="translate(452 262)"><rect class="sh" width="100" height="64" rx="6"/><text x="50" y="25">Files</text><text class="sub" x="50" y="46" data-if="files=purge">purged</text><text class="sub" x="50" y="46" data-if="files=keep">kept</text></g>
-
-      <g class="ve-co" data-ref="claim-1" transform="translate(250 20)"><circle r="11"/><text>1</text></g>
-      <g class="ve-co" data-ref="claim-2" transform="translate(16 140)"><circle r="11"/><text>2</text></g>
-      <g class="ve-co" data-ref="claim-3" transform="translate(250 262)"><circle r="11"/><text>3</text></g>
-    </svg>
-  </div>
   <figcaption><span class="fig-n">Fig. 1</span>Delete becomes an UPDATE. A nightly job does the real delete.</figcaption>
 </figure>
 
