@@ -14,7 +14,6 @@
     construct: (D, args, nt) => Reflect.construct(D, args.length ? args : [epoch + now], nt),
     apply: (D) => new D(epoch + now).toString(),
   });
-  const run = (fn, args) => (typeof fn === 'function' ? fn(...args) : (0, eval)(String(fn)));
   window.setTimeout = (fn, ms, ...args) => { const id = nextId++; timers.set(id, { at: now + Math.max(0, +ms || 0), fn, args }); return id; };
   window.setInterval = (fn, ms, ...args) => { const every = Math.max(1, +ms || 0), id = nextId++; timers.set(id, { at: now + every, fn, args, every }); return id; };
   window.clearTimeout = window.clearInterval = (id) => { timers.delete(id); };
@@ -52,7 +51,7 @@
       now = due.at;
       if (due.every) due.at += due.every; else timers.delete(id);
       sync();
-      run(due.fn, due.args);
+      if (typeof due.fn === 'function') due.fn(...due.args); else (0, eval)(String(due.fn));
       adopt();
     }
     now = target;

@@ -39,7 +39,7 @@ async function main() {
   if (!Number.isInteger(fps) || fps < 1 || fps > 120) throw new Error("--fps must be a whole number from 1 to 120");
 
   if (values.lines) {
-    const scenes = await withDeck(input, async ({ scenes }) => scenes);
+    const scenes = await withDeck(input, ({ scenes }) => scenes);
     for (const text of new Set(scenes.flatMap((s) => s.lines))) console.log(`${lineId(text)}\t${text}`);
     return;
   }
@@ -110,13 +110,12 @@ async function stills({ page, scenes, shot, failed }, dir) {
       failed();
       writeFileSync(join(part, `scene-${String(i + 1).padStart(2, "0")}.png`), await shot("png"));
     }
-  } catch (e) {
+    // Replace the previous stills only once every new one exists.
+    rmSync(dir, { recursive: true, force: true });
+    renameSync(part, dir);
+  } finally {
     rmSync(part, { recursive: true, force: true });
-    throw e;
   }
-  // Replace the previous stills only once every new one exists.
-  rmSync(dir, { recursive: true, force: true });
-  renameSync(part, dir);
   console.log(`wrote ${scenes.length} stills to ${dir}`);
 }
 
