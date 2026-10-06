@@ -5,7 +5,7 @@
 (() => {
   let now = 0, nextId = 1, frames = new Map(), cur = -1, caption = null;
   const timers = new Map();
-  const started = new WeakMap(); // Animation -> virtual start ms, or null when the page controls it
+  const owned = new WeakMap(); // Animation the renderer runs -> virtual ms of its last sync
   const epoch = Date.now();
   performance.now = () => now;
   Date.now = () => epoch + now;
@@ -20,24 +20,29 @@
   window.requestAnimationFrame = (cb) => { const id = nextId++; frames.set(id, cb); return id; };
   window.cancelAnimationFrame = (id) => { frames.delete(id); };
 
-  // Pause each new animation and start its clock now. Runs after every callback that could create one,
-  // so an animation started by a timer at 100 ms counts from 100 ms, not from the next frame.
-  const adopt = () => {
-    for (const a of document.getAnimations()) {
-      if (started.has(a)) continue;
-      // An animation the page already paused stays under page control.
-      started.set(a, a.playState === 'paused' ? null : now);
-      if (a.playState !== 'paused') a.pause();
-    }
-  };
-  // Move every adopted animation to the current virtual time.
+  // The renderer owns only the passage of time. It holds a running animation paused (natively) and moves it
+  // itself; the page's own pause(), finish(), and cancel() hand it back to the page, and play() returns it.
+  const { pause, play } = Animation.prototype;
+  // Setting currentTime completes the pause now, so a rate change pending from reverse() applies before the next sync.
+  const own = (a) => { pause.call(a); a.currentTime = a.currentTime; owned.set(a, now); };
+  for (const m of ['pause', 'finish', 'cancel']) {
+    const native = Animation.prototype[m];
+    Animation.prototype[m] = function () { owned.delete(this); return native.call(this); };
+  }
+  Animation.prototype.play = function () { play.call(this); own(this); };
+  // Take each running animation from now. Runs after every callback that could start one, so an animation
+  // started by a timer at 100 ms counts from 100 ms, not from the next frame. Paused ones stay with the page.
+  const adopt = () => { for (const a of document.getAnimations()) if (a.playState === 'running') own(a); };
+  // Move each owned animation on by the virtual time since its last sync at its current rate, from where it
+  // is, so a seek or rate change by the page counts from when the page made it.
   const sync = () => {
     for (const a of document.getAnimations()) {
-      const t0 = started.get(a);
-      if (t0 == null || a.playState === 'finished') continue; // not adopted yet, or page-controlled
-      const t = (now - t0) * a.playbackRate;
+      const t0 = owned.get(a);
+      if (t0 === undefined || a.playState !== 'paused') continue; // the page's, or replayed by it (adopt takes it)
+      const rate = a.playbackRate, t = a.currentTime + (now - t0) * rate;
+      owned.set(a, now);
       // finish() fires finish and animationend events, which a paused animation never would.
-      if (t >= a.effect.getComputedTiming().endTime) a.finish();
+      if (rate > 0 ? t >= a.effect.getComputedTiming().endTime : rate < 0 && t <= 0) a.finish();
       else a.currentTime = t;
     }
   };
