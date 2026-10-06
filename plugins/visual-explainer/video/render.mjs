@@ -58,8 +58,8 @@ async function withDeck(input, fn) {
     ({ chromium } = await import("playwright-core"));
   } catch (e) {
     if (e.code !== "ERR_MODULE_NOT_FOUND") throw e;
-    // Copied skill folders carry this script without its npm dependencies.
-    throw new Error("playwright-core is not installed beside this script. Run the packaged CLI instead: npx -y -p visual-explainer visual-explainer-video <deck.html> …\nIn a repository checkout, run npm install first.");
+    // playwright-core is an optional peer, so only people who make videos download it.
+    throw new Error("playwright-core is not installed. Run: npx -y -p visual-explainer -p playwright-core visual-explainer-video <deck.html> …\nWith a global install, run npm install -g playwright-core once. In a repository checkout, run npm install first.");
   }
   let browser;
   try {

@@ -34,7 +34,7 @@ This skill fixes that. Real typography, dark/light themes, hand-drawn diagrams t
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
 | MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes render tools, prompt templates, and read-only skill resources without starting an HTTP server |
 | PPTX export | Best-effort static utility | `visual-explainer-pptx` converts simple HTML slide decks to `.pptx`; HTML remains the source of truth |
-| Video export | Local renderer (needs ffmpeg and Chrome) | `/generate-video` writes a video deck and `visual-explainer-video` records it to a 1080p MP4, frame by frame, narrated when a speech API key is set and captioned otherwise |
+| Video export | Local renderer (needs ffmpeg, Chrome, and `playwright-core`, installed separately) | `/generate-video` writes a video deck and `visual-explainer-video` records it to a 1080p MP4, frame by frame, narrated when a speech API key is set and captioned otherwise |
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
 | Codex CLI | Native skill path plus optional prompts | Copy to `~/.codex/skills/visual-explainer`; optional prompts go in `~/.codex/prompts/` if your Codex build supports them |
 | OpenCode/opencode | Observed skill/command paths | Copy to `~/.config/opencode/skill/visual-explainer`; optional commands go in `~/.config/opencode/command/` |

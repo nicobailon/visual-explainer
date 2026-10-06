@@ -63,7 +63,7 @@ CSS animations and transitions, the Web Animations API, timers, `requestAnimatio
 3. `visual-explainer-video deck.html [out.mp4] [--voice clips/]`. Add `--captions` to burn in captions with a voice too.
 4. Report the MP4 path, its length, and the voice used, or "silent with captions".
 
-Write the deck to `~/.agent/diagrams/<name>.html`; the MP4 goes beside it. The renderer needs `ffmpeg` and either Google Chrome or `npx playwright-core install chromium-headless-shell`. If `visual-explainer-video` is not on PATH (a copied skill folder has no npm dependencies), run `npx -y -p visual-explainer visual-explainer-video` with the same arguments. From a repository checkout, run `npm install` and use `node plugins/visual-explainer/video/render.mjs`.
+Write the deck to `~/.agent/diagrams/<name>.html`; the MP4 goes beside it. The renderer needs `ffmpeg`, the `playwright-core` package, and either Google Chrome or `npx playwright-core install chromium-headless-shell`. `playwright-core` does not come with visual-explainer, so only people who make videos download it. If `visual-explainer-video` is not on PATH or says `playwright-core` is missing, run `npx -y -p visual-explainer -p playwright-core visual-explainer-video` with the same arguments. From a repository checkout, run `npm install` and use `node plugins/visual-explainer/video/render.mjs`.
 
 ## Voice clips
 

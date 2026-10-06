@@ -56,12 +56,18 @@
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
     "node-html-parser": "^9.0.1",
-    "playwright-core": "^1.63.0",
     "pptxgenjs": "^4.0.1",
     "zod": "^4.4.3"
   },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-coding-agent": "*",
+    "playwright-core": "^1.63.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright-core": { "optional": true }
   },
   "pi": {
     "extensions": [

@@ -114,7 +114,7 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 When the user asks for an animated explainer or a video:
 
 - **Default:** an HTML scene player. SVG scenes with play, pause, scrub, and captions, all in one file. See `references/diagrams.md`.
-- **Video file (`/generate-video`, MP4, "make a video"):** read `references/video.md`. Build a video deck and render it with `visual-explainer-video` (or `npx -y -p visual-explainer visual-explainer-video` when it is not installed). Narrate only when a speech API key is set; otherwise the video is silent with captions. To record a live web app, follow its tutorial section.
+- **Video file (`/generate-video`, MP4, "make a video"):** read `references/video.md`. Build a video deck and render it with `visual-explainer-video` (or `npx -y -p visual-explainer -p playwright-core visual-explainer-video` when it or `playwright-core` is not installed). Narrate only when a speech API key is set; otherwise the video is silent with captions. To record a live web app, follow its tutorial section.
 - **Script first.** One claim per scene, a sentence or two of narration, and the picture changes with every sentence.
 
 ## Slides and PPTX
