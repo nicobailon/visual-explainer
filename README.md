@@ -33,7 +33,7 @@ The same plain ops dashboard, before and after `visual-explainer` (Instrument re
 - Before: https://skill-fixture-before.theroost.dev?vr_gallery=1
 - After (visual-explainer): https://visual-explainer-after.theroost.dev?vr_gallery=1
 
-Illustrative, author-supplied example: Vibe Rooster applied the `visual-explainer` skill to the same page content. It is not a benchmark or an official demo.
+Illustrative, community-contributed example; not an official demo or benchmark.
 
 ---
 
