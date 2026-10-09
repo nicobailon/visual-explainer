@@ -26,6 +26,17 @@ Tables are worse. Ask the agent to compare 15 requirements against a plan and yo
 
 This skill fixes that. Real typography, dark/light themes, hand-drawn diagrams that animate and respond to the reader. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
 
+## Before/after example
+
+The same plain ops dashboard, before and after `visual-explainer` (Instrument register: Geist, KPI strip, tabular figures, hairlines, light+dark).
+
+- Before: https://skill-fixture-before.theroost.dev?vr_gallery=1
+- After (visual-explainer): https://visual-explainer-after.theroost.dev?vr_gallery=1
+
+Illustrative, author-supplied example: Vibe Rooster applied the `visual-explainer` skill to the same page content. It is not a benchmark or an official demo.
+
+---
+
 ## Install
 
 | Harness | Support | Install path / behavior |
