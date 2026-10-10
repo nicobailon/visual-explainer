@@ -120,7 +120,7 @@ For a set of cases (failure modes, options, environments), draw the same small d
 
 ## Small charts
 
-Every number gets a picture beside it. Each chart has `role="img"` and an `aria-label` with the values.
+A number that does not measure a span in the drawing (see Dimensions) gets a small chart beside it. Each chart has `role="img"` and an `aria-label` with the values.
 
 - **Waffle** (rates, "N of 100"): 10×10 cells, two `<pattern>` fills over three rects.
 - **Bars** (2–5 values): value label just past each bar's end. The bar that matters is accent; the rest `--border-bright`. Bars grow in when their block enters.
