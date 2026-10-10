@@ -7,7 +7,7 @@ One system, four registers, and a topic motif on top. Choose the register from t
 | Register | Use for | Display / body / mono | Signature |
 |---|---|---|---|
 | **Instrument** | diff and plan reviews, audits, metrics, status | Geist 600 / Geist / Geist Mono | A KPI strip near the top when there are metrics. Tabular numbers everywhere. Cells split by hairlines, not floating cards. Status as shape + word. |
-| **Blueprint** | architecture, data flow, systems, visual plans | IBM Plex Sans 600 / IBM Plex Sans / IBM Plex Mono | 24px grid on the background. Boundaries as dashed frames with a mono tag. Numbered callouts ① ② on the drawing. |
+| **Blueprint** | architecture, data flow, systems, visual plans | IBM Plex Sans 600 / IBM Plex Sans / IBM Plex Mono | 24px grid on the background. Boundaries as dashed frames with a mono tag. Numbered callouts ① ② on the drawing. Dimension lines for spans. |
 | **Paper** | concepts, how-it-works, fact-checks, long reading | Newsreader 500 / Atkinson Hyperlegible Next / Atkinson Hyperlegible Mono | Narrow text column, wide figures. Margin notes at ≥ 1200px. `Fig. N` labels. |
 | **Editorial** | recaps, narratives, decks, showcases | Instrument Serif / Instrument Sans / JetBrains Mono | Display type at full scale. Asymmetric grid with large empty areas. One number or phrase per screen carries the page. |
 
@@ -35,7 +35,7 @@ Effect tokens, per scheme. Dark: `--node-top: color-mix(in srgb, var(--text) 7%,
 1. **Quiet ground, one signal.** About 90% of the page is neutral. The accent marks only what the reader must look at now: the key node, the hot path, the active control, the one number that matters.
 2. **The figure is the interface.** A term in the prose and its element in the figure are linked. Hover either one, or focus the prose term, and both light up (`diagrams.md` → Linked highlighting).
 3. **Overview, then detail.** The full picture comes first. The reader steps, hovers, or expands to get detail. Raw material goes in `<details>`. Sources are the exception: keep them in a visible section at the end, never collapsed.
-4. **Every number gets a picture.** A waffle, bar, or sparkline beside it. Tabular figures, the unit smaller and in `--text-dim`, and the comparison stated (`from 5,600`).
+4. **Every number gets a picture.** A dimension line on the span it measures, a line chart when it changes over time, or else a waffle, bar, or sparkline beside it. Tabular figures, the unit smaller and in `--text-dim`, and the comparison stated (`from 5,600`).
 5. **Motion shows change or flow.** Blocks rise in once. Dots move along edges at the real rate. Steps reveal parts. Nothing loops for its own sake.
 6. **Craft is part of the meaning.** Nodes sit raised on a dot-grid stage. Shapes say what a thing is (a cylinder is a store). The one focal element gets a soft halo, the hot path a glow. No glassmorphism, neon, gradient text or backgrounds, blobs, clip-art, or emoji.
 

@@ -7,6 +7,7 @@
 - After the build, the same plan becomes a receipt: each claim shows whether it was built, changed, or dropped, next to the check that proves it.
 - Plans are written with a few short tags and rendered by `plan/render.mjs`, which has no dependencies. It reads cited code from your repository, stops on file paths and line numbers that do not exist, and adds the page's styles and script, so agents write about a quarter of what a hand-built plan page needs. Diagrams are boxes on a grid with arrows between them (`<ve-flow>`), laid out by the renderer, so agents no longer place SVG coordinates by hand. The Pi `visual_explainer` tool and the MCP render tool render plan tags too.
 - In Pi, a plan opened in Glimpse sends your response straight into the chat when you press Send to agent. No copy and paste.
+- Diagrams carry more of their numbers and notes on the drawing instead of in paragraphs. A wait, a size, or a time window is drawn as a dimension line on the span it measures. Numbered callouts on a diagram match the steps of its step-through. A finding that lives in one small part, such as file permission bits, gets a close-up of that part.
 
 ### Changed
 - `/plan-review` writes its review as a plan page: each finding is a claim with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.

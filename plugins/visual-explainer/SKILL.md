@@ -36,8 +36,9 @@ Climb as high as the request allows. The default output is one HTML page whose s
 4. **Draw the mechanism, not the name.** A request path through a cache beats a box labeled "cache". Label every arrow with a verb: `writes`, `invalidates`, `polls 30s`.
 5. **Draw the difference.** To compare options, show the edge or box each one adds or removes.
 6. **Encode state in form.** Shape, position, and pattern, plus color. Never color alone.
-7. **Every number gets a picture.** Waffle, bars, or sparkline beside it. A number inside a sentence is lost.
+7. **Every number gets a picture.** If it measures one fixed span in the drawing (a wait, a size, a window, a gap), draw it as a dimension line on that span. Otherwise a waffle, bars, or sparkline beside it; a value that changes over time gets a line chart. A number inside a sentence is lost.
 8. **Cases become small multiples.** Failure modes, options, environments: the same mini diagram once per case, not a table of sentences.
+9. **Give every fact a place.** Before you write a sentence, find its place in a figure: node label, edge verb, dimension, callout, caption. Write prose only for what has no place.
 
 Shape the page to the content. These are starting points, not templates: merge, reorder, drop, or add sections, and skip any that would be empty.
 
@@ -53,6 +54,7 @@ Shape the page to the content. These are starting points, not templates: merge, 
 | Content | Figure |
 |---|---|
 | Architecture, data flow, pipeline, state, sequence, schema, before/after | Hand-drawn inline SVG → `references/diagrams.md` |
+| The claim lives in one small part: permission bits, a key's fields, a packet's bytes | Close-up of that part alone, drawn large, its values on it |
 | Cards, timelines, file maps, side-by-side | CSS grid/flex |
 | Scenarios, failure modes, options | Small multiples → `references/diagrams.md` |
 | Matrix, audit, many rows of data | `<table>` with status chips |
@@ -135,7 +137,8 @@ Longer how-to files from v0.11.0, outside this skill. Fetch one only when you ne
 □ one complete HTML file at the path; opens with no console errors
 □ first viewport: main idea as a picture + one sentence
 □ figures outnumber prose paragraphs; the lead and prose are short enough that the pictures carry the page
-□ every number has a picture; scenarios are small multiples, not a sentence table
+□ every number has a picture; spans carry dimension lines; scenarios are small multiples, not a sentence table
+□ each fact sits in a place in a figure (label, dimension, callout, caption) before it becomes a sentence
 □ topic motif: 2–3 touches taken from the subject; page still reads without them
 □ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing
 □ key terms linked with data-ref where hovering helps
