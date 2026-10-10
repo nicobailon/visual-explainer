@@ -14,6 +14,7 @@
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.
 - Sources at the end of a page are now always visible. They were hidden in a small grey toggle that readers easily missed, so they now sit in their own section at full size.
+- In Pi, pressing Send to agent in a Glimpse plan window after `/new`, `/resume`, `/fork`, or `/reload` no longer crashes pi. Ending the session now closes the plan windows it opened, since their responses have nowhere to go. Thanks to [@masonc15](https://github.com/masonc15) for #112.
 
 ## [0.12.0] - 2026-10-02
 
