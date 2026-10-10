@@ -26,6 +26,8 @@ type Viewer = "browser" | "glimpse" | "auto";
 type OpenTarget = "browser" | "glimpse";
 type OpenStatus = "disabled" | "unsupported" | "dispatched" | "failed";
 
+type PlanHost = { root: string; onResponse: (markdown: string, page: string) => void; closed: AbortSignal };
+
 type OpenResult = {
   openAttempted: boolean;
   openStatus: OpenStatus;
@@ -196,16 +198,23 @@ function prepareRenderedHtml(html: string) {
   return ensureDocumentMetadata(ensureFavicon(escapeDisplayMath(html)));
 }
 
-function runOpener(command: string, args: string[], openTarget: OpenTarget, onMessage?: (data: unknown) => void): Promise<OpenResult> {
+type WindowListener = { onMessage: (data: unknown) => void; closed: AbortSignal };
+
+function runOpener(command: string, args: string[], openTarget: OpenTarget, listener?: WindowListener): Promise<OpenResult> {
   return new Promise<OpenResult>((resolve) => {
-    const child = spawn(command, args, { detached: true, stdio: onMessage ? ["ignore", "pipe", "ignore"] : "ignore", windowsHide: true });
-    if (onMessage && child.stdout) {
+    const child = spawn(command, args, { detached: true, stdio: listener ? ["ignore", "pipe", "ignore"] : "ignore", windowsHide: true });
+    if (listener && child.stdout) {
       // glimpseui prints each window.glimpse.send(...) payload as one JSON line
-      createInterface({ input: child.stdout }).on("line", (line) => {
+      const lines = createInterface({ input: child.stdout });
+      lines.on("line", (line) => {
         let data: unknown;
         try { data = JSON.parse(line); } catch { return; }
-        onMessage(data);
+        listener.onMessage(data);
       });
+      // Killing glimpseui ends the native window's stdin, which closes the window.
+      const closeWindow = () => { lines.close(); child.kill(); };
+      listener.closed.addEventListener("abort", closeWindow, { once: true });
+      child.once("close", () => listener.closed.removeEventListener("abort", closeWindow));
       (child.stdout as unknown as { unref(): void }).unref();
     }
     let settled = false;
@@ -252,15 +261,15 @@ async function openInBrowser(path: string): Promise<OpenResult> {
   return { openAttempted: false, openStatus: "unsupported", openTarget: "browser" };
 }
 
-async function openInGlimpse(path: string, onMessage?: (data: unknown) => void): Promise<OpenResult> {
-  return await runOpener("glimpseui", ["--width", "1200", "--height", "900", "--title", "Visual Explainer", "--open-links", path], "glimpse", onMessage);
+async function openInGlimpse(path: string, listener?: WindowListener): Promise<OpenResult> {
+  return await runOpener("glimpseui", ["--width", "1200", "--height", "900", "--title", "Visual Explainer", "--open-links", path], "glimpse", listener);
 }
 
-async function openRenderedPage(path: string, viewer: Viewer, onMessage?: (data: unknown) => void): Promise<OpenResult> {
+async function openRenderedPage(path: string, viewer: Viewer, listener?: WindowListener): Promise<OpenResult> {
   if (viewer === "browser") return await openInBrowser(path);
-  if (viewer === "glimpse") return await openInGlimpse(path, onMessage);
+  if (viewer === "glimpse") return await openInGlimpse(path, listener);
 
-  const glimpseResult = await openInGlimpse(path, onMessage);
+  const glimpseResult = await openInGlimpse(path, listener);
   if (glimpseResult.openStatus !== "failed") return glimpseResult;
 
   const browserResult = await openInBrowser(path);
@@ -343,7 +352,7 @@ async function writeRenderedHtml(
   open: boolean | undefined,
   viewer: Viewer,
   signal?: AbortSignal,
-  plan?: { root: string; onResponse: (markdown: string, page: string) => void },
+  plan?: PlanHost,
 ): Promise<AgentToolResult<VisualExplainerDetails>> {
   signal?.throwIfAborted();
 
@@ -382,13 +391,16 @@ async function writeRenderedHtml(
 
   signal?.throwIfAborted();
 
-  const onMessage = page && plan ? (data: unknown) => {
-    const d = data as { type?: unknown; markdown?: unknown } | null;
-    if (d?.type === "visual-explainer:plan-response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
+  const listener = page && plan ? {
+    onMessage: (data: unknown) => {
+      const d = data as { type?: unknown; markdown?: unknown } | null;
+      if (d?.type === "visual-explainer:plan-response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
+    },
+    closed: plan.closed,
   } : undefined;
   const openResult = open === false
     ? { openAttempted: false, openStatus: "disabled" as const }
-    : await openRenderedPage(outputPath, viewer, onMessage);
+    : await openRenderedPage(outputPath, viewer, listener);
 
   let message = `Wrote ${outputPath}.`;
   if (openResult.openStatus === "dispatched") {
@@ -402,7 +414,7 @@ async function writeRenderedHtml(
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
   if (page) message += page.note;
-  if (onMessage && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") message += " When the reader presses Send to agent, their response arrives here as a plan response message; wait for it.";
+  if (listener && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") message += " When the reader presses Send to agent, their response arrives here as a plan response message; wait for it.";
 
   return {
     content: [{ type: "text" as const, text: message }],
@@ -418,7 +430,7 @@ function validateRenderOptions(params: VisualExplainerParams): asserts params is
   }
 }
 
-async function renderVisualExplanation(params: VisualExplainerParams, plan: { root: string; onResponse: (markdown: string, page: string) => void }, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+async function renderVisualExplanation(params: VisualExplainerParams, plan: PlanHost, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
   validateRenderOptions(params);
   if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
   return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
@@ -433,6 +445,11 @@ async function renderQuickVisualExplanation(params: VisualExplainerParams, signa
 }
 
 export default function (pi: ExtensionAPI) {
+  // A Glimpse plan window can outlive this session, and pi throws on any call through a stale `pi`,
+  // so the session's end closes its plan windows before a late Send to agent can reach `pi`.
+  const session = new AbortController();
+  pi.on("session_shutdown", () => session.abort());
+
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
@@ -460,7 +477,7 @@ export default function (pi: ExtensionAPI) {
         { customType: "visual_explainer_plan_response", content: `The reader answered the plan at ${page}:\n\n${markdown}`, display: true, details: { page } },
         { triggerTurn: true, deliverAs: "followUp" },
       );
-      return await renderVisualExplanation(params, { root: ctx.cwd, onResponse }, signal);
+      return await renderVisualExplanation(params, { root: ctx.cwd, onResponse, closed: session.signal }, signal);
     },
   });
 }
