@@ -1,6 +1,6 @@
 # Hand-drawn SVG figures
 
-Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. `templates/page.html` has the CSS and JS for every pattern here. Copy those blocks as they are; this file gives the markup contracts and the rules.
+Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. `templates/page.html` has the CSS and JS for every pattern here except dimensions and callouts, which carry their CSS below. Copy those blocks as they are; this file gives the markup contracts and the rules.
 
 ## Plan on a grid
 
@@ -37,6 +37,30 @@ edge   <path class="ve-e [is-hot|is-async]"/>  + <text class="ve-el [l|r]">verb 
 - **Glyph** (`.gl`): a 16-unit line drawing in the node's top-left corner, only when the kind is not clear from the name. Stroke `--text-dim`, never filled, never emoji.
 - **Edge language:** solid = sync call · dashed = async or optional · thick glowing accent = the path this figure is about · red ✕ = blocked.
 
+## Dimensions
+
+A number that measures a span sits on that span: latency down a sequence diagram's time axis, a TTL window on a timeline, a field's size on a byte layout, the gap between before and after.
+
+```
+   ┼                       ┼    extension lines from the two measured points
+   │◄─────── 9 ms ────────►│    dimension line, value in a gap at its middle
+```
+
+```html
+<g class="ve-dim"><path class="ext" d="M120 300V322M380 300V322"/><path class="ln" d="M120 316H380M116 320l8-8M376 320l8-8"/><text x="250" y="310">9 ms</text></g>
+```
+
+```css
+.ve-dim path { fill: none; stroke-width: 1; } .ve-dim .ext { stroke: var(--border-bright); } .ve-dim .ln { stroke: var(--text-dim); }
+.ve-dim text { fill: var(--text); font: 500 14px var(--font-mono); text-anchor: middle; }
+.ve-dim.is-key .ln { stroke: var(--accent); } .ve-dim.is-key text { fill: var(--accent); }
+```
+
+- Extension lines run from the two measured points. The dimension line has a short 45° tick at each end. The value sits centered 6 units above the line, never on it: a line through a value reads as struck out.
+- Keep dimensions off the shapes, on rails beside them. Parallel rails for related spans, shortest nearest the drawing. Spans that add up (`1 ms` then `9 ms`) chain end to end on one rail, with the total on the next rail out.
+- The dimension that carries the claim takes the accent (`.is-key`). One per figure.
+- A dimension replaces the sentence for that number. Do not repeat it in prose.
+
 ## Flow dots
 
 Moving dots show direction and volume at a glance. Use them on the main figure when traffic or data moves. The rate must mean something: the ratio of spawn intervals is the real split.
@@ -63,6 +87,18 @@ The most useful interaction for teaching: each step brings its parts forward wit
 ```
 
 Open on the complete picture, because the first viewport must show the answer. One claim per scene; something visibly changes at every step. Never autoplay. Play stays available under reduced motion, because the reader starts it.
+
+**Callouts.** A numbered circle on the drawing, with a short leader line that ends exactly on the point it names. Plan heroes use the same mark (`plans.md`). Callout N is step N: give the circle and its leader `data-s="N"`, and the stepper's `.now` class fills the current one. Without a stepper, list them under the figure as one-line notes (`③ the miss reads Postgres`), never as paragraphs. 3–6 per figure.
+
+```html
+<path class="ann" data-s="3" d="M520 71V96"/><g class="ve-co" data-s="3" transform="translate(520 60)"><circle r="11"/><text>3</text></g>
+```
+
+```css
+.ve-co circle { fill: var(--surface); stroke: var(--accent); stroke-width: 1.75; }
+.ve-co text { fill: var(--accent); font: 600 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+.ve-co.now circle { fill: var(--accent); } .ve-co.now text { fill: var(--surface); }
+```
 
 ## Before / after
 
