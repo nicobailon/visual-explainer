@@ -212,7 +212,9 @@ function runOpener(command: string, args: string[], openTarget: OpenTarget, list
         listener.onMessage(data);
       });
       // Killing glimpseui ends the native window's stdin, which closes the window.
-      listener.closed.addEventListener("abort", () => { lines.close(); child.kill(); }, { once: true });
+      const closeWindow = () => { lines.close(); child.kill(); };
+      listener.closed.addEventListener("abort", closeWindow, { once: true });
+      child.once("close", () => listener.closed.removeEventListener("abort", closeWindow));
       (child.stdout as unknown as { unref(): void }).unref();
     }
     let settled = false;
