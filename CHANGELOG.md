@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Loading the pi extension inside a Bun-compiled pi (such as Pi-Bolt) no longer fails with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. `kit/render.mjs` and `plan/render.mjs` now treat an `argv[1]` that has no real path as "not the entry point" instead of throwing when they are imported.
+
 ## [0.14.0] - 2026-10-18
 
 ### Highlights

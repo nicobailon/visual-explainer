@@ -244,4 +244,6 @@ async function main() {
 }
 
 // Node resolves symlinks for import.meta.url, so a renderer reached through a symlinked skill folder must compare real paths
-if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) await main();
+// A Bun-compiled host has no real file behind argv[1] ("/$bunfs/root/..."), so realpathSync throws on import; that is not the entry point.
+const isMain = (() => { try { return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href; } catch { return false; } })();
+if (process.argv[1] && isMain) await main();
