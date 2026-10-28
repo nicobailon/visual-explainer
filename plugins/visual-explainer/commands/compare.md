@@ -19,4 +19,4 @@ Use the skill's Comparison shape:
 | Recommendation | the option you would pick and why |
 | Pick | `<ve-ask id="pick" q="Which option?">`, one `<ve-opt>` per option, `default` on the recommended one |
 
-Add another `<ve-ask>` only for a real sub-decision. Deliver with the skill's rules and hand over in one line. When the reply arrives, act on the pick within the original request; do not build unless the user asked for that.
+Add another `<ve-ask>` only for a real sub-decision. Deliver with the skill's rules and hand over in one line. When the reply arrives, act only on an explicit pick within the original request; do not build unless the user asked for that. Sending comments does not confirm a pick. Treat `no answer`, omitted answers, and `(default)` entries from older pages as unanswered.

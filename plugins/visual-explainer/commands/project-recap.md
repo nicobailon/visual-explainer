@@ -21,4 +21,4 @@ Typical sections; merge, reorder, drop, or add as the content needs:
 | Commands and files | compact reference table |
 | Next | `<ve-ask id="next" q="Where do we start?">` with one `<ve-opt>` per evidence-based next step; the best one carries `default` |
 
-Deliver with the skill's rules and hand over in one line. When the reply arrives, start on the step the reader picked.
+Deliver with the skill's rules and hand over in one line. When the reply arrives, start only on a step the reader explicitly picked. Sending comments does not confirm a step. Treat `no answer`, omitted answers, and `(default)` entries from older pages as unanswered.
