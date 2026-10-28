@@ -3,7 +3,7 @@ name: fact-check
 description: Verify a generated document against actual code and git history
 ---
 
-Load the visual-explainer skill and fact-check the document at `$@`. With no path, use the newest `<name>.html` that is not a `.src.html`, in `VISUAL_EXPLAINER_OUTPUT_DIR` when it is set and not blank (relative to the working directory), else in `~/.agent/diagrams/`.
+Load the visual-explainer skill and fact-check the document at `$@`. With no path, use the newest HTML page excluding `.src.html`. Native Pi: call `visual_explainer` `prepare` with `topic: "Fact-check"` and `preferSubagent: false`, then search its `outputDir`; do not read project settings directly. Elsewhere: use nonblank `VISUAL_EXPLAINER_OUTPUT_DIR` (relative to the working directory), else `~/.agent/diagrams/`.
 
 1. Extract every claim that you can verify: paths, names, behavior, data flow, APIs, commands, dependencies, tests, numbers, and git history. Skip opinions.
 2. Check each claim against the source or `git show`. Mark it verified, corrected, unsupported, or unverifiable.

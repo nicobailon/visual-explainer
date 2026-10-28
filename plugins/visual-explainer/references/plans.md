@@ -10,7 +10,7 @@ The renderer checks the tags below, reads cited code from disk, and adds the CSS
 node <this skill's directory>/plan/render.mjs ~/.agent/diagrams/<name>.src.html --root <repo> --open
 ```
 
-Fix every `✗` and each `⚠` you cannot defend. Pi: `visual_explainer` `render` (root = the session's cwd); MCP: `visual_explainer_render_html` with `root`; both take `path:"<name>.src.html"`. Copy the shape of `templates/plan.html`.
+Fix every `✗` and each `⚠` you cannot defend. Pi: use `prepare`'s output directory, then `render` (code-reference root = session cwd); MCP: `visual_explainer_render_html` with `root`; both take `path:"<name>.src.html"`. Copy the shape of `templates/plan.html`.
 
 ## The page
 

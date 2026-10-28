@@ -1,5 +1,5 @@
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { chmodSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
@@ -52,6 +52,7 @@ type PrepareDetails = {
   subagentAvailable: boolean;
   subagentAllToolsAvailable?: boolean;
   subagentDetectionError?: string;
+  outputDir: string;
   recommendedFlow: string[];
   subagentPrompt?: string;
 };
@@ -146,12 +147,33 @@ function detectSubagent(pi: ExtensionAPI): SubagentDetection {
   }
 }
 
-function resolveOutputDirectory() {
-  const configured = process.env.VISUAL_EXPLAINER_OUTPUT_DIR?.trim();
-  return {
-    path: configured ? resolve(configured) : join(homedir(), ".agent", "diagrams"),
-    configured: Boolean(configured),
-  };
+type OutputDirectory = { path: string; configured: boolean; settingsUnavailable?: boolean };
+
+function resolveOutputDirectory(pi: ExtensionAPI, cwd: string): OutputDirectory {
+  // Preserve the environment override's existing semantics: trimmed, process-relative, no shortcuts.
+  const override = process.env.VISUAL_EXPLAINER_OUTPUT_DIR?.trim();
+  if (override) return { path: resolve(override), configured: true };
+
+  // Older Pi hosts lack this API. Keep their default/env behavior; never read project files ourselves.
+  const settingsUnavailable = typeof pi.getSettings !== "function";
+  const settings = settingsUnavailable ? {} : pi.getSettings() as { visualExplainer?: { outputDir?: unknown } };
+  const value = settings.visualExplainer?.outputDir;
+  if (value !== undefined && typeof value !== "string") throw new Error("visualExplainer.outputDir must be a string");
+  if (value === undefined || !value.trim()) {
+    return { path: join(homedir(), ".agent", "diagrams"), configured: false, settingsUnavailable };
+  }
+
+  if (value === "project") {
+    // A Pi launched from a Git hook can inherit another repository's location.
+    const env = { ...process.env };
+    for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR"]) delete env[key];
+    const git = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const root = git.status === 0 ? git.stdout.replace(/\r?\n$/, "") : cwd;
+    return { path: join(root, ".agent", "diagrams"), configured: true };
+  }
+  // Nonblank settings paths are literal, including surrounding spaces and "./project".
+  const path = value === "~" ? homedir() : value.startsWith("~/") ? join(homedir(), value.slice(2)) : resolve(cwd, value);
+  return { path, configured: true };
 }
 
 // Checks the nearest existing ancestor, so a rejected directory is never created through a symlink.
@@ -161,6 +183,12 @@ function assertResolvesToItself(path: string) {
   while (!lstatSync(existing, { throwIfNoEntry: false }) && dirname(existing) !== existing) existing = dirname(existing);
   const resolved = join(realpathSync(existing), relative(existing, path));
   if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
+}
+
+// Validate without creating anything, before prepare directs the agent to write a source.
+function assertOutputDirectory({ path, configured }: OutputDirectory) {
+  if (lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${path} must not be a symlink`);
+  if (configured) assertResolvesToItself(path);
 }
 
 function outputFilename(input: string) {
@@ -266,7 +294,7 @@ async function openRenderedPage(path: string, viewer: Viewer, listener?: WindowL
   };
 }
 
-function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParams): AgentToolResult<VisualExplainerDetails> {
+function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParams, output: OutputDirectory): AgentToolResult<VisualExplainerDetails> {
   if (typeof params.topic !== "string") throw new Error("topic must be a string for action=prepare");
   if (params.goal !== undefined && typeof params.goal !== "string") throw new Error("goal must be a string when provided");
   if (params.audience !== undefined && typeof params.audience !== "string") throw new Error("audience must be a string when provided");
@@ -279,6 +307,7 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
 
   const topic = params.topic.trim();
   if (!topic) throw new Error("topic is required");
+  assertOutputDirectory(output);
 
   const goal = params.goal?.trim();
   const audience = params.audience?.trim();
@@ -293,12 +322,14 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
       ? ["Run a scout subagent to gather repo context and identify the visual structure.", "Synthesize the findings into a concise visual outline for the target audience."]
       : ["Gather the needed context directly in the main agent.", "Create a concise visual outline for the target audience."]),
     "Read the relevant visual-explainer references or templates before generating the page.",
-    "Write <name>.src.html in the output directory using the visual-explainer skill.",
+    `Write <name>.src.html in ${output.path} using the visual-explainer skill (create the directory if needed).`,
     "Call visual_explainer with action=render, path, optional open, and optional viewer.",
   ];
 
   const summaryLines = [
     `Prepared visual explanation for: ${topic}`,
+    `Output directory: ${output.path}`,
+    output.settingsUnavailable ? "This Pi version cannot read extension settings; using the default/environment directory. Update Pi for visualExplainer.outputDir." : undefined,
     goal ? `Goal: ${goal}` : undefined,
     audience ? `Audience: ${audience}` : undefined,
     shouldUseSubagent ? "Recommended start: use a scout subagent for context." : "Recommended start: gather context directly in this session.",
@@ -315,6 +346,7 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
       goal,
       audience,
       files,
+      outputDir: output.path,
       subagentAvailable: subagent.available,
       subagentAllToolsAvailable: subagent.allToolsHasSubagent,
       subagentDetectionError: subagent.error,
@@ -329,6 +361,7 @@ async function writeRenderedHtml(
   htmlInput: string,
   open: boolean | undefined,
   viewer: Viewer,
+  output: OutputDirectory,
   signal?: AbortSignal,
   plan?: PlanHost,
   sourcePath?: string,
@@ -343,10 +376,9 @@ async function writeRenderedHtml(
   const report: PageReport | undefined = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);
   const html = prepareRenderedHtml(page ? page.html : htmlInput);
-  const { path: outputDir, configured } = resolveOutputDirectory();
+  const { path: outputDir, configured } = output;
   const outputPath = join(outputDir, filename);
-  if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
-  if (configured) assertResolvesToItself(outputDir);
+  assertOutputDirectory(output);
   mkdirSync(outputDir, { recursive: true });
   if (configured) assertResolvesToItself(outputDir);
   const writeAtomically = (path: string, content: string) => {
@@ -425,18 +457,18 @@ function validateRenderOptions(params: VisualExplainerParams): asserts params is
   validateOpenOptions(params);
 }
 
-async function renderVisualExplanation(params: VisualExplainerParams, plan: PlanHost, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+async function renderVisualExplanation(params: VisualExplainerParams, output: OutputDirectory, plan: PlanHost, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
   if (params.path !== undefined) {
     if (typeof params.path !== "string") throw new Error("path must be a string");
     if (params.html !== undefined) throw new Error("pass html or path, not both");
     if (params.filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
     validateOpenOptions(params);
-    const source = readSourcePath(params.path, () => resolveOutputDirectory().path);
-    return await writeRenderedHtml(source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
+    const source = readSourcePath(params.path, () => output.path);
+    return await writeRenderedHtml(source.filename, source.html, params.open, params.viewer ?? "browser", output, signal, plan, source.source);
   }
   validateRenderOptions(params);
   if (typeof params.html !== "string") throw new Error("html or path is required for action=render");
-  return await writeRenderedHtml(params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
+  return await writeRenderedHtml(params.filename, params.html, params.open, params.viewer ?? "browser", output, signal, plan);
 }
 
 export default function (pi: ExtensionAPI) {
@@ -448,12 +480,12 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, or render a page source to HTML in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
+    description: "Plan visual explanations, or render a page source to HTML in the configured output directory (default ~/.agent/diagrams/). Prepare reports the resolved directory.",
     promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source.",
     promptGuidelines: [
       "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
       "Visuals cost many tokens: ask before visual_explainer action=prepare unless the user asked for a diagram, visual review, recap, or visual plan. If prepare recommends a scout subagent and one is available, gather context first.",
-      "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR) and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
+      "Use prepare to resolve the output directory before writing or locating pages, including /fact-check without a path. Write <name>.src.html there and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
       "A plan source (<ve-plan> tags, references/plans.md) renders the same way, checked against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
@@ -463,13 +495,14 @@ export default function (pi: ExtensionAPI) {
         throw new Error("action must be 'prepare' or 'render'");
       }
 
-      if (params.action === "prepare") return prepareVisualExplanation(pi, params);
+      const output = resolveOutputDirectory(pi, ctx.cwd);
+      if (params.action === "prepare") return prepareVisualExplanation(pi, params, output);
       // a labeled message from the page rather than text the user typed; it starts a turn, or waits if the agent is busy
       const onResponse = (markdown: string, page: string) => pi.sendMessage(
         { customType: "visual_explainer_response", content: `The reader replied on ${page}:\n\n${markdown}`, display: true, details: { page } },
         { triggerTurn: true, deliverAs: "followUp" },
       );
-      return await renderVisualExplanation(params, { root: ctx.cwd, onResponse, closed: session.signal }, signal);
+      return await renderVisualExplanation(params, output, { root: ctx.cwd, onResponse, closed: session.signal }, signal);
     },
   });
 }

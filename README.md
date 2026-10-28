@@ -77,7 +77,29 @@ The package manifest advertises the canonical skill, command templates, and Pi t
 }
 ```
 
-The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to render a page source (`path`) or complete HTML to `~/.agent/diagrams/`, or to `VISUAL_EXPLAINER_OUTPUT_DIR` when set, with the same output jail as the MCP server. Render can open with `viewer: "browser"` by default, `viewer: "glimpse"` when `glimpseui` is installed, or `viewer: "auto"` to try Glimpse and fall back to the browser. `/generate-web-diagram` remains the bundled prompt template command.
+The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan and resolve the output directory, then write `<name>.src.html` there and call `action: "render"` with `path` (or inline `html` and `filename`). Render opens in the browser by default; `viewer: "glimpse"` uses `glimpseui`, and `viewer: "auto"` tries Glimpse before the browser. `/generate-web-diagram` remains a prompt template command.
+
+#### Pi output directory
+
+Output defaults to `~/.agent/diagrams/`, regardless of global or `--local` installation. **Merge** this field into existing personal (`~/.pi/agent/settings.json`) or project (`<project>/.pi/settings.json`) settings, then run `/reload` or restart Pi:
+
+```json
+{
+  "visualExplainer": {
+    "outputDir": "project"
+  }
+}
+```
+
+Precedence: default → personal settings → trusted project settings → nonblank `VISUAL_EXPLAINER_OUTPUT_DIR`. Pi handles merging and project trust.
+
+- Exact `"project"` uses the session's Git root plus `.agent/diagrams/` (including subdirectories, worktrees, and nested repositories), or the session directory outside Git—not the extension checkout.
+- Other strings are literal paths: `"docs/diagrams"`, `"/some/destination"`, or `"~/Documents/my diagrams"`. Relative paths use the session directory; spaces are preserved. `"./project"` and `"current"` are ordinary paths.
+- Missing values inherit; blank values select the default; non-strings error. A nonblank environment override wins over all settings, including invalid values; blank environment values fall through. Environment paths retain their existing trimmed, process-relative behavior, without shortcuts or `~` expansion. Restart Pi to change its environment.
+
+Prepare reports `outputDir` without creating it. Keep sources, pages, and contact sheets there; `/fact-check` uses it when no path is given. Existing containment, atomic-write, and symlink protections remain, including the default's allowance for a symlinked `~/.agent`.
+
+Requires Pi's `getSettings()` API; older Pi reports settings unavailable and retains default/environment output. MCP, CLI, legacy manual installs, and other harnesses do not read Pi settings.
 
 If you previously used the old curl/manual installer, remove those copied files before using `pi install`; otherwise Pi will report skill and prompt conflicts because the user-level copies shadow the package resources:
 
@@ -512,7 +534,7 @@ plugins/
         └── slide-deck.html (slide engine + reference deck)
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. When Chrome and `playwright-core` are available, the renderer also checks the page in a browser and writes `filename.sheet.png`, a contact sheet of the first screen, the figures, and every step, which the agent looks at instead of taking its own screenshots. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
+**Output:** `~/.agent/diagrams/filename.html` by default (native Pi can configure the directory above) → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. When Chrome and `playwright-core` are available, the renderer also checks the page in a browser and writes `filename.sheet.png`, a contact sheet of the first screen, the figures, and every step, which the agent looks at instead of taking its own screenshots. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
 
 Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when you ask for it. Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 
@@ -520,7 +542,7 @@ Pages are figure-first: the first screen shows the answer as a picture and one s
 
 - Generated HTML is portable and self-contained, but auto-opening depends on the harness, browser access, and sandbox rules.
 - PPTX export is a static best-effort handoff. The HTML deck remains the source of truth for full visual fidelity.
-- All harnesses write visual output to `~/.agent/diagrams/` unless the user asks for a different path. The Pi tool and the MCP server write to `VISUAL_EXPLAINER_OUTPUT_DIR` instead when it is set.
+- Output defaults to `~/.agent/diagrams/`. Native Pi supports `visualExplainer.outputDir`; Pi and MCP accept a nonblank `VISUAL_EXPLAINER_OUTPUT_DIR` override. Other harnesses can follow a user-supplied path.
 - Results vary by model capability.
 
 ## Credits

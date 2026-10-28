@@ -57,7 +57,7 @@ CSS animations, the Web Animations API, timers, `requestAnimationFrame`, canvas,
 3. `visual-explainer-video deck.html [out.mp4] [--voice clips/] [--captions]`.
 4. Report the MP4 path, length, and voice or "silent".
 
-Write the deck to `~/.agent/diagrams/<name>.html`; the MP4 goes beside it. The renderer needs `ffmpeg`, `playwright-core`, and Google Chrome (or `npx playwright-core install chromium-headless-shell`). If `visual-explainer-video` is not on PATH or `playwright-core` is missing, run `npx -y -p visual-explainer -p playwright-core visual-explainer-video` with the same arguments; from a repository checkout, `npm install` and `node plugins/visual-explainer/video/render.mjs`.
+Write `<name>.html` in Pi `prepare`'s output directory, or `~/.agent/diagrams/` elsewhere unless the user chooses another path; keep the MP4 beside it. The renderer needs `ffmpeg`, `playwright-core`, and Google Chrome (or `npx playwright-core install chromium-headless-shell`). If `visual-explainer-video` is not on PATH or `playwright-core` is missing, run `npx -y -p visual-explainer -p playwright-core visual-explainer-video` with the same arguments; from a repository checkout, `npm install` and `node plugins/visual-explainer/video/render.mjs`.
 
 ## Voice clips
 
