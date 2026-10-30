@@ -35,7 +35,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
 - **`init`** is the first state, as plain data (objects, arrays, strings, numbers, booleans, `null`): the walk compares states as JSON.
 - **`events`** maps each event, named in the reader's words, to the step it takes: `s => the next state`. A step that returns the same state draws no arrow.
 - **`rules`** maps each rule, in the reader's words, to `{ holds, fails }`: `holds(s)` is true while the rule holds, and `fails` is a state it must reject. A rule that holds on its own `fails` state would pass on any machine, so it is an error.
-- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, or an object of region → id for parallel parts (`<ve-region>`, below). An array of ids from the outermost state in (nested states) is checked but not drawn yet.
+- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, or an object of region → id for parallel parts (`<ve-region>`, below). An array of ids from the outermost state in (nested states) is drawn only by `auto`.
 
 Write the four names as plain assignments (`init = …`), not `const`. Helpers in the script are fine.
 
@@ -70,6 +70,8 @@ It runs the model in a separate Node process with a 10 s limit, walks every stat
 
 In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. The caption under the drawing, `walked from src/player.ts`, is written for you.
 
+**Too many states to place by hand:** write `<ve-flow auto label="…">` with only the model inside. The render lays out the whole walk itself (any size, nested states as boxes in boxes, each part of an object in its own box), with the same marks, as a static drawing with no replay. Labels are the `state()` ids, so return readable ones (`floor 3 · open`).
+
 Marks on the drawing: `breaks` (a reachable state where a rule fails), `may-break` (a state from which one is reachable), `bug-path` (a state or arrow on the shortest path to it).
 
 The Page line gets one line per machine: `machine from src/player.ts · 4 states · 1 of 2 rules breaks in 1 step · 1 dead end · "you press mute" never fires`.
@@ -91,8 +93,8 @@ Each starts with the script's line, `line 12 <script>:`, and stops the render.
 | `playing-muted is drawn, but no path from init reaches it` | remove it, or find the missing event |
 | `the walk reached volume · loud, which is not drawn in region "volume"` | add the node inside that region |
 | `loud is in no <ve-region>` / `region "sound" is not a part of state()` / `a <ve-region> … has none` | every node sits in the region of its part, and every region is a key of `state()` with nodes |
-
-A walk over the chart size points at `<ve-flow auto>`, which drops the nodes and draws the whole walk as a static chart.
+| `the walk has 20 states and 38 arrows, and 19 are not drawn; set auto, or model less` | 6 or more states nobody drew; one error instead of a line each |
+| `auto draws the whole walk; remove the nodes, or drop auto` | `auto` lays out every state itself |
 
 **MCP:** a model runs the repo's code, so the MCP server runs one only when it is started with `VISUAL_EXPLAINER_RUN_MODELS=1`; otherwise the model is an error that names the variable. Pi and the command line run models as they run the repo's tests.
 

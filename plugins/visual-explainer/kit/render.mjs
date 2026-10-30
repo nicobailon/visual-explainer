@@ -88,7 +88,7 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
   }
   // A walked flow replays its walk: the figure's captions must match its steps, or the render writes them (and the player).
   const replayed = new Set();
-  for (const t of tags.filter((x) => x.machine)) {
+  for (const t of tags.filter((x) => x.machine?.steps)) {
     const fig = find(doc, (f) => f.name === "figure" && hasClass(f, "ve-steps") && find(f, (x) => x === t).length).at(-1);
     if (!fig) continue;
     // one stepper steps through every caption in its figure, so two walks there would play as one
@@ -107,6 +107,8 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
   // Mermaid becomes plain SVG here, so the page draws offline, follows the theme through CSS, and is checked like any drawing.
   // A phone gets its own layout when Pele can make one narrower. Neither layout shrinks below its natural width (the frame
   // scrolls instead), and Pele draws some labels smaller than its base size, so the base grows until the smallest is 12 px.
+  // a <ve-flow auto> becomes a diagram like one written in Mermaid, so it is drawn and checked the same way
+  for (const t of tags.filter((x) => x.auto)) mermaids.push({ name: "ve-flow", attrs: { "aria-label": t.attrs.label }, pos: t.pos, children: [{ text: t.auto.mermaid }], flow: t });
   for (const [i, pre] of mermaids.entries()) {
     const label = pre.attrs["aria-label"];
     if (!label) { errors.push(`${where(pre)}: add aria-label="…" saying what the diagram shows`); continue; }
@@ -127,8 +129,12 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
       continue;
     }
     const both = narrow.width < wide.width;
-    const svg = (r, cls) => r.svg.replace(' role="graphics-document document"', ` role="img" aria-label="${esc(label)}"`).replace('class="pele ', `class="pele${cls} `).replace('style="', `style="min-width:${r.width}px;`);
+    // Mermaid cannot put a class on a transition, so a walk's bug-path arrows are marked by the number Pele gives them
+    const lit = new Set(pre.flow?.auto.bugEdges.map((k) => `edge${k}`));
+    const svg = (r, cls) => r.svg.replace(' role="graphics-document document"', ` role="img" aria-label="${esc(label)}"`).replace('class="pele ', `class="pele${cls} `).replace('style="', `style="min-width:${r.width}px;`)
+      .replace(/class="pele-edge pele-transition" data-id="(edge\d+)"/g, (m, id) => (lit.has(id) ? m.replace("pele-transition", "pele-transition bug-path") : m));
     pre.html = `<div class="ve-mermaid"${pre.attrs.id ? ` id="${esc(pre.attrs.id)}"` : ""}>${svg(wide, both ? " is-wide" : "")}${both ? svg(narrow, " is-narrow") : ""}</div>`;
+    if (pre.flow) pre.flow.html = `<div class="frame">${pre.html}</div>${pre.flow.auto.proof}`;
   }
   // Each drawing says what it shows, and a viewBox wider than 816 gets the min-width that keeps 14-unit labels at 12 px.
   const drawings = [];

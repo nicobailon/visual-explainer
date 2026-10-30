@@ -6,7 +6,7 @@
 //   root, models        a <script type="text/plain" model> child is walked from root's code (models: false refuses it; references/machines.md)
 // A <ve-region> holds the <ve-node>s of one part of the model's state and draws as a dashed boundary around them.
 import { esc, hasClass, kids, textOf } from "./html.mjs";
-import { drawModel } from "./machine.mjs";
+import { drawAuto, drawModel } from "./machine.mjs";
 
 const W = 140, H = 64, GY = 56, PAD = 16;
 const RX = 14, RT = 30; // a region's padding beside and below its nodes, and above them, where its label sits; two regions in adjacent rows keep GY − RX − RT apart
@@ -35,6 +35,18 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
     } else if (k.name === "ve-edge") edges.push(k);
     else if (k.name === "script" && "model" in k.attrs) scripts.push(k);
     else errors.push(`${where(k)}: only <ve-node>, <ve-region>, <ve-edge>, and one <script type="text/plain" model> belong in <ve-flow>`);
+  }
+  // auto: the whole walk, laid out by Pele; render.mjs draws the Mermaid this leaves on n.auto
+  if ("auto" in n.attrs) {
+    if (boxes.size || regions.size || edges.length) errors.push(`${where(n)}: auto draws the whole walk; remove the nodes, or drop auto`);
+    else if (scripts.length !== 1) errors.push(`${where(n)}: auto draws the walk of one <script type="text/plain" model>; ${scripts.length ? "keep one" : "add it"}`);
+    else if (!n.attrs.label) errors.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
+    else if (errors.length === before) {
+      const a = drawAuto(scripts[0], { root, models, where });
+      if (a.errors) errors.push(...a.errors);
+      else { n.auto = a; n.machine = { line: a.line }; }
+    }
+    return "";
   }
   for (const [id, { k }] of regions) if (boxes.has(id)) errors.push(`${where(k)}: id="${id}" is also a <ve-node>; an arrow could not tell them apart`);
   for (const e of edges) for (const end of ["from", "to"]) if (!boxes.has(e.attrs[end])) errors.push(`${where(e)}: ${end}="${e.attrs[end] ?? ""}" names no <ve-node>`);

@@ -1,6 +1,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { loadModel } from "../plugins/visual-explainer/kit/machine.mjs";
+import { loadModel, toMermaid } from "../plugins/visual-explainer/kit/machine.mjs";
+import { render as pele } from "../plugins/visual-explainer/kit/vendor/pele.mjs";
 import { renderPage } from "../plugins/visual-explainer/kit/render.mjs";
 
 // Loads each fixture model against the fixture repo and compares what comes back with what the contract says
@@ -208,8 +209,41 @@ same("region not a part", renderPage(stereo.replace('id="volume" label', 'id="so
   'line 18 <script>: state() has a part "volume" with no <ve-region id="volume">',
 ]);
 
+// auto: the walk as Mermaid, written out by hand from the player's walk (same order and marks as the player page above)
+const playerWalk = loadModel({ text: player, root }).walk;
+const mermaid = toMermaid(playerWalk, "flat");
+same("player as Mermaid", mermaid, { mermaid: `stateDiagram-v2
+  state "stopped-normal" as s0
+  state "playing-normal" as s1
+  state "stopped-loud" as s2
+  state "playing-loud" as s3
+  [*] --> s0
+  s0 --> s1 : you press play
+  s0 --> s2 : you turn it up
+  s1 --> s3 : you turn it up
+  s1 --> s0 : the track ends
+  s2 --> s3 : you press play
+  s2 --> s0 : you turn it down
+  s3 --> s1 : you turn it down
+  s3 --> s2 : the track ends
+  class s0 may-break
+  class s0 bug-path
+  class s1 may-break
+  class s2 breaks
+  class s2 bug-path
+  class s3 may-break`, bugEdges: [2] });
+const drawnByPele = pele(mermaid.mermaid ?? "", { fontSize: 14, maxWidth: 960 }).svg;
+same("Pele draws the marks", ["pele-state may-break bug-path", "pele-state breaks bug-path"].filter((c) => !drawnByPele.includes(c)), []);
+// the elevator (repo/src/elevator.ts): 10 floors × door open or closed; the door opens on the roof after 9 rides up
+const elevator = page("auto"), lifted10 = renderPage(elevator, { root });
+same("auto page", [lifted10.errors, lifted10.report?.machines, ["pele-node[^\"]* breaks", "pele-node[^\"]* may-break", "pele-node[^\"]* bug-path", "pele-edge pele-transition bug-path"].filter((c) => !new RegExp(`class="${c}`).test(lifted10.html ?? ""))],
+  [[], ["machine from src/elevator.ts · 20 states · 1 of 1 rule breaks in 10 steps"], []]);
+same("auto with nodes", renderPage(elevator.replace("<script", '<ve-node id="floor 1 · closed" at="1 1">Floor 1</ve-node>\n      <script'), { root }).errors, ["line 7 <ve-flow>: auto draws the whole walk; remove the nodes, or drop auto"]);
+// without auto, 19 of the 20 states undrawn are one error, not 19
+same("too many to draw", renderPage(elevator.replace("<ve-flow auto", "<ve-flow").replace("<script", '<ve-node id="floor 1 · closed" at="1 1">Floor 1</ve-node>\n      <script'), { root }).errors, ["line 9 <script>: the walk has 20 states and 38 arrows, and 19 are not drawn; set auto, or model less"]);
+
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);
   process.exit(1);
 }
-console.log(`Machine check passed: ${Object.keys(cases).length} models, 3 pages`);
+console.log(`Machine check passed: ${Object.keys(cases).length} models, 4 pages`);

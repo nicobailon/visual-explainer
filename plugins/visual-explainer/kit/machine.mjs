@@ -166,14 +166,21 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
 }
 
 const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
+// this many states the walk reached but nobody drew is a chart to draw with auto, not a list of nodes to add
+const FLOOD = 6;
+const flood = (w, k, at) => `${at}: the walk has ${w.states.length} states and ${w.edges.length} arrows, and ${k} are not drawn; set auto, or model less`;
 
-/** The walk as drawn: each drawn id's depth, the arrows, the marks, and the shortest path to the first broken rule. */
+/** The walk as drawn: each drawn id's depth, the arrows, the marks, and the shortest path to the first broken rule.
+ * drawn is null for auto, which draws every state the walk reached. */
 function flatView(w, drawn, { at, where }) {
-  const errors = [
-    ...w.states.filter((id) => !drawn.has(id)).map((id) => `${at}: the walk reached ${id}, which is not drawn; add <ve-node id="${id}">`),
-    ...[...drawn].filter(([id]) => !w.states.includes(id)).map(([id, k]) => `${where(k)}: ${id} is drawn, but no path from init reaches it`),
-  ];
-  if (errors.length) return { errors };
+  if (drawn) {
+    const undrawn = w.states.filter((id) => !drawn.has(id));
+    const errors = [
+      ...(undrawn.length >= FLOOD ? [flood(w, undrawn.length, at)] : undrawn.map((id) => `${at}: the walk reached ${id}, which is not drawn; add <ve-node id="${id}">`)),
+      ...[...drawn].filter(([id]) => !w.states.includes(id)).map(([id, k]) => `${where(k)}: ${id} is drawn, but no path from init reaches it`),
+    ];
+    if (errors.length) return { errors };
+  }
   const path = w.first ? w.paths[w.first] : [];
   const ids = [w.states[0], ...path.map((p) => p.to)];
   return {
@@ -185,16 +192,19 @@ function flatView(w, drawn, { at, where }) {
 
 /** The same, per region: a state is an object of part → value, a value is the id of a node in its part's <ve-region>, and
  * each step draws one arrow in every part it changes. A step that every node of a region takes to the same node lifts to
- * one arrow from the region (its from is the region id). Marks go to the parts of each marked state. */
+ * one arrow from the region (its from is the region id). Marks go to the parts of each marked state. regions is null for
+ * auto, which takes them from the walk. */
 function regionView(w, drawn, regions, { at, where }) {
   const states = new Map(w.states.map((id) => [id, JSON.parse(id)]));
   const keys = Object.keys(states.get(w.states[0]));
   const errors = [];
-  for (const [r, { k }] of regions) if (!keys.includes(r)) errors.push(`${where(k)}: region "${r}" is not a part of state() (${keys.join(", ")})`);
-  for (const r of keys) if (!regions.has(r)) errors.push(`${at}: state() has a part "${r}" with no <ve-region id="${r}">`);
-  const inRegion = new Set([...regions.values()].flatMap((g) => g.ids));
-  for (const [id, k] of drawn) if (!inRegion.has(id)) errors.push(`${where(k)}: ${id} is in no <ve-region>; state() returns parts, so every node belongs to one`);
-  if (errors.length) return { errors };
+  if (regions) {
+    for (const [r, { k }] of regions) if (!keys.includes(r)) errors.push(`${where(k)}: region "${r}" is not a part of state() (${keys.join(", ")})`);
+    for (const r of keys) if (!regions.has(r)) errors.push(`${at}: state() has a part "${r}" with no <ve-region id="${r}">`);
+    const inRegion = new Set([...regions.values()].flatMap((g) => g.ids));
+    for (const [id, k] of drawn) if (!inRegion.has(id)) errors.push(`${where(k)}: ${id} is in no <ve-region>; state() returns parts, so every node belongs to one`);
+    if (errors.length) return { errors };
+  }
   const depths = new Map(), part = new Map();
   for (const [id, s] of states) {
     if (Object.keys(s).join() !== keys.join()) return { errors: [`${at}: state() returns the parts ${Object.keys(s).join(", ")} at ${id}, but ${keys.join(", ")} at init; return the same parts for every state`] };
@@ -205,9 +215,13 @@ function regionView(w, drawn, regions, { at, where }) {
       if (!depths.has(s[r])) depths.set(s[r], w.depths[id]); // the walk's order is by depth, so the first is the nearest
     }
   }
-  for (const [v, r] of part) if (!regions.get(r).ids.includes(v)) errors.push(`${at}: the walk reached ${r} · ${v}, which is not drawn in region "${r}"; add <ve-node id="${v}"> inside it`);
-  for (const [r, g] of regions) for (const id of g.ids) if (part.get(id) !== r) errors.push(`${where(drawn.get(id))}: ${id} is drawn in region "${r}", but no path from init reaches it there`);
-  if (errors.length) return { errors };
+  if (regions) {
+    const undrawn = [...part].filter(([v, r]) => !regions.get(r).ids.includes(v));
+    if (undrawn.length >= FLOOD) errors.push(flood(w, undrawn.length, at));
+    else for (const [v, r] of undrawn) errors.push(`${at}: the walk reached ${r} · ${v}, which is not drawn in region "${r}"; add <ve-node id="${v}"> inside it`);
+    for (const [r, g] of regions) for (const id of g.ids) if (part.get(id) !== r) errors.push(`${where(drawn.get(id))}: ${id} is drawn in region "${r}", but no path from init reaches it there`);
+    if (errors.length) return { errors };
+  } else regions = new Map(keys.map((r) => [r, { ids: [...part].filter(([, p]) => p === r).map(([v]) => v) }]));
 
   const arrows = new Map();
   const add = (from, to, events, depth) => {
@@ -232,7 +246,7 @@ function regionView(w, drawn, regions, { at, where }) {
       for (const e of taking) e.events = e.events.filter((x) => x !== ev);
       const prior = lifted.find((e) => e.from === r && e.to === to);
       if (prior) { prior.events.push(ev); prior.depth = Math.min(prior.depth, ...taking.map((e) => e.depth)); }
-      else lifted.push({ from: r, to, events: [ev], depth: Math.min(...taking.map((e) => e.depth)) });
+      else lifted.push({ from: r, to, events: [ev], depth: Math.min(...taking.map((e) => e.depth)), lifted: true });
       if (moves.some((p) => p.r === r && p.to === to && p.event === ev)) pathEdges.add(`${r}\n${to}`);
     }
   }
@@ -241,11 +255,88 @@ function regionView(w, drawn, regions, { at, where }) {
   for (const p of moves) if (arrows.get(`${p.from}\n${p.to}`)?.events.includes(p.event)) pathEdges.add(`${p.from}\n${p.to}`);
   const breaking = new Set(partsOf(Object.values(w.breaks).flat()));
   return {
-    depths, path, breaking, pathEdges,
+    depths, path, breaking, pathEdges, regions,
     edges: [...[...arrows.values()].filter((e) => e.events.length), ...lifted],
     may: new Set(partsOf(w.mayBreak).filter((v) => !breaking.has(v))),
     onPath: new Set(onPath.flatMap((s) => keys.map((r) => s[r]))),
   };
+}
+
+/** The model loaded and walked, or { errors } that each start with the script's line (the MCP opt-in first). */
+function walked(script, { root, models, where }) {
+  const at = where(script);
+  if (!models) return { errors: [`${at}: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1`] };
+  const m = loadModel({ text: rawText(script), root });
+  return m.errors.length ? { errors: m.errors.map((e) => `${at}: ${e}`) } : m;
+}
+
+/** The machine's Page line and the "walked from" caption under its drawing. */
+function summary(m) {
+  const w = m.walk, c = w.counts;
+  const line = [
+    `machine from ${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.join(", ")}`,
+    plural(c.states, "state"),
+    c.rules && (c.broken ? `${c.broken} of ${plural(c.rules, "rule")} ${c.broken === 1 ? "breaks" : "break"} in ${plural(c.steps, "step")}` : `${plural(c.rules, "rule")} ${c.rules === 1 ? "holds" : "hold"}`),
+    w.deadEnds.length && plural(w.deadEnds.length, "dead end"),
+    w.neverFired.length && `${w.neverFired.map((e) => `"${e}"`).join(", ")} never ${w.neverFired.length === 1 ? "fires" : "fire"}`,
+  ].filter(Boolean).join(" · ");
+  const proof = `<p class="ve-label">walked from ${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.map((f) => `<code>${esc(f)}</code>`).join(", ")}</p>`;
+  return { line, proof };
+}
+
+/** A <ve-flow auto>: the whole walk as Mermaid for Pele to draw, { errors } or { mermaid, bugEdges, line, proof }. */
+export function drawAuto(script, ctx) {
+  const m = walked(script, ctx);
+  if (m.errors.length) return { errors: m.errors };
+  const t = toMermaid(m.walk, m.form, ctx.where(script));
+  return t.errors ? t : { ...t, ...summary(m) };
+}
+
+/** A walk as a Mermaid state diagram: { mermaid, bugEdges } or { errors }. A flat state() draws one state per id, nested ids
+ * draw composites from the outermost in, and each part of an object draws its own composite, with lifted arrows from the
+ * composite (Pele draws a concurrent `--` region as an empty box, so parts are separate). Marks are classes on the states.
+ * Pele numbers a diagram's transitions in source order, [*] first; bugEdges are the numbers of those on the bug path. */
+export function toMermaid(w, form, at = "") {
+  const v = form === "regions" ? regionView(w, null, null, { at }) : flatView(w, null, { at });
+  if (v.errors) return v;
+  const alias = new Map(), name = (key) => alias.get(key) ?? alias.set(key, `s${alias.size}`).get(key);
+  // Pele reads these as character references; a raw " ends the label
+  const text = (s) => s.replace(/\s+/g, " ").replace(/[;&"<>]/g, (c) => ({ ";": "#59;", "&": "#amp;", '"': "#quot;", "<": "#lt;", ">": "#gt;" })[c]);
+  const lines = ["stateDiagram-v2"], bugEdges = [];
+  let n = 0;
+  const go = (indent, from, to, events, lit) => { lines.push(`${indent}${from} --> ${to}${events ? ` : ${text(events.join(" · "))}` : ""}`); if (lit) bugEdges.push(n); n++; };
+  const lit = (e) => v.path.length > 0 && v.pathEdges.has(`${e.from}\n${e.to}`);
+  if (form === "regions") {
+    const init = JSON.parse(w.states[0]);
+    for (const [r, g] of v.regions) {
+      lines.push(`  state "${text(r)}" as ${name(`region\n${r}`)} {`);
+      go("    ", "[*]", name(init[r]));
+      for (const id of g.ids) lines.push(`    state "${text(id)}" as ${name(id)}`);
+      for (const e of v.edges.filter((e) => (e.lifted ? e.from === r : g.ids.includes(e.from)))) go("    ", name(e.lifted ? `region\n${r}` : e.from), name(e.to), e.events, lit(e));
+      lines.push("  }");
+    }
+  } else {
+    const paths = [...v.depths.keys()].map((id) => [id, form === "nested" ? JSON.parse(id) : [id]]);
+    const states = (prefix, indent) => {
+      const here = paths.filter(([, p]) => p.length > prefix.length && prefix.every((x, i) => p[i] === x));
+      for (const head of new Set(here.map(([, p]) => p[prefix.length]))) {
+        const below = [...prefix, head];
+        if (here.some(([, p]) => p.length > below.length && p[prefix.length] === head)) {
+          lines.push(`${indent}state "${text(head)}" as ${name(`${JSON.stringify(below)}\n`)} {`);
+          states(below, `${indent}  `);
+          lines.push(`${indent}}`);
+        }
+        const leaf = here.find(([, p]) => p.length === below.length && p[prefix.length] === head);
+        if (leaf) lines.push(`${indent}state "${text(head)}" as ${name(leaf[0])}`);
+      }
+    };
+    states([], "  ");
+    go("  ", "[*]", name(w.states[0]));
+    for (const e of v.edges) go("  ", name(e.from), name(e.to), e.events, lit(e));
+  }
+  const dead = new Set(form === "regions" ? [] : w.deadEnds), path = v.path.length ? v.onPath : new Set();
+  for (const id of v.depths.keys()) for (const [cls, on] of [["breaks", v.breaking], ["may-break", v.may], ["bug-path", path], ["dead-end", dead]]) if (on.has(id)) lines.push(`  class ${name(id)} ${cls}`);
+  return { mermaid: lines.join("\n"), bugEdges };
 }
 
 /** What a <ve-flow> draws from its <script model>, given its drawn nodes (id → element): { errors } or
@@ -255,11 +346,10 @@ function regionView(w, drawn, regions, { at, where }) {
  * lights the shortest path to it. */
 export function drawModel(script, drawn, { root, models, where, regions = new Map() }) {
   const at = where(script);
-  if (!models) return { errors: [`${at}: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1`] };
-  const m = loadModel({ text: rawText(script), root });
-  if (m.errors.length) return { errors: m.errors.map((e) => `${at}: ${e}`) };
+  const m = walked(script, { root, models, where });
+  if (m.errors.length) return { errors: m.errors };
   const w = m.walk;
-  if (m.form === "nested") return { errors: [`${at}: state() returns an array of nested ids; nested states are not drawn yet, so return a ve-node id or an object of region → id`] };
+  if (m.form === "nested") return { errors: [`${at}: state() returns an array of nested ids, which only <ve-flow auto> draws; set auto, or return a ve-node id or an object of region → id`] };
   if (m.form === "flat" && regions.size) return { errors: [`${where([...regions.values()][0].k)}: a <ve-region> draws one part of state(), so state() must return an object of region → id`] };
   const v = m.form === "flat" ? flatView(w, drawn, { at, where }) : regionView(w, drawn, regions, { at, where });
   if (v.errors) return v;
@@ -283,18 +373,7 @@ export function drawModel(script, drawn, { root, models, where, regions = new Ma
     before = text;
   }
   if (last) steps.push(`breaks “${w.first}” in ${plural(path.length, "step")}: ${path.map((p) => p.event).join(" → ")}`);
-
-  const from = `${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.join(", ")}`;
-  const c = w.counts;
-  const line = [
-    `machine from ${from}`,
-    plural(c.states, "state"),
-    c.rules && (c.broken ? `${c.broken} of ${plural(c.rules, "rule")} ${c.broken === 1 ? "breaks" : "break"} in ${plural(c.steps, "step")}` : `${plural(c.rules, "rule")} ${c.rules === 1 ? "holds" : "hold"}`),
-    w.deadEnds.length && plural(w.deadEnds.length, "dead end"),
-    w.neverFired.length && `${w.neverFired.map((e) => `"${e}"`).join(", ")} never ${w.neverFired.length === 1 ? "fires" : "fire"}`,
-  ].filter(Boolean).join(" · ");
-  const proof = `<p class="ve-label">walked from ${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.map((f) => `<code>${esc(f)}</code>`).join(", ")}</p>`;
-  return { edges, nodes, steps, proof, line };
+  return { edges, nodes, steps, ...summary(m) };
 }
 
 /** The child: evaluates the model module from stdin and writes its checked shape as JSON, the only thing on stdout. */

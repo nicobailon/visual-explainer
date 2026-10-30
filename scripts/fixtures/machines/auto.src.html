@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-register="blueprint">
+<head><title>The elevator opens its door on the roof</title><link rel="stylesheet" href="kit.css" data-ve-kit></head>
+<body><main>
+  <header><h1>The elevator opens its door on the roof</h1></header>
+  <figure>
+    <ve-flow auto label="Every state of the elevator walked from its reducer: ten floors, each with the door open or closed. Opening the door on floor 10 breaks the rule the door stays shut on the roof, ten steps from the start.">
+      <script type="text/plain" model>
+        import { move } from "src/elevator.ts"
+        init   = { floor: 1, door: "closed" }
+        events = {
+          "up": c => move(c, "up"),
+          "down": c => move(c, "down"),
+          "open": c => move(c, "open"),
+          "close": c => move(c, "close"),
+        }
+        rules  = { "the door stays shut on the roof": {
+          holds: c => !(c.floor === 10 && c.door === "open"),
+          fails: { floor: 10, door: "open" } } }
+        state  = c => `floor ${c.floor} · ${c.door}`
+      </script>
+    </ve-flow>
+    <figcaption><span class="fig-n">Fig. 4</span>Twenty states, drawn by the walk; the door opens on the roof after nine rides up.</figcaption>
+  </figure>
+</main></body>
+</html>
