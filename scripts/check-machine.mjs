@@ -177,8 +177,33 @@ const flowSrc = page("player").match(/<ve-flow[\s\S]*?<\/ve-flow>/)[0];
 same("two walks in one stepper", renderPage(page("player").replace("</ve-flow>", `</ve-flow>\n${flowSrc}`), { root }).errors, ['line 30 <ve-flow>: one walked <ve-flow> per <figure class="ve-steps">; put this one in its own figure']);
 same("a misplaced node is not also undrawn", renderPage(page("player").replace('id="playing-loud" at="3 2"', 'id="playing-loud" at="x"'), { root }).errors, ['line 11 <ve-node#playing-loud>: needs id="name" and at="column row", for example at="2 1"']);
 
+
+// Regions (repo/src/stereo.ts): playback and volume each draw their own arrows. play and power off leave every other playback
+// state for one node, and power off every other volume, so those three lift to one arrow from the region; 8 arrows in all.
+const stereo = page("regions"), parted = renderPage(stereo, { root });
+same("regions page: errors", parted.errors, []);
+same("regions page: machine line", parted.report?.machines, ["machine from src/stereo.ts · 9 states · 1 of 1 rule breaks in 1 step"]);
+same("regions page: parts missing", [
+  '<g class="ve-n is-key is-breaks is-bug-path" data-s="1 4"', '<g class="ve-n is-may-break" data-s="2"', '<g class="ve-n is-may-break" data-s="3"',
+  '<g class="ve-n is-may-break is-bug-path" data-s="1 4"', '<g class="ve-n is-breaks is-bug-path" data-s="2 4"', '<path class="ve-e is-bug-path" data-s="2 4"',
+  '<li data-n="1/4">2 states</li>', '<li data-n="2/4">5 states · 4 arrows</li>', '<li data-n="3/4">6 states · 8 arrows</li>',
+  '<li data-n="4/4">breaks “never loud while stopped” in 1 step: louder</li>', '>Playback</text>', '>Volume</text>',
+].filter((p) => !parted.html?.includes(p)), []);
+same("regions page: arrow labels", ["play", "pause", "louder", "quieter", "power off"].map((l) => parted.html?.split(`>${l}</text>`).length - 1), [1, 1, 2, 2, 2]);
+// a rule broken through a lifted arrow lights it: play (lifted, playback) then quieter (normal → muted)
+const mutedPlay = renderPage(stereo.replace('!(s.playback === "stopped" && s.volume === "loud")', '!(s.playback === "playing" && s.volume === "muted")').replace('fails: { playback: "stopped", volume: "loud" }', 'fails: { playback: "playing", volume: "muted" }'), { root });
+same("lifted bug path", [mutedPlay.errors, mutedPlay.html?.split('<path class="ve-e is-bug-path"').length - 1], [[], 2]);
+same("empty region", renderPage(stereo.replace("</ve-flow>", '  <ve-region id="treble" label="Treble"></ve-region>\n    </ve-flow>'), { root }).errors, ["line 33 <ve-region#treble>: a <ve-region> holds the <ve-node>s of its part; this one has none"]);
+const loud = '        <ve-node id="loud" at="3 3">Loud</ve-node>\n';
+same("node in no region", renderPage(stereo.replace(loud, "").replace("      <script", `${loud}      <script`), { root }).errors, ["line 17 <ve-node#loud>: loud is in no <ve-region>; state() returns parts, so every node belongs to one"]);
+same("value not drawn", renderPage(stereo.replace(loud, ""), { root }).errors, ['line 17 <script>: the walk reached volume · loud, which is not drawn in region "volume"; add <ve-node id="loud"> inside it']);
+same("region not a part", renderPage(stereo.replace('id="volume" label', 'id="sound" label'), { root }).errors, [
+  'line 13 <ve-region#sound>: region "sound" is not a part of state() (playback, volume)',
+  'line 18 <script>: state() has a part "volume" with no <ve-region id="volume">',
+]);
+
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);
   process.exit(1);
 }
-console.log(`Machine check passed: ${Object.keys(cases).length} models, 2 pages`);
+console.log(`Machine check passed: ${Object.keys(cases).length} models, 3 pages`);

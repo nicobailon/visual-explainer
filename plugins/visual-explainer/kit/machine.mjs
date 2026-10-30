@@ -167,41 +167,115 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
 
 const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 
-/** What a <ve-flow> draws from its <script model>, given its drawn nodes (id → element): { errors } or
- *   edges: <ve-edge>-like parts for flow.mjs's arrow loop · nodes: id → attributes to add (data-s and the mark flags)
- *   steps: one caption per replay step · proof: the "walked from" line under the drawing · line: the machine's Page line.
- * The replay steps through the walk's depths (step k: what k − 1 events reach), then, when a rule breaks, one step that
- * lights the shortest path to it. */
-export function drawModel(script, drawn, { root, models, where }) {
-  const at = where(script);
-  if (!models) return { errors: [`${at}: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1`] };
-  const m = loadModel({ text: rawText(script), root });
-  if (m.errors.length) return { errors: m.errors.map((e) => `${at}: ${e}`) };
-  if (m.form !== "flat") return { errors: [`${at}: state() returns ${m.form === "regions" ? "an object of regions" : "an array of nested ids"}; draw it with <ve-region>`] };
-  const w = m.walk;
+/** The walk as drawn: each drawn id's depth, the arrows, the marks, and the shortest path to the first broken rule. */
+function flatView(w, drawn, { at, where }) {
   const errors = [
     ...w.states.filter((id) => !drawn.has(id)).map((id) => `${at}: the walk reached ${id}, which is not drawn; add <ve-node id="${id}">`),
     ...[...drawn].filter(([id]) => !w.states.includes(id)).map(([id, k]) => `${where(k)}: ${id} is drawn, but no path from init reaches it`),
   ];
   if (errors.length) return { errors };
-
   const path = w.first ? w.paths[w.first] : [];
-  const depthSteps = Math.max(...Object.values(w.depths), ...w.edges.map((e) => e.depth)) + 1;
-  const last = path.length ? ` ${depthSteps + 1}` : "";
   const ids = [w.states[0], ...path.map((p) => p.to)];
-  const onPath = new Set(ids), pathEdges = new Set(path.map((p, i) => `${ids[i]}\n${p.to}`));
-  const breaking = new Set(Object.values(w.breaks).flat()), may = new Set(w.mayBreak);
-  const nodes = new Map(w.states.map((id) => [id, {
-    "data-s": `${w.depths[id] + 1}${onPath.has(id) ? last : ""}`,
+  return {
+    depths: new Map(w.states.map((id) => [id, w.depths[id]])), edges: w.edges, path,
+    breaking: new Set(Object.values(w.breaks).flat()), may: new Set(w.mayBreak),
+    onPath: new Set(ids), pathEdges: new Set(path.map((p, i) => `${ids[i]}\n${p.to}`)),
+  };
+}
+
+/** The same, per region: a state is an object of part → value, a value is the id of a node in its part's <ve-region>, and
+ * each step draws one arrow in every part it changes. A step that every node of a region takes to the same node lifts to
+ * one arrow from the region (its from is the region id). Marks go to the parts of each marked state. */
+function regionView(w, drawn, regions, { at, where }) {
+  const states = new Map(w.states.map((id) => [id, JSON.parse(id)]));
+  const keys = Object.keys(states.get(w.states[0]));
+  const errors = [];
+  for (const [r, { k }] of regions) if (!keys.includes(r)) errors.push(`${where(k)}: region "${r}" is not a part of state() (${keys.join(", ")})`);
+  for (const r of keys) if (!regions.has(r)) errors.push(`${at}: state() has a part "${r}" with no <ve-region id="${r}">`);
+  const inRegion = new Set([...regions.values()].flatMap((g) => g.ids));
+  for (const [id, k] of drawn) if (!inRegion.has(id)) errors.push(`${where(k)}: ${id} is in no <ve-region>; state() returns parts, so every node belongs to one`);
+  if (errors.length) return { errors };
+  const depths = new Map(), part = new Map();
+  for (const [id, s] of states) {
+    if (Object.keys(s).join() !== keys.join()) return { errors: [`${at}: state() returns the parts ${Object.keys(s).join(", ")} at ${id}, but ${keys.join(", ")} at init; return the same parts for every state`] };
+    for (const r of keys) {
+      if (typeof s[r] !== "string") return { errors: [`${at}: part "${r}" of state() is ${JSON.stringify(s[r])}; nested states are not drawn yet, so return a ve-node id`] };
+      if (part.has(s[r]) && part.get(s[r]) !== r) return { errors: [`${at}: "${s[r]}" is a value of both "${part.get(s[r])}" and "${r}"; a value names its node, so give each part its own`] };
+      part.set(s[r], r);
+      if (!depths.has(s[r])) depths.set(s[r], w.depths[id]); // the walk's order is by depth, so the first is the nearest
+    }
+  }
+  for (const [v, r] of part) if (!regions.get(r).ids.includes(v)) errors.push(`${at}: the walk reached ${r} · ${v}, which is not drawn in region "${r}"; add <ve-node id="${v}"> inside it`);
+  for (const [r, g] of regions) for (const id of g.ids) if (part.get(id) !== r) errors.push(`${where(drawn.get(id))}: ${id} is drawn in region "${r}", but no path from init reaches it there`);
+  if (errors.length) return { errors };
+
+  const arrows = new Map();
+  const add = (from, to, events, depth) => {
+    const key = `${from}\n${to}`;
+    if (!arrows.has(key)) arrows.set(key, { from, to, events: [], depth });
+    const e = arrows.get(key);
+    for (const ev of events) if (!e.events.includes(ev)) e.events.push(ev);
+    e.depth = Math.min(e.depth, depth);
+  };
+  for (const e of w.edges) for (const r of keys) if (states.get(e.from)[r] !== states.get(e.to)[r]) add(states.get(e.from)[r], states.get(e.to)[r], e.events, e.depth);
+  const path = w.first ? w.paths[w.first] : [];
+  const onPath = [w.states[0], ...path.map((p) => p.to)].map((id) => states.get(id));
+  // each step of the path, per part it changes; a lifted arrow is on the path only when the path takes its event
+  const moves = onPath.slice(1).flatMap((s, i) => keys.filter((r) => s[r] !== onPath[i][r]).map((r) => ({ r, from: onPath[i][r], to: s[r], event: path[i].event })));
+  const pathEdges = new Set(moves.map((p) => `${p.from}\n${p.to}`));
+  const lifted = [];
+  for (const [r, g] of regions) {
+    const own = [...arrows.values()].filter((e) => part.get(e.from) === r);
+    for (const ev of new Set(own.flatMap((e) => e.events))) {
+      const taking = own.filter((e) => e.events.includes(ev)), to = taking[0].to, from = new Set(taking.map((e) => e.from));
+      if (taking.length < 2 || taking.some((e) => e.to !== to) || g.ids.some((id) => id !== to && !from.has(id))) continue;
+      for (const e of taking) e.events = e.events.filter((x) => x !== ev);
+      const prior = lifted.find((e) => e.from === r && e.to === to);
+      if (prior) { prior.events.push(ev); prior.depth = Math.min(prior.depth, ...taking.map((e) => e.depth)); }
+      else lifted.push({ from: r, to, events: [ev], depth: Math.min(...taking.map((e) => e.depth)) });
+      if (moves.some((p) => p.r === r && p.to === to && p.event === ev)) pathEdges.add(`${r}\n${to}`);
+    }
+  }
+  const partsOf = (ids) => ids.flatMap((id) => keys.map((r) => states.get(id)[r]));
+  const breaking = new Set(partsOf(Object.values(w.breaks).flat()));
+  return {
+    depths, path, breaking, pathEdges,
+    edges: [...[...arrows.values()].filter((e) => e.events.length), ...lifted],
+    may: new Set(partsOf(w.mayBreak).filter((v) => !breaking.has(v))),
+    onPath: new Set(onPath.flatMap((s) => keys.map((r) => s[r]))),
+  };
+}
+
+/** What a <ve-flow> draws from its <script model>, given its drawn nodes (id → element): { errors } or
+ *   edges: <ve-edge>-like parts for flow.mjs's arrow loop · nodes: id → attributes to add (data-s and the mark flags)
+ *   steps: one caption per replay step · proof: the "walked from" line under the drawing · line: the machine's Page line.
+ * The replay steps through the walk's depths (step k: what k − 1 events reach), then, when a rule breaks, one step that
+ * lights the shortest path to it. */
+export function drawModel(script, drawn, { root, models, where, regions = new Map() }) {
+  const at = where(script);
+  if (!models) return { errors: [`${at}: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1`] };
+  const m = loadModel({ text: rawText(script), root });
+  if (m.errors.length) return { errors: m.errors.map((e) => `${at}: ${e}`) };
+  const w = m.walk;
+  if (m.form === "nested") return { errors: [`${at}: state() returns an array of nested ids; nested states are not drawn yet, so return a ve-node id or an object of region → id`] };
+  if (m.form === "flat" && regions.size) return { errors: [`${where([...regions.values()][0].k)}: a <ve-region> draws one part of state(), so state() must return an object of region → id`] };
+  const v = m.form === "flat" ? flatView(w, drawn, { at, where }) : regionView(w, drawn, regions, { at, where });
+  if (v.errors) return v;
+
+  const { depths, edges: arrows, breaking, may, onPath, pathEdges, path } = v;
+  const depthSteps = Math.max(...depths.values(), ...arrows.map((e) => e.depth)) + 1;
+  const last = path.length ? ` ${depthSteps + 1}` : "";
+  const nodes = new Map([...depths].map(([id, d]) => [id, {
+    "data-s": `${d + 1}${onPath.has(id) ? last : ""}`,
     ...(breaking.has(id) && { breaks: "" }), ...(may.has(id) && { "may-break": "" }), ...(last && onPath.has(id) && { "bug-path": "" }),
   }]));
-  const edges = w.edges.map((e) => {
+  const edges = arrows.map((e) => {
     const lit = last && pathEdges.has(`${e.from}\n${e.to}`);
     return { name: "script", pos: script.pos, children: [], attrs: { from: e.from, to: e.to, label: e.events.join(" · "), "data-s": `${e.depth + 1}${lit ? last : ""}`, ...(lit && { "bug-path": "" }) } };
   });
   const steps = [];
   for (let k = 1, before = ""; k <= depthSteps; k++) {
-    const s = w.states.filter((id) => w.depths[id] < k).length, a = w.edges.filter((e) => e.depth < k).length;
+    const s = [...depths.values()].filter((d) => d < k).length, a = arrows.filter((e) => e.depth < k).length;
     const text = `${plural(s, "state")}${a ? ` · ${plural(a, "arrow")}` : ""}`;
     steps.push(text === before ? `${text} · nothing new` : text);
     before = text;

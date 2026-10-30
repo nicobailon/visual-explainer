@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" data-register="blueprint">
+<head><title>Playback and volume move apart, and power off resets both</title><link rel="stylesheet" href="kit.css" data-ve-kit></head>
+<body><main>
+  <header><h1>Playback and volume move apart, and power off resets both</h1></header>
+  <figure class="ve-steps">
+    <ve-flow label="The stereo as two parts walked from its reducer: playback (stopped, playing, paused) and volume (muted, normal, loud). Power off sends each part back from anywhere. Stopped and loud together break the rule never loud while stopped.">
+      <ve-region id="playback" label="Playback">
+        <ve-node id="stopped" at="1 1" key>Stopped</ve-node>
+        <ve-node id="playing" at="1 2">Playing</ve-node>
+        <ve-node id="paused" at="2 2">Paused</ve-node>
+      </ve-region>
+      <ve-region id="volume" label="Volume">
+        <ve-node id="muted" at="1 3">Muted</ve-node>
+        <ve-node id="normal" at="2 3">Normal</ve-node>
+        <ve-node id="loud" at="3 3">Loud</ve-node>
+      </ve-region>
+      <script type="text/plain" model>
+        import { step } from "src/stereo.ts"
+        init   = { playback: "stopped", volume: "normal" }
+        events = {
+          "play": s => step(s, "play"),
+          "pause": s => step(s, "pause"),
+          "louder": s => step(s, "louder"),
+          "quieter": s => step(s, "quieter"),
+          "power off": s => step(s, "power off"),
+        }
+        rules  = { "never loud while stopped": {
+          holds: s => !(s.playback === "stopped" && s.volume === "loud"),
+          fails: { playback: "stopped", volume: "loud" } } }
+        state  = s => ({ playback: s.playback, volume: s.volume })
+      </script>
+    </ve-flow>
+    <figcaption><span class="fig-n">Fig. 3</span>Each part draws its own arrows; power off leaves each part from anywhere.</figcaption>
+  </figure>
+</main></body>
+</html>

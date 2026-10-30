@@ -35,7 +35,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
 - **`init`** is the first state, as plain data (objects, arrays, strings, numbers, booleans, `null`): the walk compares states as JSON.
 - **`events`** maps each event, named in the reader's words, to the step it takes: `s => the next state`. A step that returns the same state draws no arrow.
 - **`rules`** maps each rule, in the reader's words, to `{ holds, fails }`: `holds(s)` is true while the rule holds, and `fails` is a state it must reject. A rule that holds on its own `fails` state would pass on any machine, so it is an error.
-- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, an object of region → id for parallel parts (`<ve-region>`), or an array of ids from the outermost state in for nested states.
+- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, or an object of region → id for parallel parts (`<ve-region>`, below). An array of ids from the outermost state in (nested states) is checked but not drawn yet.
 
 Write the four names as plain assignments (`init = …`), not `const`. Helpers in the script are fine.
 
@@ -51,6 +51,18 @@ events = {
 `when` is optional (the step always applies without it); `at:"path:line"` is required and must exist. A model that imports no code may not use plain function events: there is nothing to cite.
 
 The caption under the drawing says which proof the reader holds: "walked from `src/player.ts`" when every step is imported, "walked from a model of `src/mixer.ts`" when any step is copied.
+
+**Parallel parts.** When `state` returns an object, such as `s => ({ playback: s.playback, volume: s.volume })`, each key is a `<ve-region>` holding the nodes of that part, and each value is the id of one of them, so values must differ across parts. Nodes keep their grid `at`, and the region draws a dashed boundary around them; regions in adjacent rows or columns fit side by side.
+
+```html
+<ve-region id="playback" label="Playback">
+  <ve-node id="stopped" at="1 1" key>Stopped</ve-node>
+  <ve-node id="playing" at="1 2">Playing</ve-node>
+</ve-region>
+<ve-region id="volume" label="Volume">…</ve-region>
+```
+
+A step draws one arrow in each part it changes. When every other node of a region takes the same event to one node (power off from anywhere), the arrows lift to one arrow out of the region's side and back in to that node. A mark goes to the parts of the marked state: if stopped and loud together break a rule, both Stopped and Loud are marked.
 
 ## What the render does
 
@@ -75,8 +87,10 @@ Each starts with the script's line, `line 12 <script>:`, and stops the render.
 | `the walk has more than 2000 states; model less (fewer events, or fewer fields in the state)` | states differ in fields the chart does not need; a coarser `state()` does not help, because the walk compares whole states |
 | `event "…" throws at stopped-loud: …` / `rule "…" throws at …` | the step or rule fails on a state the walk reached |
 | `event "…": at="src/mixer.ts:99", but src/mixer.ts has 60 lines` | a hand step cites a line that is not there |
-| `the walk reached stopped-loud (Stopped · Loud), which is not drawn` | add the node |
+| `the walk reached stopped-loud, which is not drawn` | add the node |
 | `playing-muted is drawn, but no path from init reaches it` | remove it, or find the missing event |
+| `the walk reached volume · loud, which is not drawn in region "volume"` | add the node inside that region |
+| `loud is in no <ve-region>` / `region "sound" is not a part of state()` / `a <ve-region> … has none` | every node sits in the region of its part, and every region is a key of `state()` with nodes |
 
 A walk over the chart size points at `<ve-flow auto>`, which drops the nodes and draws the whole walk as a static chart.
 
