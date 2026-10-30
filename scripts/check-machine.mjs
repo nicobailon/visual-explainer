@@ -106,6 +106,20 @@ const cases = {
     proof: { kind: "code", files: ["src/counter.ts"] },
   },
   "counter-cap": { text: model("counter"), cap: 6, errors: ["the walk has more than 6 states; model less (fewer events, or fewer fields in the state)"] },
+  // a step that changes its input and returns it (repo/src/bump.ts): each step gets a copy, so n0 and n1 stay as walked
+  // and only n2 breaks, two steps out
+  mutates: {
+    text: 'import { bump } from "src/bump.ts"\ninit   = { n: 0 }\nevents = { "you bump it": s => bump(s) }\nrules  = { "stays under 2": { holds: s => s.n < 2, fails: { n: 2 } } }\nstate  = s => `n${s.n}`',
+    cap: 3,
+    errors: [], events: [{ name: "you bump it" }], rules: ["stays under 2"], form: "flat",
+    walk: {
+      states: ["n0", "n1", "n2"],
+      breaks: { "stays under 2": ["n2"] },
+      paths: { "stays under 2": [{ event: "you bump it", to: "n1" }, { event: "you bump it", to: "n2" }] },
+      counts: { states: 3, full: 3, edges: 2, broken: 1, rules: 1, steps: 2 },
+    },
+    proof: { kind: "code", files: ["src/bump.ts"] },
+  },
   // drawn by playback alone: four states merge into two, a step that changes only the volume draws no arrow
   "player-coarse": {
     text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", "state  = s => s.playback.toLowerCase()"),
@@ -182,6 +196,15 @@ same("caption count", renderPage(twoCaptions, { root }).errors.map((e) => e.spli
 const flowSrc = page("player").match(/<ve-flow[\s\S]*?<\/ve-flow>/)[0];
 same("two walks in one stepper", renderPage(page("player").replace("</ve-flow>", `</ve-flow>\n${flowSrc}`), { root }).errors, ['line 30 <ve-flow>: one walked <ve-flow> per <figure class="ve-steps">; put this one in its own figure']);
 same("a misplaced node is not also undrawn", renderPage(page("player").replace('id="playing-loud" at="3 2"', 'id="playing-loud" at="x"'), { root }).errors, ['line 11 <ve-node#playing-loud>: needs id="name" and at="column row", for example at="2 1"']);
+// ids that are also names on Object.prototype: drawn by playback alone, init is "constructor" and playing is "toString".
+// Depths 0 and 1; play draws at step 2, the track ends at 3; the break (turn it up while stopped) stays on constructor.
+const fourNodes = page("player").match(/      <ve-node id="stopped-normal"[\s\S]*<ve-node id="playing-loud"[^\n]*\n/)[0];
+const protoIds = page("player").replace(fourNodes, '      <ve-node id="constructor" at="1 1" key>Stopped</ve-node>\n      <ve-node id="toString" at="3 1">Playing</ve-node>\n').replace("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Stopped" ? "constructor" : "toString"');
+const proto = renderPage(protoIds, { root });
+same("ids named like Object's", [proto.errors, proto.report?.machines, ['<g class="ve-n is-key is-breaks is-bug-path" data-s="1 4"', '<g class="ve-n is-may-break" data-s="2"', '<path class="ve-e" data-s="2"', '<path class="ve-e" data-s="3"', '<li data-n="1/4">1 state</li>', '<li data-n="2/4">2 states · 1 arrow</li>', '<li data-n="3/4">2 states · 2 arrows</li>', '<li data-n="4/4">breaks “never loud while stopped” in 1 step: you turn it up</li>'].filter((p) => !proto.html?.includes(p))], [[], ["machine from src/player.ts · 2 states · 1 of 1 rule breaks in 1 step"], []]);
+// a rule that fails at init has no path to light: the last step marks init alone, and the caption says so
+const atStart = renderPage(page("player").replace('holds: s => !(s.playback === "Stopped" && s.volume === "Loud")', 'holds: s => s.playback === "Playing"').replace('fails: { playback: "Stopped", volume: "Loud" }', 'fails: { playback: "Stopped", volume: "Normal" }').replaceAll("never loud while stopped", "always playing"), { root });
+same("a rule that fails at init", [atStart.errors, atStart.report?.machines, ['<g class="ve-n is-key is-breaks is-bug-path" data-s="1 5"', '<g class="ve-n is-breaks" data-s="2"', '<li data-n="5/5">breaks “always playing” at the start</li>'].filter((p) => !atStart.html?.includes(p)), atStart.html?.includes('<path class="ve-e is-bug-path"')], [[], ["machine from src/player.ts · 4 states · 1 of 1 rule breaks at the start"], [], false]);
 
 // Regions (repo/src/stereo.ts): playback and volume each draw their own arrows. play and power off leave every other playback
 // state for one node, and power off every other volume, so those three lift to one arrow from the region; 8 arrows in all.

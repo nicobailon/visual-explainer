@@ -105,7 +105,8 @@ function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
     for (const [key, node] of nodes) { // a Map iterates entries added during the loop, so this is the BFS queue
       for (const [name, step] of steps) {
         let next;
-        try { next = step(node.s); } catch (e) { return { error: `event "${name}" throws at ${node.id}: ${message(e)}` }; }
+        // a step that changes its input and returns it would rewrite a state already walked; states are plain data
+        try { next = step(structuredClone(node.s)); } catch (e) { return { error: `event "${name}" throws at ${node.id}: ${message(e)}` }; }
         if (next === NONE) continue;
         if (!isData(next)) return { error: `event "${name}" at ${node.id} returns ${String(next)}, which is not plain data` };
         const k = stable(next);
@@ -127,7 +128,8 @@ function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   }
 
   const uniq = (xs) => [...new Set(xs)];
-  const breaks = {}, paths = {}, broken = new Set();
+  // keyed by rule names and state ids, so no prototype: a state named constructor is not Object's
+  const breaks = Object.create(null), paths = Object.create(null), broken = new Set();
   for (const [rule, { holds }] of Object.entries(rules)) {
     const bad = [];
     for (const [key, n] of nodes) {
@@ -151,7 +153,7 @@ function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   const breakIds = new Set([...broken].map((k) => nodes.get(k).id));
   const first = Object.keys(paths).reduce((a, r) => (a === null || paths[r].length < paths[a].length ? r : a), null);
   const states = uniq([...nodes.values()].map((n) => n.id));
-  const depths = {};
+  const depths = Object.create(null);
   for (const n of nodes.values()) depths[n.id] ??= n.depth; // BFS order, so the first state drawn as an id is its nearest
   return {
     states,
@@ -183,7 +185,7 @@ function flatView(w, drawn, { at, where }) {
     ];
     if (errors.length) return { errors };
   }
-  const path = w.first ? w.paths[w.first] : [];
+  const path = w.first !== null ? w.paths[w.first] : [];
   const along = [w.states[0], ...path.map((p) => p.to)];
   return {
     depths: new Map(w.states.map((id) => [id, w.depths[id]])), edges: w.edges, path,
@@ -234,7 +236,7 @@ function regionView(w, drawn, regions, { at, where }) {
     for (const ev of events) if (!e.events.includes(ev)) e.events.push(ev);
   };
   for (const e of w.edges) for (const r of keys) if (states.get(e.from)[r] !== states.get(e.to)[r]) add(states.get(e.from)[r], states.get(e.to)[r], e.events, e.depth);
-  const path = w.first ? w.paths[w.first] : [];
+  const path = w.first !== null ? w.paths[w.first] : [];
   const onPath = [w.states[0], ...path.map((p) => p.to)].map((id) => states.get(id));
   // each step of the path, per part it changes; a lifted arrow is on the path only when the path takes its event
   const moves = onPath.slice(1).flatMap((s, i) => keys.filter((r) => s[r] !== onPath[i][r]).map((r) => ({ r, from: onPath[i][r], to: s[r], event: path[i].event })));
@@ -278,7 +280,7 @@ function summary(m) {
   const line = [
     `machine from ${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.join(", ")}`,
     plural(c.states, "state"),
-    c.rules && (c.broken ? `${c.broken} of ${plural(c.rules, "rule")} ${c.broken === 1 ? "breaks" : "break"} in ${plural(c.steps, "step")}` : `${plural(c.rules, "rule")} ${c.rules === 1 ? "holds" : "hold"}`),
+    c.rules && (c.broken ? `${c.broken} of ${plural(c.rules, "rule")} ${c.broken === 1 ? "breaks" : "break"} ${c.steps ? `in ${plural(c.steps, "step")}` : "at the start"}` : `${plural(c.rules, "rule")} ${c.rules === 1 ? "holds" : "hold"}`),
     w.deadEnds.length && plural(w.deadEnds.length, "dead end"),
     w.neverFired.length && `${w.neverFired.map((e) => `"${e}"`).join(", ")} never ${w.neverFired.length === 1 ? "fires" : "fire"}`,
   ].filter(Boolean).join(" · ");
@@ -336,7 +338,7 @@ export function toMermaid(w, form, at = "") {
     go("  ", "[*]", name(w.states[0]));
     for (const e of v.edges) go("  ", name(e.from), name(e.to), e.events, lit(e));
   }
-  const dead = new Set(form === "regions" ? [] : w.deadEnds), path = v.path.length ? v.onPath : new Set();
+  const dead = new Set(form === "regions" ? [] : w.deadEnds), path = w.first !== null ? v.onPath : new Set();
   for (const id of v.depths.keys()) for (const [cls, on] of [["breaks", v.breaking], ["may-break", v.may], ["bug-path", path], ["dead-end", dead]]) if (on.has(id)) lines.push(`  class ${name(id)} ${cls}`);
   return { mermaid: lines.join("\n"), bugEdges };
 }
@@ -358,7 +360,8 @@ export function drawModel(script, drawn, { root, models, where, regions }) {
 
   const { depths, edges: arrows, breaking, may, onPath, pathEdges, path } = v;
   const depthSteps = Math.max(...depths.values(), ...arrows.map((e) => e.depth)) + 1;
-  const last = path.length ? ` ${depthSteps + 1}` : "";
+  // a rule that already fails at init has an empty path: the last step marks init alone
+  const last = w.first !== null ? ` ${depthSteps + 1}` : "";
   const nodes = new Map([...depths].map(([id, d]) => [id, {
     "data-s": `${d + 1}${onPath.has(id) ? last : ""}`,
     ...(breaking.has(id) && { breaks: "" }), ...(may.has(id) && { "may-break": "" }), ...(last && onPath.has(id) && { "bug-path": "" }),
@@ -374,7 +377,7 @@ export function drawModel(script, drawn, { root, models, where, regions }) {
     steps.push(text === before ? `${text} · nothing new` : text);
     before = text;
   }
-  if (last) steps.push(`breaks “${w.first}” in ${plural(path.length, "step")}: ${path.map((p) => p.event).join(" → ")}`);
+  if (last) steps.push(path.length ? `breaks “${w.first}” in ${plural(path.length, "step")}: ${path.map((p) => p.event).join(" → ")}` : `breaks “${w.first}” at the start`);
   return { edges, nodes, steps, ...summary(m) };
 }
 
