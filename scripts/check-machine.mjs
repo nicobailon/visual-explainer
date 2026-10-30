@@ -14,13 +14,38 @@ const variant = (from, to) => {
   return player.replace(from, to);
 };
 
+// Walk expectations are read off each fixture's reducer by hand (repo/src/*.ts), in the order a breadth-first walk
+// reaches them. A case's walk lists only the fields it checks.
+const [SN, PN, SL, PL] = ["stopped-normal", "playing-normal", "stopped-loud", "playing-loud"];
+const RULE = "never loud while stopped";
 const playerLoaded = {
   errors: [],
   events: [{ name: "you press play" }, { name: "you turn it up" }, { name: "you turn it down" }, { name: "the track ends" }],
-  rules: ["never loud while stopped"],
+  rules: [RULE],
   form: "flat",
+  walk: {
+    states: [SN, PN, SL, PL],
+    edges: [
+      { from: SN, to: PN, events: ["you press play"] },
+      { from: SN, to: SL, events: ["you turn it up"] },
+      { from: PN, to: PL, events: ["you turn it up"] },
+      { from: PN, to: SN, events: ["the track ends"] },
+      { from: SL, to: PL, events: ["you press play"] },
+      { from: SL, to: SN, events: ["you turn it down"] },
+      { from: PL, to: PN, events: ["you turn it down"] },
+      { from: PL, to: SL, events: ["the track ends"] },
+    ],
+    breaks: { [RULE]: [SL] },
+    paths: { [RULE]: [{ event: "you turn it up", to: SL }] },
+    first: RULE,
+    mayBreak: [SN, PN, PL],
+    deadEnds: [],
+    neverFired: [],
+    counts: { states: 4, full: 4, edges: 8, broken: 1, rules: 1, steps: 1 },
+  },
   proof: { kind: "code", files: ["src/player.ts"] },
 };
+const counterPath = [1, 2, 3].map((n) => ({ event: "you add one", to: `n${n}` }));
 
 const cases = {
   player: { text: player, ...playerLoaded },
@@ -32,7 +57,60 @@ const cases = {
     events: [{ name: "you press play", at: "src/player.ts:7" }, { name: "you turn it up", at: "src/player.ts:8" }],
     rules: [],
     form: "regions",
+    walk: { deadEnds: ['{"playback":"playing","volume":"loud"}'], counts: { states: 4, full: 4, edges: 4, broken: 0, rules: 0, steps: null } },
     proof: { kind: "model", files: ["src/player.ts"] },
+  },
+  door: {
+    text: model("door"),
+    errors: [],
+    events: ["you open it", "you close it", "you lock it", "you unlock it", "you kick it", "you ring the bell"].map((name) => ({ name })),
+    rules: ["the door never burns"],
+    form: "flat",
+    walk: {
+      states: ["closed", "open", "locked", "broken"],
+      edges: [
+        { from: "closed", to: "open", events: ["you open it"] },
+        { from: "closed", to: "locked", events: ["you lock it"] },
+        { from: "open", to: "closed", events: ["you close it"] },
+        { from: "locked", to: "closed", events: ["you unlock it"] },
+        { from: "locked", to: "broken", events: ["you kick it"] },
+      ],
+      breaks: { "the door never burns": [] },
+      paths: {},
+      first: null,
+      mayBreak: [],
+      deadEnds: ["broken"],
+      neverFired: ["you ring the bell"],
+      counts: { states: 4, full: 4, edges: 5, broken: 0, rules: 1, steps: null },
+    },
+    proof: { kind: "code", files: ["src/door.ts"] },
+  },
+  counter: {
+    text: model("counter"),
+    cap: 7, // exactly its 7 states
+    errors: [],
+    events: [{ name: "you add one" }, { name: "you reset" }],
+    rules: ["stays under three"],
+    form: "flat",
+    walk: {
+      breaks: { "stays under three": ["n3", "n4", "n5", "n6"] },
+      paths: { "stays under three": counterPath },
+      mayBreak: ["n0", "n1", "n2"],
+      counts: { states: 7, full: 7, edges: 12, broken: 1, rules: 1, steps: 3 },
+    },
+    proof: { kind: "code", files: ["src/counter.ts"] },
+  },
+  "counter-cap": { text: model("counter"), cap: 6, errors: ["the walk has more than 6 states; model less (fewer events, or fewer fields in the state)"] },
+  // drawn by playback alone: four states merge into two, a step that changes only the volume draws no arrow
+  "player-coarse": {
+    text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", "state  = s => s.playback.toLowerCase()"),
+    ...playerLoaded,
+    walk: {
+      states: ["stopped", "playing"],
+      edges: [{ from: "stopped", to: "playing", events: ["you press play"] }, { from: "playing", to: "stopped", events: ["the track ends"] }],
+      mayBreak: ["playing"],
+      counts: { states: 2, full: 4, edges: 2, broken: 1, rules: 1, steps: 1 },
+    },
   },
   "hand-bad": {
     text: model("hand-bad"),
@@ -63,8 +141,9 @@ const cases = {
 };
 
 const problems = [];
-for (const [name, { text, timeoutMs, ...want }] of Object.entries(cases)) {
-  const got = JSON.parse(JSON.stringify(loadModel({ text, root, timeoutMs })).replaceAll(root, "<root>"));
+for (const [name, { text, timeoutMs, cap, ...want }] of Object.entries(cases)) {
+  const got = JSON.parse(JSON.stringify(loadModel({ text, root, timeoutMs, cap })).replaceAll(root, "<root>"));
+  if (want.walk && got.walk) got.walk = Object.fromEntries(Object.keys(want.walk).map((k) => [k, got.walk[k]]));
   if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`${name}:\n    got  ${JSON.stringify(got)}\n    want ${JSON.stringify(want)}`);
 }
 

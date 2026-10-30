@@ -70,6 +70,8 @@ Each starts with the script's line, `line 12 <script>:`, and stops the render.
 | `an import cannot be found: …` / `src/v.ts:1 uses TypeScript that Node cannot strip …` | the imported code does not load as stripped TypeScript; fix it or write a hand model |
 | `the model did not finish in 10 s; …` | a step that never returns, or an import that waits on I/O |
 | `rule "…" cannot fail; it is not a rule` | `holds(fails)` is true |
+| `the walk has more than 2000 states; model less (fewer events, or fewer fields in the state)` | states differ in fields the chart does not need; a coarser `state()` does not help, because the walk compares whole states |
+| `event "…" throws at stopped-loud: …` / `rule "…" throws at …` | the step or rule fails on a state the walk reached |
 | `event "…": at="src/mixer.ts:99", but src/mixer.ts has 60 lines` | a hand step cites a line that is not there |
 | `the walk reached stopped-loud (Stopped · Loud), which is not drawn` | add the node |
 | `playing-muted is drawn, but no path from init reaches it` | remove it, or find the missing event |

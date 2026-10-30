@@ -1,0 +1,8 @@
+import { add, reset } from "src/counter.ts"
+init   = 0
+events = {
+  "you add one": n => add(n),
+  "you reset": n => reset(n),
+}
+rules  = { "stays under three": { holds: n => n < 3, fails: 3 } }
+state  = n => `n${n}`
