@@ -31,7 +31,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
 </figure>
 ```
 
-- **`import`** names files by their path from the repo root (the session's working directory; `--root` on the command line), never from the page. A file outside the root, or named like a secrets file, is refused. Node strips TypeScript types, so a `.ts` file works if every relative import in it has its extension and it uses no `enum`, `namespace`, or path alias.
+- **`import`** names files by their path from the repo root (the session's working directory; `--root` on the command line), never from the page. A file outside the root, or named like a secrets file, is refused. Node strips TypeScript types, so a `.ts` file works if every relative import in it has its real extension (`.ts`, not `.js`) and it uses no `enum`, `namespace`, parameter property, or path alias. Log with `console.error`, not to stdout.
 - **`init`** is the first state, as plain data (objects, arrays, strings, numbers, booleans, `null`): the walk compares states as JSON.
 - **`events`** maps each event, named in the reader's words, to the step it takes: `s => the next state`. A step that returns the same state draws no arrow.
 - **`rules`** maps each rule, in the reader's words, to `{ holds, fails }`: `holds(s)` is true while the rule holds, and `fails` is a state it must reject. A rule that holds on its own `fails` state would pass on any machine, so it is an error.

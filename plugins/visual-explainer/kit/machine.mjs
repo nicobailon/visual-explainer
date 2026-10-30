@@ -6,7 +6,9 @@ import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { checkAt, fileReader } from "./files.mjs";
 
-const IMPORT = /^[ \t]*import\s+([\s\S]+?)\s+from\s*(["'])([^"'\n]+)\2[ \t]*;?[ \t]*$/gm;
+const IMPORT = /^[ \t]*import\s+([\s\S]+?)\s+from\s*(["'])([^"'\n]+)\2[ \t]*;?[ \t]*(?:\/\/.*)?$/gm;
+// the model runs as a data: URL; name it for the reader instead of printing the encoded source
+const plain = (msg) => msg.replace(/"?data:text\/javascript,[^"\s]*"?/g, "the model script");
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 // states are compared as JSON, so they hold only what JSON keeps
 const isData = (v) => v === null || ["string", "boolean"].includes(typeof v) || Number.isFinite(v) || (Array.isArray(v) ? v.every(isData) : isObj(v) && Object.getPrototypeOf(v) === Object.prototype && Object.values(v).every(isData));
@@ -31,16 +33,20 @@ export function loadModel({ text, root, timeoutMs = 10_000 }) {
   const lines = imports.map(({ clause, path }) => {
     const r = read(path);
     if (r.error) errors.push(`import "${path}": ${r.error}`);
-    return `import ${clause} from ${JSON.stringify(r.abs ? pathToFileURL(r.abs).href : "")};`;
+    return `import ${clause} from ${JSON.stringify(r.abs && pathToFileURL(r.abs).href)};`;
   });
   if (errors.length) return { errors };
 
   const input = `${lines.join(" ")} let init, events, rules, state;\n${body}\nexport default { init, events, rules, state };`;
-  const run = spawnSync(process.execPath, [...STRIP, fileURLToPath(import.meta.url)], { cwd: realRoot, input, timeout: timeoutMs, encoding: "utf8", maxBuffer: 64 << 20 });
+  // SIGKILL, because a model's own SIGTERM handler would outlive the timeout
+  const run = spawnSync(process.execPath, [...STRIP, fileURLToPath(import.meta.url)], { cwd: realRoot, input, timeout: timeoutMs, killSignal: "SIGKILL", encoding: "utf8", maxBuffer: 64 << 20 });
   if (run.error?.code === "ETIMEDOUT") return { errors: [`the model did not finish in ${timeoutMs / 1000} s; a step that never returns, or an import that waits on I/O`] };
   if (run.error) return { errors: [`the model could not run: ${run.error.message}`] };
-  if (!run.stdout) return { errors: [`the model crashed: ${run.stderr.trim().split("\n").at(-1)}`] };
-  const out = JSON.parse(run.stdout);
+  // Node exits 13 when a top-level await never settles; its warning points at the kit's own line, not the model's
+  if (run.status === 13) return { errors: ["the model waits on an await that never settles"] };
+  if (!run.stdout) return { errors: [`the model crashed (exit ${run.status ?? run.signal}): ${plain(run.stderr.split("\n").map((l) => l.trim()).filter((l) => l && !/^\^+$/.test(l)).at(-1) ?? "no message")}`] };
+  let out;
+  try { out = JSON.parse(run.stdout); } catch { return { errors: ["the model wrote to stdout itself; log with console.error"] }; }
   // name files by their path from the root, as the page does
   out.errors = out.errors.map((e) => e.replaceAll(`${pathToFileURL(realRoot).href}/`, "").replaceAll(`${realRoot}/`, ""));
 
@@ -56,8 +62,8 @@ export function loadModel({ text, root, timeoutMs = 10_000 }) {
 }
 
 function loadError(e) {
-  const msg = String(e?.message ?? e).split("\n")[0];
-  if (e?.code === "ERR_MODULE_NOT_FOUND") return `an import cannot be found: ${msg}. Node runs .ts files by stripping their types, so every relative import needs its file extension and path aliases do not resolve; fix the import, or write a hand model (when, then, at)`;
+  const msg = plain(String(e?.message ?? e).split("\n")[0]);
+  if (e?.code === "ERR_MODULE_NOT_FOUND") return `an import cannot be found: ${msg}. Node runs .ts files by stripping their types, so every relative import needs the file's real extension (.ts, not .js), path aliases do not resolve, and packages must be installed under the root; fix the import, or write a hand model (when, then, at)`;
   // Node puts the file and line of unstrippable syntax on the first line of the stack
   if (e?.code === "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") return `${/:\d+$/.test(e.stack?.split("\n")[0]) ? e.stack.split("\n")[0] : "the code"} uses TypeScript that Node cannot strip (an enum, a namespace, or parameter properties): ${msg}; write a hand model (when, then, at)`;
   if (e?.code === "ERR_UNKNOWN_FILE_EXTENSION") return `Node ${process.version} cannot import ${msg.match(/"([^"]+)"/)?.[1] ?? "a .ts file"}; use Node 22.6 or later, or write a hand model (when, then, at)`;
@@ -68,8 +74,11 @@ function loadError(e) {
 /** The child: evaluates the model module from stdin and writes its checked shape as JSON, the only thing on stdout. */
 async function child() {
   console.log = console.info = console.debug = console.error;
+  // code that writes to stdout itself (a logger) goes to stderr; the result is the only thing on the real stdout
+  const write = process.stdout.write.bind(process.stdout);
+  process.stdout.write = process.stderr.write.bind(process.stderr);
   const out = { errors: [], events: [], rules: [], form: null };
-  const done = () => process.stdout.write(JSON.stringify(out), () => process.exit(0));
+  const done = () => write(JSON.stringify(out), () => process.exit(0));
   const err = (e) => out.errors.push(e);
   let m;
   try {

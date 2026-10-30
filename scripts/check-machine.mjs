@@ -14,15 +14,18 @@ const variant = (from, to) => {
   return player.replace(from, to);
 };
 
+const playerLoaded = {
+  errors: [],
+  events: [{ name: "you press play" }, { name: "you turn it up" }, { name: "you turn it down" }, { name: "the track ends" }],
+  rules: ["never loud while stopped"],
+  form: "flat",
+  proof: { kind: "code", files: ["src/player.ts"] },
+};
+
 const cases = {
-  player: {
-    text: player,
-    errors: [],
-    events: [{ name: "you press play" }, { name: "you turn it up" }, { name: "you turn it down" }, { name: "the track ends" }],
-    rules: ["never loud while stopped"],
-    form: "flat",
-    proof: { kind: "code", files: ["src/player.ts"] },
-  },
+  player: { text: player, ...playerLoaded },
+  // a comment after an import, and code that writes to stdout itself (a logger), still load
+  logs: { text: variant(IMPORT, `${IMPORT} // the reducer\nprocess.stdout.write("x")`), ...playerLoaded },
   hand: {
     text: model("hand"),
     errors: [],
@@ -46,7 +49,7 @@ const cases = {
   outside: { text: variant(IMPORT, 'import { x as reduce } from "../outside.ts"'), errors: ['import "../outside.ts": ../outside.ts is outside <root>'] },
   extensionless: {
     text: variant(IMPORT, 'import { step as reduce } from "src/mixer.ts"'),
-    errors: ["an import cannot be found: Cannot find module 'src/player' imported from src/mixer.ts. Node runs .ts files by stripping their types, so every relative import needs its file extension and path aliases do not resolve; fix the import, or write a hand model (when, then, at)"],
+    errors: ["an import cannot be found: Cannot find module 'src/player' imported from src/mixer.ts. Node runs .ts files by stripping their types, so every relative import needs the file's real extension (.ts, not .js), path aliases do not resolve, and packages must be installed under the root; fix the import, or write a hand model (when, then, at)"],
   },
   enum: {
     text: variant(IMPORT, `${IMPORT}\nimport { louder } from "src/volume.ts"`),
