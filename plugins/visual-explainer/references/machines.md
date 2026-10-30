@@ -31,7 +31,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
 </figure>
 ```
 
-- **`import`** names files by their path from the repo root (the session's working directory; `--root` on the command line), never from the page. A file outside the root, or named like a secrets file, is refused. Node strips TypeScript types, so a `.ts` file works if every relative import in it has its real extension (`.ts`, not `.js`) and it uses no `enum`, `namespace`, parameter property, or path alias. Log with `console.error`, not to stdout.
+- **`import`** names files by their path from the repo root (the session's working directory; `--root` on the command line), never from the page. An `import … from` line naming a file outside the root, or one named like a secrets file, is refused. Node strips TypeScript types, so a `.ts` file works if every relative import in it has its real extension (`.ts`, not `.js`) and it uses no `enum`, `namespace`, parameter property, or path alias. Log with `console.error`, not to stdout.
 - **`init`** is the first state, as plain data (objects, arrays, strings, numbers, booleans, `null`): the walk compares states as JSON.
 - **`events`** maps each event, named in the reader's words, to the step it takes: `s => the next state`. A step that returns the same state draws no arrow.
 - **`rules`** maps each rule, in the reader's words, to `{ holds, fails }`: `holds(s)` is true while the rule holds, and `fails` is a state it must reject. A rule that holds on its own `fails` state would pass on any machine, so it is an error.
@@ -66,9 +66,9 @@ A step draws one arrow in each part it changes. When every other node of a regio
 
 ## What the render does
 
-It runs the model in a separate Node process with a 10 s limit, walks every state from `init` (at most 2 000), and draws by `state()`. The arrows come from the walk; several events between the same two states share one arrow, labeled `play · resume`, so name events short and put states a column apart when an arrow carries several (the render warns when a label is wider than its gap).
+It runs the model in a separate Node process with a 10 s limit, walks every state from `init` (at most 2000), and draws by `state()`. The arrows come from the walk; several events between the same two states share one arrow, labeled `play · resume`, so name events short and put states a column apart when an arrow carries several (the render warns when a label is wider than its gap).
 
-In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. One walked flow per stepper figure. The caption under the drawing, `walked from src/player.ts`, is written for you. In a plan, a flow with a model is a level-2 exhibit, drawn without the replay.
+In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. One walked flow per stepper figure. The caption under the drawing, `walked from src/player.ts`, is written for you. In a plan, a flow with a model is a level-2 exhibit, drawn without the replay; place its states by hand, since `auto` draws only on a page.
 
 **Too many states to place by hand:** write `<ve-flow auto label="…">` with only the model inside. The render lays out the whole walk itself (any size, nested states as boxes in boxes, each part of an object in its own box), with the same marks, as a static drawing with no replay. Labels are the `state()` ids, so return readable ones (`floor 3 · open`).
 
@@ -95,6 +95,8 @@ Each names the line it is about (`line 12 <script>:` for the model) and stops th
 | `loud is in no <ve-region>` / `region "sound" is not a part of state()` / `a <ve-region> … has none` | every node sits in the region of its part, and every region is a key of `state()` with nodes |
 | `the walk has 20 states and 38 arrows, and 19 are not drawn; set auto, or model less` | 6 or more states nobody drew; one error instead of a line each |
 | `auto draws the whole walk; remove the nodes, or drop auto` | `auto` lays out every state itself |
+
+**Trust:** the model script is your own code, run as Node with your permissions, as the repo's tests are. The import check catches a wrong path, or a secrets-named file, in its `import … from` lines, nothing more; it is not a sandbox.
 
 **MCP:** a model runs the repo's code, so the MCP server runs one only when it is started with `VISUAL_EXPLAINER_RUN_MODELS=1`; otherwise the model is an error that names the variable. Pi and the command line run models as they run the repo's tests.
 

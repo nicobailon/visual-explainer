@@ -75,6 +75,8 @@ function loadError(e) {
   // Node puts the file and line of unstrippable syntax on the first line of the stack
   if (e?.code === "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") return `${/:\d+$/.test(e.stack?.split("\n")[0]) ? e.stack.split("\n")[0] : "the code"} uses TypeScript that Node cannot strip (an enum, a namespace, or parameter properties): ${msg}; write a hand model (when, then, at)`;
   if (e?.code === "ERR_UNKNOWN_FILE_EXTENSION") return `Node ${process.version} cannot import ${msg.match(/"([^"]+)"/)?.[1] ?? "a .ts file"}; use Node 22.6 or later, or write a hand model (when, then, at)`;
+  const declared = msg.match(/^Identifier '(init|events|rules|state)' has already been declared/)?.[1];
+  if (declared) return `the model script declares ${declared}; write ${declared} = …, not const or let`;
   if (e instanceof SyntaxError) return `the model script does not parse: ${msg}`;
   return `the model threw while loading: ${msg}`;
 }

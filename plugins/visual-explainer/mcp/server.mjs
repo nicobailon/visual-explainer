@@ -40,7 +40,7 @@ const renderInputSchema = z.object({
   filename: z.string().min(1).optional().describe("With html: basename filename; .html is appended when missing."),
   html: z.string().min(1).optional().describe("Page source or complete HTML, when you cannot write a path."),
   path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory."),
-  root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its citations are checked against. Defaults to the server's working directory."),
+  root: z.string().min(1).optional().describe("The repository a plan source (<ve-plan> tags) checks its citations against, and a page's <ve-flow> model imports from. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
 }).strict();
@@ -55,7 +55,7 @@ const renderOutputSchema = z.object({
   fallbackFrom: openTargetSchema.optional(),
   fallbackError: z.string().optional(),
   source: z.string().optional(),
-  report: z.object({ figures: z.number(), uncaptioned: z.number(), dataTags: z.number(), flows: z.number(), proseWords: z.number() }).optional(),
+  report: z.object({ figures: z.number(), uncaptioned: z.number(), dataTags: z.number(), flows: z.number(), proseWords: z.number(), machines: z.array(z.string()).optional() }).optional(),
 });
 
 const promptArgsSchema = z.object({

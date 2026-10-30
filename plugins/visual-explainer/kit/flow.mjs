@@ -38,7 +38,9 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   }
   // auto: the whole walk, laid out by Pele; render.mjs draws the Mermaid this leaves on n.auto
   if ("auto" in n.attrs) {
-    if (boxes.size || regions.size || edges.length) errors.push(`${where(n)}: auto draws the whole walk; remove the nodes, or drop auto`);
+    // a plan has no Pele step to draw it, so it would be an empty exhibit
+    if (!page) errors.push(`${where(n)}: auto draws only on a page; in a plan, place the states by hand with <ve-node>`);
+    else if (boxes.size || regions.size || edges.length) errors.push(`${where(n)}: auto draws the whole walk; remove the nodes, or drop auto`);
     else if (!scripts.length) errors.push(`${where(n)}: auto draws the walk of one <script type="text/plain" model>; add it`);
     else if (!n.attrs.label) errors.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
     else if (errors.length === before) {

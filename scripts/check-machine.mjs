@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { loadModel, toMermaid } from "../plugins/visual-explainer/kit/machine.mjs";
 import { render as pele } from "../plugins/visual-explainer/kit/vendor/pele.mjs";
 import { renderPage } from "../plugins/visual-explainer/kit/render.mjs";
+import { renderPlan } from "../plugins/visual-explainer/plan/render.mjs";
 
 // Loads each fixture model against the fixture repo and compares what comes back with what the contract says
 // (references/machines.md). Fails on any difference. Most cases are the player model with one line changed.
@@ -128,6 +129,7 @@ const cases = {
     errors: ['rule "never loud while stopped" cannot fail; it is not a rule'],
   },
   "bad-path": { text: variant(IMPORT, 'import { reduce } from "src/nope.ts"'), errors: ['import "src/nope.ts": src/nope.ts not found under <root>'] },
+  "const init": { text: variant("init   = ", "const init = "), errors: ["the model script declares init; write init = …, not const or let"] },
   outside: { text: variant(IMPORT, 'import { x as reduce } from "../outside.ts"'), errors: ['import "../outside.ts": ../outside.ts is outside <root>'] },
   extensionless: {
     text: variant(IMPORT, 'import { step as reduce } from "src/mixer.ts"'),
@@ -245,6 +247,9 @@ same("too many to draw", renderPage(elevator.replace("<ve-flow auto", "<ve-flow"
 // auto draws each part of the stereo in its own box; the one bug-path arrow (louder, normal → loud) is found by Pele's edge number
 const autoParts = renderPage(stereo.replace(/<ve-region[\s\S]*?<\/ve-region>\s*/g, "").replace("<ve-flow ", "<ve-flow auto "), { root });
 same("auto with parts", [autoParts.errors, autoParts.html?.split("pele-transition bug-path").length - 1], [[], 1]);
+// a plan has no Pele step, so auto there is an error rather than an empty exhibit
+const autoPlan = `<ve-plan title="Player" summary="s">\n<ve-claim id="a" level="2" title="The player">\n  <ve-flow auto label="The player">\n    <script type="text/plain" model>\n${player}\n    </script>\n  </ve-flow>\n</ve-claim>\n</ve-plan>`;
+same("auto in a plan", renderPlan(autoPlan, { root }).errors.filter((e) => e.includes("<ve-flow>")), ["line 3 <ve-flow>: auto draws only on a page; in a plan, place the states by hand with <ve-node>"]);
 // nested ids draw as a box in a box: playing holds its two volumes, and the arrows run at the top level
 const nested = loadModel({ text: player.replace("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Playing" ? ["playing", s.volume.toLowerCase()] : ["stopped · " + s.volume.toLowerCase()]'), root });
 same("nested as Mermaid", toMermaid(nested.walk, nested.form), { mermaid: `stateDiagram-v2
