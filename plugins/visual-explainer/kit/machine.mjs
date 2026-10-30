@@ -222,7 +222,7 @@ function regionView(w, drawn, regions, { at, where }) {
   const onPath = [w.states[0], ...path.map((p) => p.to)].map((id) => states.get(id));
   // each step of the path, per part it changes; a lifted arrow is on the path only when the path takes its event
   const moves = onPath.slice(1).flatMap((s, i) => keys.filter((r) => s[r] !== onPath[i][r]).map((r) => ({ r, from: onPath[i][r], to: s[r], event: path[i].event })));
-  const pathEdges = new Set(moves.map((p) => `${p.from}\n${p.to}`));
+  const pathEdges = new Set();
   const lifted = [];
   for (const [r, g] of regions) {
     const own = [...arrows.values()].filter((e) => part.get(e.from) === r);
@@ -237,6 +237,8 @@ function regionView(w, drawn, regions, { at, where }) {
     }
   }
   const partsOf = (ids) => ids.flatMap((id) => keys.map((r) => states.get(id)[r]));
+  // a plain arrow is on the path only if it still carries the event the path took (a lifted event left it above)
+  for (const p of moves) if (arrows.get(`${p.from}\n${p.to}`)?.events.includes(p.event)) pathEdges.add(`${p.from}\n${p.to}`);
   const breaking = new Set(partsOf(Object.values(w.breaks).flat()));
   return {
     depths, path, breaking, pathEdges,

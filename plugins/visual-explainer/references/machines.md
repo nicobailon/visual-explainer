@@ -52,7 +52,7 @@ events = {
 
 The caption under the drawing says which proof the reader holds: "walked from `src/player.ts`" when every step is imported, "walked from a model of `src/mixer.ts`" when any step is copied.
 
-**Parallel parts.** When `state` returns an object, such as `s => ({ playback: s.playback, volume: s.volume })`, each key is a `<ve-region>` holding the nodes of that part, and each value is the id of one of them, so values must differ across parts. Nodes keep their grid `at`, and the region draws a dashed boundary around them; regions in adjacent rows or columns fit side by side.
+**Parallel parts.** When `state` returns an object, such as `s => ({ playback: s.playback, volume: s.volume })`, each key is a `<ve-region>` holding the nodes of that part, and each value is the id of one of them, so values must differ across parts. Nodes keep their grid `at`, and the region draws a dashed boundary around them. Regions in adjacent rows fit; regions side by side need a free column between them for the labels of lifted arrows.
 
 ```html
 <ve-region id="playback" label="Playback">

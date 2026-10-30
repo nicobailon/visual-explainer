@@ -193,6 +193,12 @@ same("regions page: arrow labels", ["play", "pause", "louder", "quieter", "power
 // a rule broken through a lifted arrow lights it: play (lifted, playback) then quieter (normal → muted)
 const mutedPlay = renderPage(stereo.replace('!(s.playback === "stopped" && s.volume === "loud")', '!(s.playback === "playing" && s.volume === "muted")').replace('fails: { playback: "stopped", volume: "loud" }', 'fails: { playback: "playing", volume: "muted" }'), { root });
 same("lifted bug path", [mutedPlay.errors, mutedPlay.html?.split('<path class="ve-e is-bug-path"').length - 1], [[], 2]);
+// power off and quieter both take normal → muted; when the path takes power off (lifted), the plain quieter arrow stays unlit
+const offFirst = stereo.replace('"quieter": s => step(s, "quieter"),\n          "power off": s => step(s, "power off"),', '"power off": s => step(s, "power off"),\n          "quieter": s => step(s, "quieter"),');
+const viaOff = renderPage(offFirst.replace('!(s.playback === "stopped" && s.volume === "loud")', '!(s.playback === "stopped" && s.volume === "muted")').replace('fails: { playback: "stopped", volume: "loud" }', 'fails: { playback: "stopped", volume: "muted" }'), { root });
+same("lifted path leaves the plain arrow unlit", [viaOff.errors, viaOff.html?.split('<path class="ve-e is-bug-path"').length - 1], [[], 1]);
+// a lifted arrow comes back in along its node's row: with paused beside stopped, power off cannot use the right side, and play has the left
+same("lifted arrow with no free side", renderPage(stereo.replace('id="paused" at="2 2"', 'id="paused" at="2 1"'), { root }).warnings, ['line 18 <script>: two lifted arrows leave region "playback" on its left; put stopped at the other end of its row']);
 same("empty region", renderPage(stereo.replace("</ve-flow>", '  <ve-region id="treble" label="Treble"></ve-region>\n    </ve-flow>'), { root }).errors, ["line 33 <ve-region#treble>: a <ve-region> holds the <ve-node>s of its part; this one has none"]);
 const loud = '        <ve-node id="loud" at="3 3">Loud</ve-node>\n';
 same("node in no region", renderPage(stereo.replace(loud, "").replace("      <script", `${loud}      <script`), { root }).errors, ["line 17 <ve-node#loud>: loud is in no <ve-region>; state() returns parts, so every node belongs to one"]);

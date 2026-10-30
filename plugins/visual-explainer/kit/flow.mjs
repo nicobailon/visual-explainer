@@ -54,25 +54,34 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   }
   const pairs = new Set(edges.map((e) => `${e.attrs.from}>${e.attrs.to}`));
   const toks = [];
-  const lifts = new Map(); // region id → lifted arrows drawn so far, so a second one leaves from the other side
+  const lifts = new Map(); // region id → the sides its lifted arrows already leave from
   const width = Math.max(...[...boxes.values()].map((b) => b.x)) + W + PAD, height = Math.max(...[...boxes.values()].map((b) => b.y)) + H + PAD;
   const rects = new Map([...regions].filter(([, g]) => g.ids.length).map(([id, g]) => {
     const bs = g.ids.map((i) => boxes.get(i)), x = Math.min(...bs.map((b) => b.x)) - RX, y = Math.min(...bs.map((b) => b.y)) - RT;
-    return [id, { k: g.k, x, y, w: Math.max(...bs.map((b) => b.x)) + W + RX - x, h: Math.max(...bs.map((b) => b.y)) + H + RX - y }];
+    return [id, { k: g.k, ids: g.ids, x, y, w: Math.max(...bs.map((b) => b.x)) + W + RX - x, h: Math.max(...bs.map((b) => b.y)) + H + RX - y }];
   }));
   // a label beside a vertical arrow can reach past the outer boxes; the drawing widens to hold it
   let lo = 0, hi = width;
   const edgeSvg = edges.filter((e) => (boxes.has(e.attrs.from) || rects.has(e.attrs.from)) && boxes.has(e.attrs.to) && e.attrs.from !== e.attrs.to).map((e) => {
     const a = boxes.get(e.attrs.from) ?? rects.get(e.attrs.from), b = boxes.get(e.attrs.to), lift = !boxes.has(e.attrs.from);
-    const side = lift ? (lifts.set(e.attrs.from, (lifts.get(e.attrs.from) ?? 0) + 1).get(e.attrs.from) % 2 ? -1 : 1) : 0;
+    let side = 0;
+    if (lift) {
+      // a lifted arrow comes back in along its node's row, so it leaves from a side with no other node of the region in that row,
+      // and not one another lifted arrow of the region already uses
+      const used = lifts.get(e.attrs.from) ?? new Set(), between = (s) => a.ids.find((id) => boxes.get(id) !== b && boxes.get(id).y === b.y && (s < 0 ? boxes.get(id).x < b.x : boxes.get(id).x > b.x));
+      const clear = [-1, 1].filter((s) => !between(s));
+      side = clear.find((s) => !used.has(s)) ?? clear[0] ?? -1;
+      if (!clear.length) warnings.push(`${where(e)}: the arrow "${e.attrs.label}" lifted to ${e.attrs.to} would run under ${between(-1)}; put ${e.attrs.to} at the end of its row in region "${e.attrs.from}"`);
+      else if (used.has(side)) warnings.push(`${where(e)}: two lifted arrows leave region "${e.attrs.from}" on its ${side < 0 ? "left" : "right"}; put ${e.attrs.to} at the other end of its row`);
+      lifts.set(e.attrs.from, used.add(side));
+    }
     // two arrows between the same boxes run side by side instead of on top of each other
     const off = pairs.has(`${e.attrs.to}>${e.attrs.from}`) ? (e.attrs.from < e.attrs.to ? -12 : 12) : 0;
     const [ax, ay, bx, by] = [a.x + W / 2, a.y + H / 2, b.x + W / 2, b.y + H / 2];
     const x1 = bx > ax ? a.x + W : a.x, y2 = by > ay ? b.y : b.y + H;
     let d, mx, my, vertical = false;
-    // a step every node of a region takes to one of them: out of the region's left side and back in to that node
     if (lift) {
-      // out of the region's left side (then its right, for a second one) and back in to the node
+      // a step every other node of a region takes to one of them: out of the region's side and back in to that node
       const out = Math.abs(a.y + a.h / 2 - by) < 20 ? a.y + a.h - 8 : a.y + a.h / 2, edge = side < 0 ? a.x : a.x + a.w;
       d = `M${edge} ${out}H${edge + side * 32}V${by}H${side < 0 ? b.x : b.x + W}`; mx = edge + side * 32; my = (out + by) / 2; vertical = true;
     }
