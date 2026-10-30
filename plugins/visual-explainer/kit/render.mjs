@@ -87,9 +87,13 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
     else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true, root, models }) : TAGS[t.name](t, { errors, warnings, where });
   }
   // A walked flow replays its walk: the figure's captions must match its steps, or the render writes them (and the player).
+  const replayed = new Set();
   for (const t of tags.filter((x) => x.machine)) {
     const fig = find(doc, (f) => f.name === "figure" && hasClass(f, "ve-steps") && find(f, (x) => x === t).length).at(-1);
     if (!fig) continue;
+    // one stepper steps through every caption in its figure, so two walks there would play as one
+    if (replayed.has(fig)) { errors.push(`${where(t)}: one walked <ve-flow> per <figure class="ve-steps">; put this one in its own figure`); continue; }
+    replayed.add(fig);
     const { steps } = t.machine;
     const player = find(fig, (x) => hasClass(x, "ve-player"))[0], ol = find(fig, (x) => hasClass(x, "ve-cap"))[0];
     const caps = ol ? find(ol, (x) => x.name === "li") : [];

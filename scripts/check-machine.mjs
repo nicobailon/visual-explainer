@@ -173,6 +173,9 @@ same("diff page: errors", renderPage(page("diff"), { root }).errors, [
 same("models off", renderPage(page("player"), { root, models: false }).errors, ["line 12 <script>: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1"]);
 const twoCaptions = page("player").replace("</ve-flow>", '</ve-flow>\n    <div class="ve-player"><ol class="ve-cap"><li data-n="1/2">a</li><li data-n="2/2">b</li></ol></div>');
 same("caption count", renderPage(twoCaptions, { root }).errors.map((e) => e.split(" (")[0]), ["line 30 <li>: the walk replays in 5 steps"]);
+const flowSrc = page("player").match(/<ve-flow[\s\S]*?<\/ve-flow>/)[0];
+same("two walks in one stepper", renderPage(page("player").replace("</ve-flow>", `</ve-flow>\n${flowSrc}`), { root }).errors, ['line 30 <ve-flow>: one walked <ve-flow> per <figure class="ve-steps">; put this one in its own figure']);
+same("a misplaced node is not also undrawn", renderPage(page("player").replace('id="playing-loud" at="3 2"', 'id="playing-loud" at="x"'), { root }).errors, ['line 11 <ve-node#playing-loud>: needs id="name" and at="column row", for example at="2 1"']);
 
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);

@@ -24,13 +24,14 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
       else boxes.set(k.attrs.id, { k, x: PAD + (m[1] - 1) * (W + GX), y: PAD + (m[2] - 1) * (H + GY) });
     } else if (k.name === "ve-edge") edges.push(k);
     else if (k.name === "script" && "model" in k.attrs) scripts.push(k);
-    else errors.push(`${where(k)}: only <ve-node> and <ve-edge> belong in <ve-flow>`);
+    else errors.push(`${where(k)}: only <ve-node>, <ve-edge>, and one <script type="text/plain" model> belong in <ve-flow>`);
   }
   for (const e of edges) for (const end of ["from", "to"]) if (!boxes.has(e.attrs[end])) errors.push(`${where(e)}: ${end}="${e.attrs[end] ?? ""}" names no <ve-node>`);
   if (!n.attrs.label) warnings.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
   if (!boxes.size) { errors.push(`${where(n)}: needs at least one <ve-node>`); return ""; }
   // a model draws the arrows and sets the steps: the walk replaces what an author would write by hand
-  if (scripts.length) {
+  // (a node that failed to place is already an error; walking without it would also call it "not drawn")
+  if (scripts.length && !kids(n).some((k) => k.name === "ve-node" && !boxes.has(k.attrs.id))) {
     if (scripts.length > 1) errors.push(`${where(scripts[1])}: one model per <ve-flow>`);
     for (const e of edges) errors.push(`${where(e)}: a flow with a model draws its arrows from the walk; remove this <ve-edge>`);
     for (const { k } of boxes.values()) if ("data-s" in k.attrs) errors.push(`${where(k)}: a flow with a model takes its steps from the walk; remove data-s`);

@@ -184,7 +184,8 @@ figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(-
 /* a walked machine (references/machines.md): a state that can still reach a broken rule, the shortest way there, and the state
    that breaks it; later rules win, so the breaking state stays red on the path */
 .ve-n.is-may-break .sh { stroke: var(--warn); }
-.ve-n.is-bug-path .sh, .ve-e.is-bug-path { stroke: var(--accent); }
+/* in a stepper the path lights only on its last step, the full picture; elsewhere it is always lit */
+.ve-n.is-bug-path:not(.ve-steps:not(.is-full) *) .sh, .ve-e.is-bug-path:not(.ve-steps:not(.is-full) *) { stroke: var(--accent); }
 .ve-n.is-breaks .sh, .ve-steps .ve-n.is-breaks.now > .sh { stroke: var(--risk); stroke-width: 2.5; stroke-dasharray: 6 3; }
 .ve-x { fill: var(--risk); font: 600 16px var(--font-mono); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; }
 /* <ve-stack>: one bar split in proportion; labels under their segments */
