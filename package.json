@@ -4,7 +4,8 @@
   "description": "Agent skill that generates beautiful HTML pages for diagrams, diff reviews, plan reviews, slide decks, and data tables",
   "scripts": {
     "check:versions": "node scripts/check-versions.mjs",
-    "check:kit": "node scripts/check-kit.mjs"
+    "check:kit": "node scripts/check-kit.mjs",
+    "check:machine": "node scripts/check-machine.mjs"
   },
   "license": "MIT",
   "homepage": "https://github.com/nicobailon/visual-explainer#readme",

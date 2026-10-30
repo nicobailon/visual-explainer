@@ -40,7 +40,7 @@ const renderInputSchema = z.object({
   filename: z.string().min(1).optional().describe("With html: basename filename; .html is appended when missing."),
   html: z.string().min(1).optional().describe("Page source or complete HTML, when you cannot write a path."),
   path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory."),
-  root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its citations are checked against. Defaults to the server's working directory."),
+  root: z.string().min(1).optional().describe("The repository a plan source (<ve-plan> tags) checks its citations against, and a page's <ve-flow> model imports from. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
 }).strict();
@@ -55,7 +55,7 @@ const renderOutputSchema = z.object({
   fallbackFrom: openTargetSchema.optional(),
   fallbackError: z.string().optional(),
   source: z.string().optional(),
-  report: z.object({ figures: z.number(), uncaptioned: z.number(), dataTags: z.number(), flows: z.number(), proseWords: z.number() }).optional(),
+  report: z.object({ figures: z.number(), uncaptioned: z.number(), dataTags: z.number(), flows: z.number(), proseWords: z.number(), machines: z.array(z.string()).optional() }).optional(),
 });
 
 const promptArgsSchema = z.object({
@@ -72,6 +72,7 @@ const promptFiles = [
   "generate-web-diagram.md",
   "plan-review.md",
   "project-recap.md",
+  "state-machine.md",
 ];
 
 const resourceFiles = [
@@ -275,7 +276,8 @@ function prepareVisualExplanation(params) {
 async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot, sourcePath) {
   assertHtmlDocument(htmlInput);
   // MCP cannot put the reader's reply into the chat, so plan and kit pages here always copy it instead (no sendBack).
-  const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
+  // a <ve-flow> model runs the repo's code, so a client can only make this server run one when its operator opted in
+  const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput), models: process.env.VISUAL_EXPLAINER_RUN_MODELS === "1" });
   // a plan page has its own summary in its note; every other page gets the report
   const report = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);

@@ -83,7 +83,7 @@ If you previously used the old curl/manual installer, remove those copied files 
 
 ```bash
 rm -rf ~/.pi/agent/skills/visual-explainer
-rm -f ~/.pi/agent/prompts/{compare,diff-review,fact-check,generate-slides,generate-video,generate-visual-plan,generate-web-diagram,plan-review,project-recap}.md
+rm -f ~/.pi/agent/prompts/{compare,diff-review,fact-check,generate-slides,generate-video,generate-visual-plan,generate-web-diagram,plan-review,project-recap,state-machine}.md
 rm -f ~/.pi/agent/prompts/s[h]are*.md
 ```
 
@@ -446,6 +446,7 @@ Use `configs/copilot/AGENTS.md` as custom instructions or rules guidance. For VS
 | `/project-recap` | Mental model snapshot for context-switching back to a project |
 | `/compare` | Draw two or more options side by side, recommend one, and let you pick in the page; the pick comes back to the agent |
 | `/fact-check` | Verify accuracy of a document against actual code |
+| `/state-machine` | Draw a state machine from the code itself: the page walks every state and shows the states you forgot, the events that never fire, the dead ends, and each rule the code breaks as a path you can replay |
 
 The agent also kicks in automatically when it's about to dump a complex table in the terminal (4+ rows or 3+ columns) — it renders HTML instead.
 

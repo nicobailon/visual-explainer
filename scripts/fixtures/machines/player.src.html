@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" data-register="blueprint">
+<head><title>The player breaks its own rule in one step</title><link rel="stylesheet" href="kit.css" data-ve-kit></head>
+<body><main>
+  <header><h1>The player breaks its own rule in one step</h1></header>
+  <figure class="ve-steps">
+    <ve-flow label="Playback and volume, walked from the player reducer. Stopped and loud breaks the rule never loud while stopped, one step from the start.">
+      <ve-node id="stopped-normal" at="1 1" sub="normal" key>Stopped</ve-node>
+      <ve-node id="playing-normal" at="3 1" sub="normal">Playing</ve-node>
+      <ve-node id="stopped-loud" at="1 2" sub="loud">Stopped</ve-node>
+      <ve-node id="playing-loud" at="3 2" sub="loud">Playing</ve-node>
+      <script type="text/plain" model>
+        import { reduce } from "src/player.ts"
+        init   = reduce(undefined, { type: "INIT" })
+        events = {
+          "you press play": s => reduce(s, { type: "PLAY" }),
+          "you turn it up": s => reduce(s, { type: "VOL_UP" }),
+          "you turn it down": s => reduce(s, { type: "VOL_DOWN" }),
+          "the track ends": s => reduce(s, { type: "ENDED" }),
+        }
+        rules  = {
+          "never loud while stopped": {
+            holds: s => !(s.playback === "Stopped" && s.volume === "Loud"),
+            fails: { playback: "Stopped", volume: "Loud" },
+          },
+        }
+        state  = s => `${s.playback}-${s.volume}`.toLowerCase()
+      </script>
+    </ve-flow>
+    <figcaption><span class="fig-n">Fig. 2</span>The walk reaches four states; turning it up while stopped breaks the rule.</figcaption>
+  </figure>
+</main></body>
+</html>

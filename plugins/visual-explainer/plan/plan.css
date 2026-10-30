@@ -245,6 +245,10 @@ figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(-
 .ve-e.is-async { stroke-dasharray: 6 5; }
 .ve-e.is-new { stroke: var(--ok); }
 .ve-e.is-gone { stroke: var(--risk); stroke-dasharray: 3 4; }
+/* a walked machine (references/machines.md), as in kit/kit.css; a plan has no stepper, so the path is always lit */
+.ve-n.is-may-break .sh { stroke: var(--warn); } .ve-n.is-may-break:not(.is-key) .sh { fill: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+.ve-n.is-bug-path .sh, .ve-e.is-bug-path { stroke: var(--accent); }
+.ve-n.is-breaks .sh { stroke: var(--risk); stroke-width: 2.5; stroke-dasharray: 6 3; }
 .ve-el { fill: var(--text-dim); font: 500 14px var(--font-mono); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
 .ve-el.l { text-anchor: end; } .ve-el.r { text-anchor: start; }
 .ve-zone { fill: none; stroke: var(--border-bright); stroke-dasharray: 4 5; }

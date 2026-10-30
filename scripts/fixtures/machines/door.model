@@ -1,0 +1,12 @@
+import { door } from "src/door.ts"
+init   = "closed"
+events = {
+  "you open it": d => door(d, "open"),
+  "you close it": d => door(d, "close"),
+  "you lock it": d => door(d, "lock"),
+  "you unlock it": d => door(d, "unlock"),
+  "you kick it": d => door(d, "kick"),
+  "you ring the bell": d => door(d, "ring"),
+}
+rules  = { "the door never burns": { holds: d => d !== "burning", fails: "burning" } }
+state  = d => d
