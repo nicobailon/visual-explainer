@@ -56,10 +56,12 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
     if (!t) throw new Error(`the section nav links to ${a.hash}, but no element has that id`);
     return t;
   });
+  // every section in the band, so scrolling back re-marks the one still there; the lowest one in the band wins
+  const seen = new Set();
   const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (!e.isIntersecting) continue;
-      const i = targets.indexOf(e.target);
+    for (const e of entries) e.isIntersecting ? seen.add(e.target) : seen.delete(e.target);
+    const i = targets.findLastIndex((t) => seen.has(t));
+    if (i >= 0) {
       links.forEach((a, j) => (j === i ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
       if (pos) pos.textContent = `${i + 1} / ${links.length}`;
       try { history.replaceState(null, '', links[i].hash); } catch {} // some browsers throw on file:// pages

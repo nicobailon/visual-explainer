@@ -48,7 +48,7 @@ function measure(minLabel) {
   }
   // SVG text with no fill gets the default black, which no kit token is; it vanishes on a dark scheme. A page whose own text is black is exempt.
   const black = "rgb(0, 0, 0)";
-  const unfilled = getComputedStyle(document.body).color === black ? [] : [...document.querySelectorAll("svg text")].filter((t) => t.textContent.trim() && t.checkVisibility() && getComputedStyle(t).fill === black);
+  const unfilled = getComputedStyle(document.body).color === black ? [] : [...document.querySelectorAll("svg text")].filter((t) => t.textContent.trim() && !t.closest("defs, marker, symbol, clipPath, mask, pattern") && t.checkVisibility() && getComputedStyle(t).fill === black);
   let prose = 0;
   for (const p of document.querySelectorAll("p, li")) if (!p.closest("figure") && !p.parentElement.closest("p, li")) prose += p.textContent.trim().split(/\s+/).filter(Boolean).length;
   return {

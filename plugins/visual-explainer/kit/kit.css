@@ -123,7 +123,7 @@ code { font: .875em var(--font-mono); font-variant-ligatures: none; }
    an h3 closest). The opener keeps its own gaps, so h2 gets none. */
 :where(main, section:not(.sources)) > :where(p, ul, ol) { max-width: 65ch; }
 :where(pre) { font: 500 var(--t-small)/1.55 var(--font-mono); font-variant-ligatures: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-2); padding: var(--s-4); overflow-x: auto; }
-:where(pre code) { font: inherit; }
+:where(pre) code { font: inherit; }
 :where(main :is(ul, ol):not([class])) { padding-left: 1.25rem; display: grid; gap: var(--s-2); }
 :where(section:not(.sources) > * + :not(h2)) { margin-top: var(--s-5); }
 :where(section:not(.sources) > :is(p, ul, ol) + :is(p, ul, ol)) { margin-top: var(--s-3); }
@@ -235,7 +235,8 @@ svg.has-lit g[data-ref]:not(.is-lit) text, svg.has-lit text[data-ref]:not(.is-li
 .ve-steps .ve-at:not(.now) { opacity: 0; }
 .ve-steps .ve-at.now { transition-delay: var(--d, 0ms); }
 /* a changing value: one text per step at one spot; the latest step's shows, swapped without a crossfade */
-.ve-vals text { fill: var(--text-dim); font: 500 14px var(--font-mono); }
+/* zero-specificity parent, so a value inside a node, a dimension, or a stack keeps that part's own fill and font */
+:where(.ve-vals) text { fill: var(--text-dim); } :where(.ve-vals) .sub { font: 500 14px var(--font-mono); }
 .ve-steps .ve-vals text { transition: none; }
 .ve-vals text.on:has(~ text.on) { opacity: 0; }
 .ve-player { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-4); }
