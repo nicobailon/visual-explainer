@@ -36,6 +36,8 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 
 **Registers:** `data-register="instrument"` (default), `blueprint`, `paper`, or `editorial` (`style-guide.md`). Use the tokens as `var(--accent)`, `var(--s-4)`; a page's own `:root { --accent: … }` wins over the kit.
 
+The kit already styles plain HTML, so a page adds none of it: a section's paragraphs and lists at 65ch, `<pre>` code blocks, bare `<ul>`/`<ol>`, and the gaps between a section's blocks. A page's own rule always wins.
+
 ## Parts
 
 | Part | Markup |
@@ -43,11 +45,13 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 | Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `y`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
 | Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>` (`l` ends at `x`, `r` starts there); draw edges before nodes |
 | Boundary, slots, axes | `rect.ve-bnd` + `text.ve-bnd-t` tag; `rect.ve-slot` (`.is-on` filled); `.ve-axis` lines + `text.ve-axis-t` |
+| Label | `<text class="ve-tag [key\|risk]">` for a note or a count on a drawing; SVG text with no fill renders black, which is a render error |
 | Table | `<div class="ve-table"><table>`; `class="num"` on number cells; `<small>` for a note in a cell |
 | Flags | `.is-new`, `.is-gone` on `.ve-n` or `.ve-e`; `<text class="ve-x">✕</text>` marks a blocked edge |
 | KPI strip | `.kpis` › `.kpi`: `<span class="ve-label">Hit rate</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>` + a data tag; `data-count` counts up |
 | Small multiples | `.cases` › `<div class="case" data-st="ok\|warn\|risk">`: a chip, `<h3>`, `<svg class="ve-mini" viewBox="0 0 240 128">`; changed parts `.is-st`, a missing part `.is-off` |
 | Chips | `<span class="chip ok\|warn\|risk">word</span>` |
+| Section nav | 4+ sections: `<nav class="ve-toc" aria-label="Sections"><div><a href="#load">Load</a>…</div><span class="pos"></span></nav>` before `<main>`; the section in view is marked and counted |
 | Linked highlighting | `data-ref="redis"` on any part; a prose term is `<span class="ve-ref" data-ref="redis" tabindex="0">` (`diagrams.md`) |
 | Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals` (`motion.md`); `.ve-co`, `.ve-dim`, `data-flow` (`diagrams.md`) |
 

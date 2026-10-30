@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+- Pages read well without any page CSS. Paragraphs and lists keep a comfortable line length, code blocks get a framed, scrollable style, plain lists get proper indents, and the blocks of a section get even spacing, so a figure's caption no longer sits on the paragraph after it.
+- A section menu for long pages. One `<nav>` line gives a bar that stays at the top, scrolls sideways on a phone, and marks the section you are reading.
+- Rendering a page flags drawing labels that have no color, which show as black text on a dark background.
+
+### Fixed
+- Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
+
 ## [0.14.0] - 2026-10-18
 
 ### Highlights

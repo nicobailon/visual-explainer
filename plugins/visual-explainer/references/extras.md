@@ -12,4 +12,4 @@ node -e 'const fs=require("fs"),[f,i]=process.argv.slice(1);fs.writeFileSync(f,f
 
 ## Older recipes
 
-Fetch only for mechanics; keep this skill's look: `https://raw.githubusercontent.com/nicobailon/visual-explainer/v0.11.0/plugins/visual-explainer/` + `references/css-patterns.md` · `references/libraries.md` (Chart.js, anime.js) · `references/responsive-nav.md` (sticky TOC) · `references/slide-patterns.md` · `templates/architecture.html` · `templates/data-table.html`.
+Fetch only for mechanics; keep this skill's look: `https://raw.githubusercontent.com/nicobailon/visual-explainer/v0.11.0/plugins/visual-explainer/` + `references/css-patterns.md` · `references/libraries.md` (Chart.js, anime.js) · `references/slide-patterns.md` · `templates/architecture.html` · `templates/data-table.html`.
