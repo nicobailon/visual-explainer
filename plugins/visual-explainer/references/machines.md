@@ -4,15 +4,15 @@ Read this when a page draws a state machine that lives in the user's code: a red
 
 ## The model
 
-You place the states as `<ve-node>`s, as on any flow. The model is one more child; the render writes the arrows from the walk, so a flow with a model has no `<ve-edge>`.
+You place the states as `<ve-node>`s, as on any flow. The model is one more child; the render writes the arrows and the steps from the walk, so a flow with a model has no `<ve-edge>` and no `data-s`.
 
 ```html
 <figure class="ve-steps">
   <ve-flow label="How playback and volume move together">
-    <ve-node id="stopped-normal" at="1 1" key>Stopped · Normal</ve-node>
-    <ve-node id="playing-normal" at="2 1">Playing · Normal</ve-node>
-    <ve-node id="stopped-loud" at="1 2">Stopped · Loud</ve-node>
-    <ve-node id="playing-loud" at="2 2">Playing · Loud</ve-node>
+    <ve-node id="stopped-normal" at="1 1" sub="normal" key>Stopped</ve-node>
+    <ve-node id="playing-normal" at="3 1" sub="normal">Playing</ve-node>
+    <ve-node id="stopped-loud" at="1 2" sub="loud">Stopped</ve-node>
+    <ve-node id="playing-loud" at="3 2" sub="loud">Playing</ve-node>
     <script type="text/plain" model>
       import { reduce } from "src/player.ts"
       init   = reduce(undefined, { type: "INIT" })
@@ -27,7 +27,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
       state  = s => `${s.playback}-${s.volume}`.toLowerCase()
     </script>
   </ve-flow>
-  <div class="ve-player">…</div>
+  <figcaption>…</figcaption>
 </figure>
 ```
 
@@ -54,7 +54,9 @@ The caption under the drawing says which proof the reader holds: "walked from `s
 
 ## What the render does
 
-It runs the model in a separate Node process with a 10 s limit, walks every state from `init` (at most 2 000), and draws by `state()`. The arrows come from the walk; several events between the same two states share one arrow. The replay lights the shortest path from `init` to the first broken rule: give the figure one `.ve-cap` caption per event on that path, or none and the render writes them.
+It runs the model in a separate Node process with a 10 s limit, walks every state from `init` (at most 2 000), and draws by `state()`. The arrows come from the walk; several events between the same two states share one arrow, labeled `play · resume`, so name events short and put states a column apart when an arrow carries several (`flow.mjs` warns when a label is wider than its gap).
+
+In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. The caption under the drawing, `walked from src/player.ts`, is written for you.
 
 Marks on the drawing: `breaks` (a reachable state where a rule fails), `may-break` (a state from which one is reachable), `bug-path` (a state or arrow on the shortest path to it).
 

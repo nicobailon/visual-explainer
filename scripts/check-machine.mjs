@@ -1,6 +1,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadModel } from "../plugins/visual-explainer/kit/machine.mjs";
+import { renderPage } from "../plugins/visual-explainer/kit/render.mjs";
 
 // Loads each fixture model against the fixture repo and compares what comes back with what the contract says
 // (references/machines.md). Fails on any difference. Most cases are the player model with one line changed.
@@ -25,15 +26,16 @@ const playerLoaded = {
   form: "flat",
   walk: {
     states: [SN, PN, SL, PL],
+    depths: { [SN]: 0, [PN]: 1, [SL]: 1, [PL]: 2 },
     edges: [
-      { from: SN, to: PN, events: ["you press play"] },
-      { from: SN, to: SL, events: ["you turn it up"] },
-      { from: PN, to: PL, events: ["you turn it up"] },
-      { from: PN, to: SN, events: ["the track ends"] },
-      { from: SL, to: PL, events: ["you press play"] },
-      { from: SL, to: SN, events: ["you turn it down"] },
-      { from: PL, to: PN, events: ["you turn it down"] },
-      { from: PL, to: SL, events: ["the track ends"] },
+      { from: SN, to: PN, events: ["you press play"], depth: 1 },
+      { from: SN, to: SL, events: ["you turn it up"], depth: 1 },
+      { from: PN, to: PL, events: ["you turn it up"], depth: 2 },
+      { from: PN, to: SN, events: ["the track ends"], depth: 2 },
+      { from: SL, to: PL, events: ["you press play"], depth: 2 },
+      { from: SL, to: SN, events: ["you turn it down"], depth: 2 },
+      { from: PL, to: PN, events: ["you turn it down"], depth: 3 },
+      { from: PL, to: SL, events: ["the track ends"], depth: 3 },
     ],
     breaks: { [RULE]: [SL] },
     paths: { [RULE]: [{ event: "you turn it up", to: SL }] },
@@ -68,12 +70,13 @@ const cases = {
     form: "flat",
     walk: {
       states: ["closed", "open", "locked", "broken"],
+      depths: { closed: 0, open: 1, locked: 1, broken: 2 },
       edges: [
-        { from: "closed", to: "open", events: ["you open it"] },
-        { from: "closed", to: "locked", events: ["you lock it"] },
-        { from: "open", to: "closed", events: ["you close it"] },
-        { from: "locked", to: "closed", events: ["you unlock it"] },
-        { from: "locked", to: "broken", events: ["you kick it"] },
+        { from: "closed", to: "open", events: ["you open it"], depth: 1 },
+        { from: "closed", to: "locked", events: ["you lock it"], depth: 1 },
+        { from: "open", to: "closed", events: ["you close it"], depth: 2 },
+        { from: "locked", to: "closed", events: ["you unlock it"], depth: 2 },
+        { from: "locked", to: "broken", events: ["you kick it"], depth: 2 },
       ],
       breaks: { "the door never burns": [] },
       paths: {},
@@ -107,7 +110,7 @@ const cases = {
     ...playerLoaded,
     walk: {
       states: ["stopped", "playing"],
-      edges: [{ from: "stopped", to: "playing", events: ["you press play"] }, { from: "playing", to: "stopped", events: ["the track ends"] }],
+      edges: [{ from: "stopped", to: "playing", events: ["you press play"], depth: 1 }, { from: "playing", to: "stopped", events: ["the track ends"], depth: 2 }],
       mayBreak: ["playing"],
       counts: { states: 2, full: 4, edges: 2, broken: 1, rules: 1, steps: 1 },
     },
@@ -147,8 +150,32 @@ for (const [name, { text, timeoutMs, cap, ...want }] of Object.entries(cases)) {
   if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`${name}:\n    got  ${JSON.stringify(got)}\n    want ${JSON.stringify(want)}`);
 }
 
+// Pages: a walked <ve-flow> draws the walk, marks it, and replays it; a drawing that disagrees with the walk is an error.
+const page = (name) => readFileSync(new URL(`${name}.src.html`, dir), "utf8");
+const same = (name, got, want) => JSON.stringify(got) !== JSON.stringify(want) && problems.push(`${name}:\n    got  ${JSON.stringify(got)}\n    want ${JSON.stringify(want)}`);
+const drawn = renderPage(page("player"), { root });
+same("player page: errors", drawn.errors, []);
+same("player page: machine line", drawn.report?.machines, ["machine from src/player.ts · 4 states · 1 of 1 rule breaks in 1 step"]);
+// steps are the walk's depths, then the path to the break: SN at 1, PN and SL at 2, PL at 3; SN→SL is the one-step path
+const parts = [
+  '<g class="ve-n is-key is-may-break is-bug-path" data-s="1 5"', '<g class="ve-n is-may-break" data-s="2"',
+  '<g class="ve-n is-breaks is-bug-path" data-s="2 5"', '<g class="ve-n is-may-break" data-s="3"', '<path class="ve-e is-bug-path" data-s="2 5"',
+  '<li data-n="1/5">1 state</li>', '<li data-n="2/5">3 states · 2 arrows</li>', '<li data-n="3/5">4 states · 6 arrows</li>',
+  '<li data-n="4/5">4 states · 8 arrows</li>', '<li data-n="5/5">breaks “never loud while stopped” in 1 step: you turn it up</li>',
+  '<p class="ve-label">walked from <code>src/player.ts</code></p>',
+];
+same("player page: parts missing", parts.filter((p) => !drawn.html?.includes(p)), []);
+same("diff page: errors", renderPage(page("diff"), { root }).errors, [
+  "line 12 <ve-edge>: a flow with a model draws its arrows from the walk; remove this <ve-edge>",
+  'line 13 <script>: the walk reached playing-loud, which is not drawn; add <ve-node id="playing-loud">',
+  "line 11 <ve-node#muted>: muted is drawn, but no path from init reaches it",
+]);
+same("models off", renderPage(page("player"), { root, models: false }).errors, ["line 12 <script>: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1"]);
+const twoCaptions = page("player").replace("</ve-flow>", '</ve-flow>\n    <div class="ve-player"><ol class="ve-cap"><li data-n="1/2">a</li><li data-n="2/2">b</li></ol></div>');
+same("caption count", renderPage(twoCaptions, { root }).errors.map((e) => e.split(" (")[0]), ["line 30 <li>: the walk replays in 5 steps"]);
+
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);
   process.exit(1);
 }
-console.log(`Machine check passed: ${Object.keys(cases).length} models`);
+console.log(`Machine check passed: ${Object.keys(cases).length} models, 2 pages`);

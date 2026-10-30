@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { checkAt, fileReader } from "./files.mjs";
+import { esc, rawText } from "./html.mjs";
 
 const IMPORT = /^[ \t]*import\s+([\s\S]+?)\s+from\s*(["'])([^"'\n]+)\2[ \t]*;?[ \t]*(?:\/\/.*)?$/gm;
 // the model runs as a data: URL; name it for the reader instead of printing the encoded source
@@ -80,7 +81,8 @@ function loadError(e) {
 
 /** Walks a checked model breadth-first from init: every event at every state, at most cap distinct states (compared as
  * stable JSON). It returns { error } or, by drawn id (state(): an id, or the JSON of a regions or nested value):
- *   states: drawn ids in the order reached · edges: [{ from, to, events }] between different drawn ids, events merged
+ *   states: drawn ids in the order reached · depths: { id: fewest events from init }
+ *   edges: [{ from, to, events, depth }] between different drawn ids, events merged; depth: fewest events to first take it
  *   breaks: { rule: drawn ids where holds is false } · paths: { rule: the shortest [{ event, to }] from init to a break }
  *   first: the rule that breaks in the fewest steps, or null · mayBreak: ids from which a break is reachable, not breaking
  *   deadEnds: ids of states no event leaves · neverFired: events that change no reachable state
@@ -90,14 +92,14 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   const steps = Object.entries(events).map(([name, ev]) => [name, typeof ev === "function" ? ev : (s) => (ev.when && !ev.when(s) ? NONE : ev.then(s))]);
   const form = formOf(state(init));
   const nodes = new Map(); // full key → { s, id, from, event, next: keys }
-  const add = (s, from, event) => {
+  const add = (s, from, event, depth) => {
     const v = state(s);
     if (formOf(v) !== form) throw new Error(`state() returns ${JSON.stringify(v)} at ${stable(s)}, but a ${form} value at init; return one form for every state`);
-    nodes.set(stable(s), { s, id: typeof v === "string" ? v : stable(v), from, event, next: new Set() });
+    nodes.set(stable(s), { s, id: typeof v === "string" ? v : stable(v), from, event, depth, next: new Set() });
   };
   const edges = new Map(), fired = new Set();
   try {
-    add(init, null, null);
+    add(init, null, null, 0);
     for (const [key, node] of nodes) { // a Map iterates entries added during the loop, so this is the BFS queue
       for (const [name, step] of steps) {
         let next;
@@ -110,11 +112,11 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
         node.next.add(k);
         if (!nodes.has(k)) {
           if (nodes.size >= cap) return { error: `the walk has more than ${cap} states; model less (fewer events, or fewer fields in the state)` };
-          add(next, key, name);
+          add(next, key, name, node.depth + 1);
         }
         const to = nodes.get(k).id, pair = `${node.id}\n${to}`;
         if (to === node.id) continue;
-        if (!edges.has(pair)) edges.set(pair, { from: node.id, to, events: [] });
+        if (!edges.has(pair)) edges.set(pair, { from: node.id, to, events: [], depth: node.depth + 1 });
         if (!edges.get(pair).events.includes(name)) edges.get(pair).events.push(name);
       }
     }
@@ -147,8 +149,11 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   const breakIds = new Set([...broken].map((k) => nodes.get(k).id));
   const first = Object.keys(paths).reduce((a, r) => (a === null || paths[r].length < paths[a].length ? r : a), null);
   const states = uniq([...nodes.values()].map((n) => n.id));
+  const depths = {};
+  for (const n of nodes.values()) depths[n.id] ??= n.depth; // BFS order, so the first state drawn as an id is its nearest
   return {
     states,
+    depths,
     edges: [...edges.values()],
     breaks,
     paths,
@@ -158,6 +163,62 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
     neverFired: steps.map(([name]) => name).filter((name) => !fired.has(name)),
     counts: { states: states.length, full: nodes.size, edges: edges.size, broken: Object.keys(paths).length, rules: Object.keys(rules).length, steps: first === null ? null : paths[first].length },
   };
+}
+
+const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
+
+/** What a <ve-flow> draws from its <script model>, given its drawn nodes (id → element): { errors } or
+ *   edges: <ve-edge>-like parts for flow.mjs's arrow loop · nodes: id → attributes to add (data-s and the mark flags)
+ *   steps: one caption per replay step · proof: the "walked from" line under the drawing · line: the machine's Page line.
+ * The replay steps through the walk's depths (step k: what k − 1 events reach), then, when a rule breaks, one step that
+ * lights the shortest path to it. */
+export function drawModel(script, drawn, { root, models, where }) {
+  const at = where(script);
+  if (!models) return { errors: [`${at}: models run only when the MCP server starts with VISUAL_EXPLAINER_RUN_MODELS=1`] };
+  const m = loadModel({ text: rawText(script), root });
+  if (m.errors.length) return { errors: m.errors.map((e) => `${at}: ${e}`) };
+  if (m.form !== "flat") return { errors: [`${at}: state() returns ${m.form === "regions" ? "an object of regions" : "an array of nested ids"}; draw it with <ve-region>`] };
+  const w = m.walk;
+  const errors = [
+    ...w.states.filter((id) => !drawn.has(id)).map((id) => `${at}: the walk reached ${id}, which is not drawn; add <ve-node id="${id}">`),
+    ...[...drawn].filter(([id]) => !w.states.includes(id)).map(([id, k]) => `${where(k)}: ${id} is drawn, but no path from init reaches it`),
+  ];
+  if (errors.length) return { errors };
+
+  const path = w.first ? w.paths[w.first] : [];
+  const depthSteps = Math.max(...Object.values(w.depths), ...w.edges.map((e) => e.depth)) + 1;
+  const last = path.length ? ` ${depthSteps + 1}` : "";
+  const ids = [w.states[0], ...path.map((p) => p.to)];
+  const onPath = new Set(ids), pathEdges = new Set(path.map((p, i) => `${ids[i]}\n${p.to}`));
+  const breaking = new Set(Object.values(w.breaks).flat()), may = new Set(w.mayBreak);
+  const nodes = new Map(w.states.map((id) => [id, {
+    "data-s": `${w.depths[id] + 1}${onPath.has(id) ? last : ""}`,
+    ...(breaking.has(id) && { breaks: "" }), ...(may.has(id) && { "may-break": "" }), ...(last && onPath.has(id) && { "bug-path": "" }),
+  }]));
+  const edges = w.edges.map((e) => {
+    const lit = last && pathEdges.has(`${e.from}\n${e.to}`);
+    return { name: "script", pos: script.pos, children: [], attrs: { from: e.from, to: e.to, label: e.events.join(" · "), "data-s": `${e.depth + 1}${lit ? last : ""}`, ...(lit && { "bug-path": "" }) } };
+  });
+  const steps = [];
+  for (let k = 1, before = ""; k <= depthSteps; k++) {
+    const s = w.states.filter((id) => w.depths[id] < k).length, a = w.edges.filter((e) => e.depth < k).length;
+    const text = `${plural(s, "state")}${a ? ` · ${plural(a, "arrow")}` : ""}`;
+    steps.push(text === before ? `${text} · nothing new` : text);
+    before = text;
+  }
+  if (last) steps.push(`breaks “${w.first}” in ${plural(path.length, "step")}: ${path.map((p) => p.event).join(" → ")}`);
+
+  const from = `${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.join(", ")}`;
+  const c = w.counts;
+  const line = [
+    `machine from ${from}`,
+    plural(c.states, "state"),
+    c.rules && (c.broken ? `${c.broken} of ${plural(c.rules, "rule")} ${c.broken === 1 ? "breaks" : "break"} in ${plural(c.steps, "step")}` : `${plural(c.rules, "rule")} ${c.rules === 1 ? "holds" : "hold"}`),
+    w.deadEnds.length && plural(w.deadEnds.length, "dead end"),
+    w.neverFired.length && `${w.neverFired.map((e) => `"${e}"`).join(", ")} never ${w.neverFired.length === 1 ? "fires" : "fire"}`,
+  ].filter(Boolean).join(" · ");
+  const proof = `<p class="ve-label">walked from ${m.proof.kind === "model" ? "a model of " : ""}${m.proof.files.map((f) => `<code>${esc(f)}</code>`).join(", ")}</p>`;
+  return { edges, nodes, steps, proof, line };
 }
 
 /** The child: evaluates the model module from stdin and writes its checked shape as JSON, the only thing on stdout. */

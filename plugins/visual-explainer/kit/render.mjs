@@ -24,9 +24,11 @@ const FONTS = {
   editorial: "family=Instrument+Serif&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600",
 };
 
-/** Figures, figures without a caption, expanded tags and flows, and prose words outside figures. */
+/** Figures, figures without a caption, expanded tags and flows, prose words outside figures, and a line per walked machine. */
 function count(doc, tags) {
   const r = { figures: 0, uncaptioned: 0, dataTags: tags.filter((t) => t.name !== "ve-flow").length, flows: tags.filter((t) => t.name === "ve-flow").length, proseWords: 0 };
+  const machines = tags.filter((t) => t.machine).map((t) => t.machine.line);
+  if (machines.length) r.machines = machines;
   // a <p> inside an <li> is counted once, with its <li>
   const visit = (n, quiet) => {
     for (const c of kids(n)) {
@@ -43,13 +45,14 @@ function count(doc, tags) {
 export const reportPage = (html) => count(parseHtml(html), []);
 
 const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
-export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures`;
+export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures${(r.machines ?? []).map((m) => `\n${m}`).join("")}`;
 
 /**
  * Inlines the kit at its marker and expands the data tags, <ve-flow>, and <ve-ask>. A page with none returns unchanged, with `kit: false`.
  * `sendBack` marks a page Pi opens in Glimpse, so the reader's reply goes to the agent instead of being copied.
+ * `root` is the repo a <ve-flow> model imports from; `models: false` refuses to run one (the MCP server, unless opted in).
  */
-export function renderPage(source, { sendBack = false } = {}) {
+export function renderPage(source, { sendBack = false, root = process.cwd(), models = true } = {}) {
   const errors = [], warnings = [];
   const doc = parseHtml(source);
   const links = find(doc, (n) => n.name === "link" && "data-ve-kit" in n.attrs);
@@ -81,7 +84,21 @@ export function renderPage(source, { sendBack = false } = {}) {
   const ids = new Map();
   for (const t of tags) {
     if (t.name === "ve-ask") t.html = expandAsk(t, { errors, warnings, where, ids, k: asks.indexOf(t) + 1, total: asks.length, page: true });
-    else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
+    else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true, root, models }) : TAGS[t.name](t, { errors, warnings, where });
+  }
+  // A walked flow replays its walk: the figure's captions must match its steps, or the render writes them (and the player).
+  for (const t of tags.filter((x) => x.machine)) {
+    const fig = find(doc, (f) => f.name === "figure" && hasClass(f, "ve-steps") && find(f, (x) => x === t).length).at(-1);
+    if (!fig) continue;
+    const { steps } = t.machine;
+    const player = find(fig, (x) => hasClass(x, "ve-player"))[0], ol = find(fig, (x) => hasClass(x, "ve-cap"))[0];
+    const caps = ol ? find(ol, (x) => x.name === "li") : [];
+    const lis = steps.map((s, i) => `<li data-n="${i + 1}/${steps.length}">${esc(s)}</li>`).join("");
+    if (caps.length && caps.length !== steps.length) errors.push(`${where(caps[0])}: the walk replays in ${plural(steps.length, "step")} (${steps.map((s) => `“${s}”`).join(", ")}); write ${steps.length} captions, or none and the render writes them`);
+    else if (caps.length) continue;
+    else if (ol) ol.html = `<ol class="ve-cap">${lis}</ol>`;
+    else if (player) player.children.unshift({ html: `<ol class="ve-cap">${lis}</ol>` });
+    else t.html += `<div class="ve-player"><ol class="ve-cap">${lis}</ol><button data-go="-1" aria-label="Previous step">‹</button><button data-play>Play</button><input type="range" aria-label="Step"><button data-go="1" aria-label="Next step">›</button></div>`;
   }
   // Mermaid becomes plain SVG here, so the page draws offline, follows the theme through CSS, and is checked like any drawing.
   // A phone gets its own layout when Pele can make one narrower. Neither layout shrinks below its natural width (the frame
@@ -182,10 +199,10 @@ export function readSourcePath(input, dir) {
  * The page step shared by the Pi tool and the MCP server. Returns null for an ordinary page. A plan source or a kit page
  * becomes the page, renamed from <name>.src.html, with the source kept beside it.
  */
-export function renderPageForHost(html, { root, filename, sendBack = false }) {
-  const plan = renderPlanForHost(html, { root, filename, sendBack });
+export function renderPageForHost(html, { root, filename, sendBack = false, models = true }) {
+  const plan = renderPlanForHost(html, { root, filename, sendBack, models });
   if (plan) return plan;
-  const r = renderPage(html, { sendBack });
+  const r = renderPage(html, { sendBack, root, models });
   if (!r.kit) return null;
   if (r.errors.length) throw new Error(`The page has ${r.errors.length} error(s); nothing was written:\n${r.errors.map((e) => `- ${e}`).join("\n")}`);
   const page = filename.replace(/\.src(\.html?)$/i, "$1");
@@ -215,7 +232,8 @@ async function main() {
     process.exit(2);
   }
   const source = readFileSync(input, "utf8");
-  const result = hasPlan(source) ? renderPlan(source, { root: value("--root") ?? process.cwd() }) : renderPage(source);
+  const root = value("--root") ?? process.cwd();
+  const result = hasPlan(source) ? renderPlan(source, { root }) : renderPage(source, { root });
   const summary = result.summary ?? (result.kit ? "kit inlined" : "no kit marker; written as given");
   for (const w of result.warnings) console.log(`  ⚠ ${w}`);
   for (const e of result.errors) console.log(`  ✗ ${e}`);
@@ -223,7 +241,7 @@ async function main() {
     console.log(`✗ ${result.errors.length} error(s), ${result.warnings.length} warning(s); nothing written`);
     process.exit(1);
   }
-  const report = result.report ? `\n  ${reportLine(result.report)}` : "";
+  const report = result.report ? `\n  ${reportLine(result.report).replaceAll("\n", "\n  ")}` : "";
   if (flag("--lint")) { console.log(`✓ ${summary}${report}`); return; }
   const temp = `${output}.${process.pid}.tmp`;
   // a plan and an ordinary page are written as given; a kit page gets what the hosts add

@@ -275,7 +275,8 @@ function prepareVisualExplanation(params) {
 async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot, sourcePath) {
   assertHtmlDocument(htmlInput);
   // MCP cannot put the reader's reply into the chat, so plan and kit pages here always copy it instead (no sendBack).
-  const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
+  // a <ve-flow> model runs the repo's code, so a client can only make this server run one when its operator opted in
+  const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput), models: process.env.VISUAL_EXPLAINER_RUN_MODELS === "1" });
   // a plan page has its own summary in its note; every other page gets the report
   const report = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);

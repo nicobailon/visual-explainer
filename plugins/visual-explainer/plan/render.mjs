@@ -55,7 +55,7 @@ function dedent(text) {
 const EDITORS = { vscode: "vscode://file", cursor: "cursor://file", windsurf: "windsurf://file", zed: "zed://file" };
 
 /* ── the renderer ── */
-export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode", sendBack = false } = {}) {
+export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode", sendBack = false, models = true } = {}) {
   const errors = [], warnings = [];
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
@@ -332,7 +332,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     // the callout shows and hides with its box
     const callout = (k, x, y) => (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no))
       .map((no, i) => { called.add(no); return `<g${ifAttrs(k, "ve-co")} data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`; }).join("");
-    return expandFlow(n, { errors, warnings, where, ref: refOf, callout });
+    return expandFlow(n, { errors, warnings, where, ref: refOf, callout, root, models });
   };
 
   const CHIP = { built: ["ok", "Built"], changed: ["warn", "Changed"], dropped: ["risk", "Dropped"] };
@@ -491,9 +491,9 @@ ${js}
  * The plan step shared by the Pi tool and the MCP server. Returns null for an ordinary page. A plan source becomes the
  * page, renamed from <name>.src.html, with the source kept beside it. A page already rendered passes through untouched.
  */
-export function renderPlanForHost(html, { root, filename, sendBack = false }) {
+export function renderPlanForHost(html, { root, filename, sendBack = false, models = true }) {
   if (!hasPlan(html)) return /<script data-ve-plan>/.test(html) ? { html, filename, note: "" } : null;
-  const r = renderPlan(html, { root, sendBack });
+  const r = renderPlan(html, { root, sendBack, models });
   if (r.errors.length) throw new Error(`The plan has ${r.errors.length} error(s); nothing was written:\n${r.errors.map((e) => `- ${e}`).join("\n")}`);
   const page = filename.replace(/\.src(\.html?)$/i, "$1");
   const source = page.replace(/\.html?$/i, ".src.html");
