@@ -24,7 +24,7 @@ const [major, minor] = process.versions.node.split(".").map(Number);
 const STRIP = !process.features.typescript && (major > 22 || (major === 22 && minor >= 6)) ? ["--experimental-strip-types"] : [];
 
 /** Splits a model script into its imports (paths as written, from the repo root) and the rest, which keeps its line count. */
-export function parseModel(text) {
+function parseModel(text) {
   const imports = [...text.matchAll(IMPORT)].map((m) => ({ clause: m[1], path: m[3] }));
   return { imports, body: text.replace(IMPORT, (m) => m.replace(/[^\n]/g, "")) };
 }
@@ -70,7 +70,7 @@ export function loadModel({ text, root, timeoutMs = 10_000, cap = 2000 }) {
 }
 
 function loadError(e) {
-  const msg = plain(String(e?.message ?? e).split("\n")[0]);
+  const msg = plain(message(e));
   if (e?.code === "ERR_MODULE_NOT_FOUND") return `an import cannot be found: ${msg}. Node runs .ts files by stripping their types, so every relative import needs the file's real extension (.ts, not .js), path aliases do not resolve, and packages must be installed under the root; fix the import, or write a hand model (when, then, at)`;
   // Node puts the file and line of unstrippable syntax on the first line of the stack
   if (e?.code === "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") return `${/:\d+$/.test(e.stack?.split("\n")[0]) ? e.stack.split("\n")[0] : "the code"} uses TypeScript that Node cannot strip (an enum, a namespace, or parameter properties): ${msg}; write a hand model (when, then, at)`;
@@ -87,7 +87,7 @@ function loadError(e) {
  *   first: the rule that breaks in the fewest steps, or null · mayBreak: ids from which a break is reachable, not breaking
  *   deadEnds: ids of states no event leaves · neverFired: events that change no reachable state
  *   counts: { states, full, edges, broken, rules, steps } for the Page line (steps: to the first break, or null) */
-export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
+function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   const NONE = Symbol("none");
   const steps = Object.entries(events).map(([name, ev]) => [name, typeof ev === "function" ? ev : (s) => (ev.when && !ev.when(s) ? NONE : ev.then(s))]);
   const form = formOf(state(init));
@@ -165,7 +165,7 @@ export function walk({ init, events, rules = {}, state }, { cap = 2000 } = {}) {
   };
 }
 
-const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
+export const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 // this many states the walk reached but nobody drew is a chart to draw with auto, not a list of nodes to add
 const FLOOD = 6;
 const flood = (w, k, at) => `${at}: the walk has ${w.states.length} states and ${w.edges.length} arrows, and ${k} are not drawn; set auto, or model less`;
@@ -182,11 +182,11 @@ function flatView(w, drawn, { at, where }) {
     if (errors.length) return { errors };
   }
   const path = w.first ? w.paths[w.first] : [];
-  const ids = [w.states[0], ...path.map((p) => p.to)];
+  const along = [w.states[0], ...path.map((p) => p.to)];
   return {
     depths: new Map(w.states.map((id) => [id, w.depths[id]])), edges: w.edges, path,
     breaking: new Set(Object.values(w.breaks).flat()), may: new Set(w.mayBreak),
-    onPath: new Set(ids), pathEdges: new Set(path.map((p, i) => `${ids[i]}\n${p.to}`)),
+    onPath: new Set(along), pathEdges: new Set(path.map((p, i) => `${along[i]}\n${p.to}`)),
   };
 }
 
@@ -209,7 +209,7 @@ function regionView(w, drawn, regions, { at, where }) {
   for (const [id, s] of states) {
     if (Object.keys(s).join() !== keys.join()) return { errors: [`${at}: state() returns the parts ${Object.keys(s).join(", ")} at ${id}, but ${keys.join(", ")} at init; return the same parts for every state`] };
     for (const r of keys) {
-      if (typeof s[r] !== "string") return { errors: [`${at}: part "${r}" of state() is ${JSON.stringify(s[r])}; nested states are not drawn yet, so return a ve-node id`] };
+      if (typeof s[r] !== "string") return { errors: [`${at}: part "${r}" of state() is ${JSON.stringify(s[r])}; a part's value is one ve-node id (nested states draw only as a whole-state array under auto)`] };
       if (part.has(s[r]) && part.get(s[r]) !== r) return { errors: [`${at}: "${s[r]}" is a value of both "${part.get(s[r])}" and "${r}"; a value names its node, so give each part its own`] };
       part.set(s[r], r);
       if (!depths.has(s[r])) depths.set(s[r], w.depths[id]); // the walk's order is by depth, so the first is the nearest
@@ -225,11 +225,11 @@ function regionView(w, drawn, regions, { at, where }) {
 
   const arrows = new Map();
   const add = (from, to, events, depth) => {
+    // the walk's arrows come in the order it reached them, so the first depth an arrow gets is its least
     const key = `${from}\n${to}`;
     if (!arrows.has(key)) arrows.set(key, { from, to, events: [], depth });
     const e = arrows.get(key);
     for (const ev of events) if (!e.events.includes(ev)) e.events.push(ev);
-    e.depth = Math.min(e.depth, depth);
   };
   for (const e of w.edges) for (const r of keys) if (states.get(e.from)[r] !== states.get(e.to)[r]) add(states.get(e.from)[r], states.get(e.to)[r], e.events, e.depth);
   const path = w.first ? w.paths[w.first] : [];
@@ -305,7 +305,7 @@ export function toMermaid(w, form, at = "") {
   const lines = ["stateDiagram-v2"], bugEdges = [];
   let n = 0;
   const go = (indent, from, to, events, lit) => { lines.push(`${indent}${from} --> ${to}${events ? ` : ${text(events.join(" · "))}` : ""}`); if (lit) bugEdges.push(n); n++; };
-  const lit = (e) => v.path.length > 0 && v.pathEdges.has(`${e.from}\n${e.to}`);
+  const lit = (e) => v.pathEdges.has(`${e.from}\n${e.to}`);
   if (form === "regions") {
     const init = JSON.parse(w.states[0]);
     for (const [r, g] of v.regions) {
@@ -344,7 +344,7 @@ export function toMermaid(w, form, at = "") {
  *   steps: one caption per replay step · proof: the "walked from" line under the drawing · line: the machine's Page line.
  * The replay steps through the walk's depths (step k: what k − 1 events reach), then, when a rule breaks, one step that
  * lights the shortest path to it. */
-export function drawModel(script, drawn, { root, models, where, regions = new Map() }) {
+export function drawModel(script, drawn, { root, models, where, regions }) {
   const at = where(script);
   const m = walked(script, { root, models, where });
   if (m.errors.length) return { errors: m.errors };
@@ -412,7 +412,7 @@ async function child() {
     if (!isObj(r) || typeof r.holds !== "function") { err(`rule "${name}" has no holds: s => true while the rule holds`); continue; }
     if (!("fails" in r) || !isData(r.fails)) { err(`rule "${name}" has no fails: the state, as plain data, that it must reject`); continue; }
     let held;
-    try { held = r.holds(r.fails); } catch (e) { err(`rule "${name}" throws on its fails state: ${String(e?.message ?? e)}`); continue; }
+    try { held = r.holds(r.fails); } catch (e) { err(`rule "${name}" throws on its fails state: ${message(e)}`); continue; }
     if (held) err(`rule "${name}" cannot fail; it is not a rule`);
     else out.rules.push(name);
   }

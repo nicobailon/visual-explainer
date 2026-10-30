@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 
-export const SECRET_NAME = /(^|\/)\.(git|ssh|aws|gnupg|kube)(\/|$)|(^|\/)(\.env(\.[^/]*)?|\.npmrc|\.netrc|\.pypirc|\.pgpass|\.git-credentials|id_(rsa|dsa|ecdsa|ed25519)[^/]*|credentials[^/]*|secrets?(\.[^/]*)?)$|\.(pem|key|p12|pfx|tfstate|kdbx|keystore)$/i;
+const SECRET_NAME = /(^|\/)\.(git|ssh|aws|gnupg|kube)(\/|$)|(^|\/)(\.env(\.[^/]*)?|\.npmrc|\.netrc|\.pypirc|\.pgpass|\.git-credentials|id_(rsa|dsa|ecdsa|ed25519)[^/]*|credentials[^/]*|secrets?(\.[^/]*)?)$|\.(pem|key|p12|pfx|tfstate|kdbx|keystore)$/i;
 
 /** A cached reader for paths relative to realRoot: { text, abs } or { error } (plus missing: true when nothing is there). */
 export function fileReader(realRoot) {

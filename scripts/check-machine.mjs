@@ -144,9 +144,10 @@ const cases = {
   },
 };
 
-const problems = [];
+const problems = [], loaded = {};
 for (const [name, { text, timeoutMs, cap, ...want }] of Object.entries(cases)) {
-  const got = JSON.parse(JSON.stringify(loadModel({ text, root, timeoutMs, cap })).replaceAll(root, "<root>"));
+  loaded[name] = loadModel({ text, root, timeoutMs, cap });
+  const got = JSON.parse(JSON.stringify(loaded[name]).replaceAll(root, "<root>"));
   if (want.walk && got.walk) got.walk = Object.fromEntries(Object.keys(want.walk).map((k) => [k, got.walk[k]]));
   if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`${name}:\n    got  ${JSON.stringify(got)}\n    want ${JSON.stringify(want)}`);
 }
@@ -166,7 +167,9 @@ const parts = [
   '<p class="ve-label">walked from <code>src/player.ts</code></p>',
 ];
 same("player page: parts missing", parts.filter((p) => !drawn.html?.includes(p)), []);
-same("diff page: errors", renderPage(page("diff"), { root }).errors, [
+// one node missing, one extra, and a hand-written arrow: exactly those three errors
+const diff = page("player").replace('<ve-node id="playing-loud" at="3 2" sub="loud">Playing</ve-node>', '<ve-node id="muted" at="2 3">Muted</ve-node>\n      <ve-edge from="stopped-normal" to="playing-normal" label="play"/>');
+same("diff page: errors", renderPage(diff, { root }).errors, [
   "line 12 <ve-edge>: a flow with a model draws its arrows from the walk; remove this <ve-edge>",
   'line 13 <script>: the walk reached playing-loud, which is not drawn; add <ve-node id="playing-loud">',
   "line 11 <ve-node#muted>: muted is drawn, but no path from init reaches it",
@@ -177,7 +180,6 @@ same("caption count", renderPage(twoCaptions, { root }).errors.map((e) => e.spli
 const flowSrc = page("player").match(/<ve-flow[\s\S]*?<\/ve-flow>/)[0];
 same("two walks in one stepper", renderPage(page("player").replace("</ve-flow>", `</ve-flow>\n${flowSrc}`), { root }).errors, ['line 30 <ve-flow>: one walked <ve-flow> per <figure class="ve-steps">; put this one in its own figure']);
 same("a misplaced node is not also undrawn", renderPage(page("player").replace('id="playing-loud" at="3 2"', 'id="playing-loud" at="x"'), { root }).errors, ['line 11 <ve-node#playing-loud>: needs id="name" and at="column row", for example at="2 1"']);
-
 
 // Regions (repo/src/stereo.ts): playback and volume each draw their own arrows. play and power off leave every other playback
 // state for one node, and power off every other volume, so those three lift to one arrow from the region; 8 arrows in all.
@@ -210,8 +212,7 @@ same("region not a part", renderPage(stereo.replace('id="volume" label', 'id="so
 ]);
 
 // auto: the walk as Mermaid, written out by hand from the player's walk (same order and marks as the player page above)
-const playerWalk = loadModel({ text: player, root }).walk;
-const mermaid = toMermaid(playerWalk, "flat");
+const mermaid = toMermaid(loaded.player.walk, "flat");
 same("player as Mermaid", mermaid, { mermaid: `stateDiagram-v2
   state "stopped-normal" as s0
   state "playing-normal" as s1
@@ -241,6 +242,33 @@ same("auto page", [lifted10.errors, lifted10.report?.machines, ["pele-node[^\"]*
 same("auto with nodes", renderPage(elevator.replace("<script", '<ve-node id="floor 1 · closed" at="1 1">Floor 1</ve-node>\n      <script'), { root }).errors, ["line 7 <ve-flow>: auto draws the whole walk; remove the nodes, or drop auto"]);
 // without auto, 19 of the 20 states undrawn are one error, not 19
 same("too many to draw", renderPage(elevator.replace("<ve-flow auto", "<ve-flow").replace("<script", '<ve-node id="floor 1 · closed" at="1 1">Floor 1</ve-node>\n      <script'), { root }).errors, ["line 9 <script>: the walk has 20 states and 38 arrows, and 19 are not drawn; set auto, or model less"]);
+// auto draws each part of the stereo in its own box; the one bug-path arrow (louder, normal → loud) is found by Pele's edge number
+const autoParts = renderPage(stereo.replace(/<ve-region[\s\S]*?<\/ve-region>\s*/g, "").replace("<ve-flow ", "<ve-flow auto "), { root });
+same("auto with parts", [autoParts.errors, autoParts.html?.split("pele-transition bug-path").length - 1], [[], 1]);
+// nested ids draw as a box in a box: playing holds its two volumes, and the arrows run at the top level
+const nested = loadModel({ text: player.replace("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Playing" ? ["playing", s.volume.toLowerCase()] : ["stopped · " + s.volume.toLowerCase()]'), root });
+same("nested as Mermaid", toMermaid(nested.walk, nested.form), { mermaid: `stateDiagram-v2
+  state "stopped · normal" as s0
+  state "playing" as s1 {
+    state "normal" as s2
+    state "loud" as s3
+  }
+  state "stopped · loud" as s4
+  [*] --> s0
+  s0 --> s2 : you press play
+  s0 --> s4 : you turn it up
+  s2 --> s3 : you turn it up
+  s2 --> s0 : the track ends
+  s4 --> s3 : you press play
+  s4 --> s0 : you turn it down
+  s3 --> s2 : you turn it down
+  s3 --> s4 : the track ends
+  class s0 may-break
+  class s0 bug-path
+  class s2 may-break
+  class s4 breaks
+  class s4 bug-path
+  class s3 may-break`, bugEdges: [2] });
 
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);

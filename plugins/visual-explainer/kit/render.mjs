@@ -9,6 +9,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { decode, esc, find, hasClass, inner, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
 import { expandFlow } from "./flow.mjs";
+import { plural } from "./machine.mjs";
 import { expandAsk } from "./ask.mjs";
 import { TAGS } from "./tags.mjs";
 import { PeleError, render as drawMermaid } from "./vendor/pele.mjs";
@@ -44,7 +45,6 @@ function count(doc, tags) {
 
 export const reportPage = (html) => count(parseHtml(html), []);
 
-const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures${(r.machines ?? []).map((m) => `\n${m}`).join("")}`;
 
 /**

@@ -33,13 +33,13 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
       for (const c of kids(k)) if (c.name === "ve-node") place(c, g); else errors.push(`${where(c)}: only <ve-node> belongs in <ve-region>`);
       if (!kids(k).some((c) => c.name === "ve-node")) errors.push(`${where(k)}: a <ve-region> holds the <ve-node>s of its part; this one has none`);
     } else if (k.name === "ve-edge") edges.push(k);
-    else if (k.name === "script" && "model" in k.attrs) scripts.push(k);
+    else if (k.name === "script" && "model" in k.attrs) { if (scripts.length) errors.push(`${where(k)}: one model per <ve-flow>`); scripts.push(k); }
     else errors.push(`${where(k)}: only <ve-node>, <ve-region>, <ve-edge>, and one <script type="text/plain" model> belong in <ve-flow>`);
   }
   // auto: the whole walk, laid out by Pele; render.mjs draws the Mermaid this leaves on n.auto
   if ("auto" in n.attrs) {
     if (boxes.size || regions.size || edges.length) errors.push(`${where(n)}: auto draws the whole walk; remove the nodes, or drop auto`);
-    else if (scripts.length !== 1) errors.push(`${where(n)}: auto draws the walk of one <script type="text/plain" model>; ${scripts.length ? "keep one" : "add it"}`);
+    else if (!scripts.length) errors.push(`${where(n)}: auto draws the walk of one <script type="text/plain" model>; add it`);
     else if (!n.attrs.label) errors.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
     else if (errors.length === before) {
       const a = drawAuto(scripts[0], { root, models, where });
@@ -55,7 +55,6 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   // a model draws the arrows and sets the steps: the walk replaces what an author would write by hand
   // (after a node or region error the drawing is incomplete, and the walk would only repeat it as "not drawn")
   if (scripts.length && errors.length === before) {
-    if (scripts.length > 1) errors.push(`${where(scripts[1])}: one model per <ve-flow>`);
     for (const e of edges) errors.push(`${where(e)}: a flow with a model draws its arrows from the walk; remove this <ve-edge>`);
     for (const { k } of boxes.values()) if ("data-s" in k.attrs) errors.push(`${where(k)}: a flow with a model takes its steps from the walk; remove data-s`);
     const m = drawModel(scripts[0], new Map([...boxes].map(([id, b]) => [id, b.k])), { root, models, where, regions });
