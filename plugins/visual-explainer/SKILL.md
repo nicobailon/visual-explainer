@@ -56,6 +56,7 @@ Shape the page to the content; merge, reorder, or drop sections.
 | Numbers: a trend, a size or rank, a share, a spread, a link, a place | line or sparkline; bars, sorted (around zero for a deviation); waffle or stack; strip or histogram; scatter; map. `<ve-bars>`, `<ve-waffle>`, `<ve-stack>` (`references/kit.md`); Chart.js only for many interactive series |
 | Depth that carries data | three.js |
 | A process over time, steps, a state machine, queue, or workflow | stepper or scene player; a state machine replays one event per step |
+| A state machine read from the user's code | `<ve-flow>` with a model: the render walks every state and marks the rules it breaks (`references/machines.md`); one with no code to cite stays a hand-drawn replay |
 | A setting to feel: TTL, rollout % | live figure |
 | Slide deck, only when asked (`/generate-slides`, `--slides`); PPTX only on request or `--pptx` | `references/slides.md` |
 

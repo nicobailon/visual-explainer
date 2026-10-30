@@ -6,9 +6,14 @@
 - Pages read well without any page CSS. Paragraphs and lists keep a comfortable line length, code blocks get a framed, scrollable style, plain lists get proper indents, and the blocks of a section get even spacing, so a figure's caption no longer sits on the paragraph after it.
 - A section menu for long pages. One `<nav>` line gives a bar that stays at the top, scrolls sideways on a phone, and marks the section you are reading.
 - Rendering a page flags drawing labels that have no color, which show as black text on a dark background.
+- State machines drawn from the code itself. Point a page at the reducer or transition function in your repo, and the page walks every state the code can reach. It shows the states you forgot to draw, the events that never fire, the dead ends, and each rule the code breaks as the shortest path there, which you can replay step by step. A machine too big to place by hand is laid out for you, and a machine with independent parts, like playback and volume, draws each part in its own box. A new `/state-machine` command runs the whole workflow, from finding the code to a test you can keep for each broken rule. The MCP server runs your code this way only when it starts with `VISUAL_EXPLAINER_RUN_MODELS=1`. Inspired by the `/statechart` skill in [cursor/plugins](https://github.com/cursor/plugins/tree/main/pstack/skills/statechart) (pstack), which walks a machine with TLA+; this kit walks the code directly and needs nothing installed.
+
+### Changed
+- Diff reviews and comparisons walk a state machine read from code on each side, so they show a rule a change newly breaks or a state it makes unreachable.
 
 ### Fixed
 - Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
+- An arrow's label no longer crosses the arrow beside it; the drawing widens to hold it.
 
 ## [0.14.0] - 2026-10-18
 

@@ -62,23 +62,23 @@ The caption under the drawing says which proof the reader holds: "walked from `s
 <ve-region id="volume" label="Volume">…</ve-region>
 ```
 
-A step draws one arrow in each part it changes. When every other node of a region takes the same event to one node (power off from anywhere), the arrows lift to one arrow out of the region's side and back in to that node. A mark goes to the parts of the marked state: if stopped and loud together break a rule, both Stopped and Loud are marked.
+A step draws one arrow in each part it changes. When every other node of a region takes the same event to one node (power off from anywhere), the arrows lift to one arrow out of the region's side and back in to that node, along the node's row; put that node at the end of its row, or the render warns. A mark goes to the parts of the marked state: if stopped and loud together break a rule, both Stopped and Loud are marked.
 
 ## What the render does
 
 It runs the model in a separate Node process with a 10 s limit, walks every state from `init` (at most 2 000), and draws by `state()`. The arrows come from the walk; several events between the same two states share one arrow, labeled `play · resume`, so name events short and put states a column apart when an arrow carries several (`flow.mjs` warns when a label is wider than its gap).
 
-In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. The caption under the drawing, `walked from src/player.ts`, is written for you.
+In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. One walked flow per stepper figure. The caption under the drawing, `walked from src/player.ts`, is written for you. In a plan, a flow with a model is a level-2 exhibit, drawn without the replay.
 
 **Too many states to place by hand:** write `<ve-flow auto label="…">` with only the model inside. The render lays out the whole walk itself (any size, nested states as boxes in boxes, each part of an object in its own box), with the same marks, as a static drawing with no replay. Labels are the `state()` ids, so return readable ones (`floor 3 · open`).
 
-Marks on the drawing: `breaks` (a reachable state where a rule fails), `may-break` (a state from which one is reachable), `bug-path` (a state or arrow on the shortest path to it).
+Marks on the drawing: `breaks` (a reachable state where a rule fails: red, dashed), `may-break` (a state from which one is reachable: amber, tinted), `bug-path` (a state or arrow on the shortest path to it: a thick accent line, lit on the replay's last step), and, with `auto`, a dead end (a state no event leaves: dim, dashed).
 
 The Page line gets one line per machine: `machine from src/player.ts · 4 states · 1 of 2 rules breaks in 1 step · 1 dead end · "you press mute" never fires`.
 
 ## Errors
 
-Each starts with the script's line, `line 12 <script>:`, and stops the render.
+Each names the line it is about (`line 12 <script>:` for the model) and stops the render.
 
 | Error | Meaning |
 |---|---|

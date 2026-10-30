@@ -72,6 +72,7 @@ const promptFiles = [
   "generate-web-diagram.md",
   "plan-review.md",
   "project-recap.md",
+  "state-machine.md",
 ];
 
 const resourceFiles = [

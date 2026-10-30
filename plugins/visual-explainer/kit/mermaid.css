@@ -15,7 +15,7 @@
 }
 /* a walked machine drawn with <ve-flow auto> (references/machines.md): a state that can still reach a broken rule, the shortest way
    there, a state no event leaves, and the state that breaks the rule; later rules win, so the breaking state stays red on the path */
-.pele-node.may-break > rect { stroke: var(--warn); stroke-width: 1.75; }
+.pele-node.may-break > rect { stroke: var(--warn); stroke-width: 1.75; fill: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
 .pele-node.bug-path > rect, .pele-edge.bug-path > path:not(.pele-marker) { stroke: var(--accent); stroke-width: 2.25; } .pele-edge.bug-path > .pele-marker { fill: var(--accent); }
 .pele-node.dead-end > rect { stroke: var(--text-dim); stroke-dasharray: 3 3; }
 .pele-node.breaks > rect { stroke: var(--risk); stroke-width: 2.5; stroke-dasharray: 6 3; }

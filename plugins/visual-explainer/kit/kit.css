@@ -183,7 +183,7 @@ figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(-
 .ve-e.is-gone { stroke: var(--risk); stroke-dasharray: 3 4; }
 /* a walked machine (references/machines.md): a state that can still reach a broken rule, the shortest way there, and the state
    that breaks it; later rules win, so the breaking state stays red on the path */
-.ve-n.is-may-break .sh { stroke: var(--warn); }
+.ve-n.is-may-break .sh { stroke: var(--warn); } .ve-n.is-may-break:not(.is-key) .sh { fill: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
 /* in a stepper the path lights only on its last step, the full picture; elsewhere it is always lit */
 .ve-n.is-bug-path:not(.ve-steps:not(.is-full) *) .sh, .ve-e.is-bug-path:not(.ve-steps:not(.is-full) *) { stroke: var(--accent); }
 .ve-n.is-breaks .sh, .ve-steps .ve-n.is-breaks.now > .sh { stroke: var(--risk); stroke-width: 2.5; stroke-dasharray: 6 3; }

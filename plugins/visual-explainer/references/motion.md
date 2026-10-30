@@ -17,6 +17,8 @@ Steps = the number of `li`; `data-s` counts from 1. It opens on the last step, t
 
 For a state machine, a workflow, or a reducer, each step is one event. The caption says what happened and why: `miss → fetch, because the TTL expired (cache.ts:48)`. The "because" is the guard or branch that fired: cite it, never invent it. Pick 6–12 events that carry one claim; show the other branch as a second stepper or small multiples. If the events come from a real run, say so in the figcaption.
 
+A machine that lives in the user's code is not replayed by hand: its `<ve-flow>` model is walked, and the render writes the steps (`machines.md`).
+
 `data-s` may list steps: a part appears at the first and lights on each; `0` draws it from the start. Draw the whole machine with `0` and let the run light its path. On a step, the edges that fired and the node's border light, and each token runs once. To light a route, give every edge on it the step and run one token along the joined `d`. The last step is the full picture.
 
 ```html
