@@ -35,7 +35,7 @@ You place the states as `<ve-node>`s, as on any flow. The model is one more chil
 - **`init`** is the first state, as plain data (objects, arrays, strings, numbers, booleans, `null`): the walk compares states as JSON.
 - **`events`** maps each event, named in the reader's words, to the step it takes: `s => the next state`. A step that returns the same state draws no arrow.
 - **`rules`** maps each rule, in the reader's words, to `{ holds, fails }`: `holds(s)` is true while the rule holds, and `fails` is a state it must reject. A rule that holds on its own `fails` state would pass on any machine, so it is an error.
-- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, or an object of region → id for parallel parts (`<ve-region>`, below). An array of ids from the outermost state in (nested states) is drawn only by `auto`.
+- **`state`** maps a state to what draws it: a `ve-node` id for a flat chart, or an object of region → id for parallel parts (`<ve-region>`, below).
 
 Write the four names as plain assignments (`init = …`), not `const`. Helpers in the script are fine.
 
@@ -70,7 +70,7 @@ It runs the model in a separate Node process with a 10 s limit, walks every stat
 
 In a `<figure class="ve-steps">` the walk replays: step k shows what k − 1 events reach (`1 state`, `3 states · 2 arrows`, …), and when a rule breaks, one last step lights the shortest path to it (`breaks “never loud while stopped” in 1 step: you turn it up`), or marks the first state alone when the rule already fails there (`breaks “…” at the start`). Leave out the `.ve-cap` captions, or the whole `.ve-player`, and the render writes them; captions you write must match the step count. One walked flow per stepper figure. The caption under the drawing, `walked from src/player.ts`, is written for you. In a plan, a flow with a model is a level-2 exhibit, drawn without the replay; place its states by hand, since `auto` draws only on a page.
 
-**Too many states to place by hand:** write `<ve-flow auto label="…">` with only the model inside. The render lays out the whole walk itself (any size, nested states as boxes in boxes, each part of an object in its own box), with the same marks, as a static drawing with no replay. Labels are the `state()` ids, so return readable ones (`floor 3 · open`).
+**Too many states to place by hand:** write `<ve-flow auto label="…">` with only the model inside. The render lays out the whole walk itself (any size, each part of an object in its own box), with the same marks, as a static drawing with no replay. Labels are the `state()` ids, so return readable ones (`floor 3 · open`).
 
 Marks on the drawing: `breaks` (a reachable state where a rule fails: red, dashed), `may-break` (a state from which one is reachable: amber, tinted), `bug-path` (a state or arrow on the shortest path to it: a thick accent line, lit on the replay's last step), and, with `auto`, a dead end (a state the code cannot leave (with a coarse `state()`, one of the states drawn as that node): dim, dashed).
 

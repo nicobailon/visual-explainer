@@ -15,9 +15,9 @@ const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const isData = (v) => v === null || ["string", "boolean"].includes(typeof v) || Number.isFinite(v) || (Array.isArray(v) ? v.every(isData) : isObj(v) && Object.getPrototypeOf(v) === Object.prototype && Object.values(v).every(isData));
 // the same state written with its keys in another order is the same state
 const stable = (v) => (Array.isArray(v) ? `[${v.map(stable).join(",")}]` : isObj(v) ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable(v[k])}`).join(",")}}` : JSON.stringify(v));
-const ids = (v) => (Array.isArray(v) ? v.length > 0 && v.every((x) => typeof x === "string" && x) : typeof v === "string" && v);
-/** What a state() value draws: flat (an id), nested (ids from the outermost state in), regions (region → id or ids), or null. */
-const formOf = (id) => (typeof id === "string" && id ? "flat" : Array.isArray(id) && ids(id) ? "nested" : isObj(id) && Object.keys(id).length && Object.values(id).every(ids) ? "regions" : null);
+const isId = (v) => typeof v === "string" && v !== "";
+/** What a state() value draws: flat (an id), regions (region → id), or null. */
+const formOf = (id) => (isId(id) ? "flat" : isObj(id) && Object.keys(id).length && Object.values(id).every(isId) ? "regions" : null);
 const message = (e) => String(e?.message ?? e).split("\n")[0];
 // Node 22.18+ strips TypeScript types by default; 22.6–22.17 need the flag
 const [major, minor] = process.versions.node.split(".").map(Number);
@@ -30,7 +30,7 @@ function parseModel(text) {
 }
 
 /** Loads, checks, and walks a model: { errors } when it is not a model or the walk fails, else { errors: [], events, rules, form, walk, proof }.
- * events: [{ name, at? }] (at marks a hand-written step); rules: names; form: flat | regions | nested;
+ * events: [{ name, at? }] (at marks a hand-written step); rules: names; form: flat | regions;
  * walk: see walk(); proof: { kind: "code" | "model", files } for the caption ("walked from src/player.ts" or "walked from a model of mixer.ts").
  * One timeout covers loading and walking. */
 export function loadModel({ text, root, timeoutMs = 10_000, cap = 2000 }) {
@@ -82,7 +82,7 @@ function loadError(e) {
 }
 
 /** Walks a checked model breadth-first from init: every event at every state, at most cap distinct states (compared as
- * stable JSON). It returns { error } or, by drawn id (state(): an id, or the JSON of a regions or nested value):
+ * stable JSON). It returns { error } or, by drawn id (state(): an id, or the JSON of a regions value):
  *   states: drawn ids in the order reached · depths: { id: fewest events from init }
  *   edges: [{ from, to, events, depth }] between different drawn ids, events merged; depth: fewest events to first take it
  *   breaks: { rule: drawn ids where holds is false } · paths: { rule: the shortest [{ event, to }] from init to a break }
@@ -213,7 +213,6 @@ function regionView(w, drawn, regions, { at, where }) {
   for (const [id, s] of states) {
     if (Object.keys(s).join() !== keys.join()) return { errors: [`${at}: state() returns the parts ${Object.keys(s).join(", ")} at ${id}, but ${keys.join(", ")} at init; return the same parts for every state`] };
     for (const r of keys) {
-      if (typeof s[r] !== "string") return { errors: [`${at}: part "${r}" of state() is ${JSON.stringify(s[r])}; a part's value is one ve-node id (nested states draw only as a whole-state array under auto)`] };
       if (part.has(s[r]) && part.get(s[r]) !== r) return { errors: [`${at}: "${s[r]}" is a value of both "${part.get(s[r])}" and "${r}"; a value names its node, so give each part its own`] };
       part.set(s[r], r);
       if (!depths.has(s[r])) depths.set(s[r], w.depths[id]); // the walk's order is by depth, so the first is the nearest
@@ -296,9 +295,9 @@ export function drawAuto(script, ctx) {
   return t.errors ? t : { ...t, ...summary(m) };
 }
 
-/** A walk as a Mermaid state diagram: { mermaid, bugEdges } or { errors }. A flat state() draws one state per id, nested ids
- * draw composites from the outermost in, and each part of an object draws its own composite, with lifted arrows from the
- * composite (Pele draws a concurrent `--` region as an empty box, so parts are separate). Marks are classes on the states.
+/** A walk as a Mermaid state diagram: { mermaid, bugEdges } or { errors }. A flat state() draws one state per id, and each
+ * part of an object draws its own composite, with lifted arrows from the composite (Pele draws a concurrent `--` region as
+ * an empty box, so parts are separate). Marks are classes on the states.
  * Pele numbers a diagram's transitions in source order, [*] first; bugEdges are the numbers of those on the bug path. */
 export function toMermaid(w, form, at = "") {
   const v = form === "regions" ? regionView(w, null, null, { at }) : flatView(w, null, { at });
@@ -320,21 +319,7 @@ export function toMermaid(w, form, at = "") {
       lines.push("  }");
     }
   } else {
-    const paths = [...v.depths.keys()].map((id) => [id, form === "nested" ? JSON.parse(id) : [id]]);
-    const states = (prefix, indent) => {
-      const here = paths.filter(([, p]) => p.length > prefix.length && prefix.every((x, i) => p[i] === x));
-      for (const head of new Set(here.map(([, p]) => p[prefix.length]))) {
-        const below = [...prefix, head];
-        if (here.some(([, p]) => p.length > below.length && p[prefix.length] === head)) {
-          lines.push(`${indent}state "${text(head)}" as ${name(`${JSON.stringify(below)}\n`)} {`);
-          states(below, `${indent}  `);
-          lines.push(`${indent}}`);
-        }
-        const leaf = here.find(([, p]) => p.length === below.length && p[prefix.length] === head);
-        if (leaf) lines.push(`${indent}state "${text(head)}" as ${name(leaf[0])}`);
-      }
-    };
-    states([], "  ");
+    for (const id of v.depths.keys()) lines.push(`  state "${text(id)}" as ${name(id)}`);
     go("  ", "[*]", name(w.states[0]));
     for (const e of v.edges) go("  ", name(e.from), name(e.to), e.events, lit(e));
   }
@@ -353,7 +338,6 @@ export function drawModel(script, drawn, { root, models, where, regions }) {
   const m = walked(script, { root, models, where });
   if (m.errors.length) return { errors: m.errors };
   const w = m.walk;
-  if (m.form === "nested") return { errors: [`${at}: state() returns an array of nested ids, which only <ve-flow auto> draws; set auto, or return a ve-node id or an object of region → id`] };
   if (m.form === "flat" && regions.size) return { errors: [`${where([...regions.values()][0].k)}: a <ve-region> draws one part of state(), so state() must return an object of region → id`] };
   const v = m.form === "flat" ? flatView(w, drawn, { at, where }) : regionView(w, drawn, regions, { at, where });
   if (v.errors) return v;
@@ -427,7 +411,7 @@ async function child() {
     try {
       const id = state(init);
       out.form = formOf(id);
-      if (!out.form) err(`state(init) returned ${JSON.stringify(id)}; return a ve-node id, an array of ids from the outermost state in, or an object of region → id`);
+      if (!out.form) err(`state(init) returned ${JSON.stringify(id)}; return a ve-node id or an object of region → id`);
     } catch (e) {
       err(`state(init) throws: ${message(e)}`);
     }
