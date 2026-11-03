@@ -133,6 +133,15 @@ const cases = {
     text: variant('s => !(s.playback === "Stopped" && s.volume === "Loud")', 's => typeof s.volume === "string"'),
     errors: ['rule "never loud while stopped" cannot fail; it is not a rule'],
   },
+  // state() draws an id or an object of region → id; an array is neither, at init or at any later state
+  "state-array": {
+    text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", "state  = s => [s.playback, s.volume]"),
+    errors: ['state(init) returned ["Stopped","Normal"]; return a ve-node id or an object of region → id'],
+  },
+  "state-form-changes": {
+    text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Stopped" ? s.volume.toLowerCase() : [s.playback, s.volume]'),
+    errors: ['state() returns ["Playing","Normal"] at {"playback":"Playing","volume":"Normal"}, but a flat value at init; return one form for every state'],
+  },
   "bad-path": { text: variant(IMPORT, 'import { reduce } from "src/nope.ts"'), errors: ['import "src/nope.ts": src/nope.ts not found under <root>'] },
   "const init": { text: variant("init   = ", "const init = "), errors: ["the model script declares init; write init = …, not const or let"] },
   outside: { text: variant(IMPORT, 'import { x as reduce } from "../outside.ts"'), errors: ['import "../outside.ts": ../outside.ts is outside <root>'] },
