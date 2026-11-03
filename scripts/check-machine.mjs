@@ -1,7 +1,6 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadModel, toMermaid } from "../plugins/visual-explainer/kit/machine.mjs";
-import { render as pele } from "../plugins/visual-explainer/kit/vendor/pele.mjs";
 import { renderPage } from "../plugins/visual-explainer/kit/render.mjs";
 import { renderPlan } from "../plugins/visual-explainer/plan/render.mjs";
 
@@ -64,6 +63,7 @@ const cases = {
     walk: { deadEnds: ['{"playback":"playing","volume":"loud"}'], counts: { states: 4, full: 4, edges: 4, broken: 0, rules: 0, steps: null } },
     proof: { kind: "model", files: ["src/player.ts"] },
   },
+  // the player covers states, depths, and edges; the door owns dead ends, events that never fire, and a rule that holds
   door: {
     text: model("door"),
     errors: [],
@@ -71,15 +71,6 @@ const cases = {
     rules: ["the door never burns"],
     form: "flat",
     walk: {
-      states: ["closed", "open", "locked", "broken"],
-      depths: { closed: 0, open: 1, locked: 1, broken: 2 },
-      edges: [
-        { from: "closed", to: "open", events: ["you open it"], depth: 1 },
-        { from: "closed", to: "locked", events: ["you lock it"], depth: 1 },
-        { from: "open", to: "closed", events: ["you close it"], depth: 2 },
-        { from: "locked", to: "closed", events: ["you unlock it"], depth: 2 },
-        { from: "locked", to: "broken", events: ["you kick it"], depth: 2 },
-      ],
       breaks: { "the door never burns": [] },
       paths: {},
       first: null,
@@ -141,6 +132,15 @@ const cases = {
   "cannot-fail": {
     text: variant('s => !(s.playback === "Stopped" && s.volume === "Loud")', 's => typeof s.volume === "string"'),
     errors: ['rule "never loud while stopped" cannot fail; it is not a rule'],
+  },
+  // state() draws an id or an object of region → id; an array is neither, at init or at any later state
+  "state-array": {
+    text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", "state  = s => [s.playback, s.volume]"),
+    errors: ['state(init) returned ["Stopped","Normal"]; return a ve-node id or an object of region → id'],
+  },
+  "state-form-changes": {
+    text: variant("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Stopped" ? s.volume.toLowerCase() : [s.playback, s.volume]'),
+    errors: ['state() returns ["Playing","Normal"] at {"playback":"Playing","volume":"Normal"}, but a flat value at init; return one form for every state'],
   },
   "bad-path": { text: variant(IMPORT, 'import { reduce } from "src/nope.ts"'), errors: ['import "src/nope.ts": src/nope.ts not found under <root>'] },
   "const init": { text: variant("init   = ", "const init = "), errors: ["the model script declares init; write init = …, not const or let"] },
@@ -236,30 +236,9 @@ same("region not a part", renderPage(stereo.replace('id="volume" label', 'id="so
   'line 18 <script>: state() has a part "volume" with no <ve-region id="volume">',
 ]);
 
-// auto: the walk as Mermaid, written out by hand from the player's walk (same order and marks as the player page above)
-const mermaid = toMermaid(loaded.player.walk, "flat");
-same("player as Mermaid", mermaid, { mermaid: `stateDiagram-v2
-  state "stopped-normal" as s0
-  state "playing-normal" as s1
-  state "stopped-loud" as s2
-  state "playing-loud" as s3
-  [*] --> s0
-  s0 --> s1 : you press play
-  s0 --> s2 : you turn it up
-  s1 --> s3 : you turn it up
-  s1 --> s0 : the track ends
-  s2 --> s3 : you press play
-  s2 --> s0 : you turn it down
-  s3 --> s1 : you turn it down
-  s3 --> s2 : the track ends
-  class s0 may-break
-  class s0 bug-path
-  class s1 may-break
-  class s2 breaks
-  class s2 bug-path
-  class s3 may-break`, bugEdges: [2] });
-const drawnByPele = pele(mermaid.mermaid ?? "", { fontSize: 14, maxWidth: 960 }).svg;
-same("Pele draws the marks", ["pele-state may-break bug-path", "pele-state breaks bug-path"].filter((c) => !drawnByPele.includes(c)), []);
+// auto: Pele numbers transitions in source order, [*] first, so the lit number must be the player's one-step path
+const mermaid = toMermaid(loaded.player.walk, "flat"), transitions = mermaid.mermaid.split("\n").filter((l) => l.includes("-->"));
+same("player as Mermaid: every arrow, and the lit one", [transitions.length, mermaid.bugEdges.map((i) => transitions[i].trim())], [9, ["s0 --> s2 : you turn it up"]]);
 // the elevator (repo/src/elevator.ts): 10 floors × door open or closed; the door opens on the roof after 9 rides up
 const elevator = page("auto"), lifted10 = renderPage(elevator, { root });
 same("auto page", [lifted10.errors, lifted10.report?.machines, ["pele-node[^\"]* breaks", "pele-node[^\"]* may-break", "pele-node[^\"]* bug-path", "pele-edge pele-transition bug-path"].filter((c) => !new RegExp(`class="${c}`).test(lifted10.html ?? ""))],
@@ -273,30 +252,6 @@ same("auto with parts", [autoParts.errors, autoParts.html?.split("pele-transitio
 // a plan has no Pele step, so auto there is an error rather than an empty exhibit
 const autoPlan = `<ve-plan title="Player" summary="s">\n<ve-claim id="a" level="2" title="The player">\n  <ve-flow auto label="The player">\n    <script type="text/plain" model>\n${player}\n    </script>\n  </ve-flow>\n</ve-claim>\n</ve-plan>`;
 same("auto in a plan", renderPlan(autoPlan, { root }).errors.filter((e) => e.includes("<ve-flow>")), ["line 3 <ve-flow>: auto draws only on a page; in a plan, place the states by hand with <ve-node>"]);
-// nested ids draw as a box in a box: playing holds its two volumes, and the arrows run at the top level
-const nested = loadModel({ text: player.replace("state  = s => `${s.playback}-${s.volume}`.toLowerCase()", 'state  = s => s.playback === "Playing" ? ["playing", s.volume.toLowerCase()] : ["stopped · " + s.volume.toLowerCase()]'), root });
-same("nested as Mermaid", toMermaid(nested.walk, nested.form), { mermaid: `stateDiagram-v2
-  state "stopped · normal" as s0
-  state "playing" as s1 {
-    state "normal" as s2
-    state "loud" as s3
-  }
-  state "stopped · loud" as s4
-  [*] --> s0
-  s0 --> s2 : you press play
-  s0 --> s4 : you turn it up
-  s2 --> s3 : you turn it up
-  s2 --> s0 : the track ends
-  s4 --> s3 : you press play
-  s4 --> s0 : you turn it down
-  s3 --> s2 : you turn it down
-  s3 --> s4 : the track ends
-  class s0 may-break
-  class s0 bug-path
-  class s2 may-break
-  class s4 breaks
-  class s4 bug-path
-  class s3 may-break`, bugEdges: [2] });
 
 if (problems.length) {
   console.error(`Machine check failed:\n${problems.map((p) => `- ${p}`).join("\n")}`);
