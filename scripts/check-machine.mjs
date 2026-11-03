@@ -229,7 +229,7 @@ same("region not a part", renderPage(stereo.replace('id="volume" label', 'id="so
 
 // auto: Pele numbers transitions in source order, [*] first, so the lit number must be the player's one-step path
 const mermaid = toMermaid(loaded.player.walk, "flat"), transitions = mermaid.mermaid.split("\n").filter((l) => l.includes("-->"));
-same("player as Mermaid: the lit arrow", mermaid.bugEdges.map((i) => transitions[i].trim()), ["s0 --> s2 : you turn it up"]);
+same("player as Mermaid: every arrow, and the lit one", [transitions.length, mermaid.bugEdges.map((i) => transitions[i].trim())], [9, ["s0 --> s2 : you turn it up"]]);
 // the elevator (repo/src/elevator.ts): 10 floors × door open or closed; the door opens on the roof after 9 rides up
 const elevator = page("auto"), lifted10 = renderPage(elevator, { root });
 same("auto page", [lifted10.errors, lifted10.report?.machines, ["pele-node[^\"]* breaks", "pele-node[^\"]* may-break", "pele-node[^\"]* bug-path", "pele-edge pele-transition bug-path"].filter((c) => !new RegExp(`class="${c}`).test(lifted10.html ?? ""))],
