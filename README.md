@@ -77,7 +77,7 @@ The package manifest advertises the canonical skill, command templates, and Pi t
 }
 ```
 
-The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan and resolve the output directory, then write `<name>.src.html` there and call `action: "render"` with `path` (or inline `html` and `filename`). Render opens in the browser by default; `viewer: "glimpse"` uses `glimpseui`, and `viewer: "auto"` tries Glimpse before the browser. `/generate-web-diagram` remains a prompt template command.
+The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to render a page source (`path`) or complete HTML to the output directory (see below), with the same output jail as the MCP server. Render can open with `viewer: "browser"` by default, `viewer: "glimpse"` when `glimpseui` is installed, or `viewer: "auto"` to try Glimpse and fall back to the browser. `/generate-web-diagram` remains the bundled prompt template command.
 
 #### Pi output directory
 
@@ -93,13 +93,11 @@ Output defaults to `~/.agent/diagrams/`, regardless of global or `--local` insta
 
 Precedence: default → personal settings → trusted project settings → nonblank `VISUAL_EXPLAINER_OUTPUT_DIR`. Pi handles merging and project trust.
 
-- Exact `"project"` uses the session's Git root plus `.agent/diagrams/` (including subdirectories, worktrees, and nested repositories), or the session directory outside Git—not the extension checkout.
-- Other strings are literal paths: `"docs/diagrams"`, `"/some/destination"`, or `"~/Documents/my diagrams"`. Relative paths use the session directory; spaces are preserved. `"./project"` and `"current"` are ordinary paths.
-- Missing values inherit; blank values select the default; non-strings error. A nonblank environment override wins over all settings, including invalid values; blank environment values fall through. Environment paths retain their existing trimmed, process-relative behavior, without shortcuts or `~` expansion. Restart Pi to change its environment.
+- `"project"` uses the session's Git root plus `.agent/diagrams/`, or the session directory outside Git.
+- Other strings are paths: `"docs/diagrams"`, `"/some/destination"`, or `"~/Documents/my diagrams"`. Relative paths use the session directory; only the exact `"project"` is special.
+- Blank values select the default; non-strings are an error. The environment variable keeps its existing behavior (resolved against Pi's launch directory, no `~`).
 
-Prepare reports `outputDir` without creating it. Keep sources, pages, and contact sheets there; `/fact-check` uses it when no path is given. Existing containment, atomic-write, and symlink protections remain, including the default's allowance for a symlinked `~/.agent`.
-
-Requires Pi's `getSettings()` API; older Pi reports settings unavailable and retains default/environment output. MCP, CLI, legacy manual installs, and other harnesses do not read Pi settings.
+Prepare reports `outputDir`; `/fact-check` uses it when no path is given. Only the native Pi tool reads this setting; a Pi without `getSettings()` keeps the default.
 
 If you previously used the old curl/manual installer, remove those copied files before using `pi install`; otherwise Pi will report skill and prompt conflicts because the user-level copies shadow the package resources:
 

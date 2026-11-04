@@ -147,21 +147,17 @@ function detectSubagent(pi: ExtensionAPI): SubagentDetection {
   }
 }
 
-type OutputDirectory = { path: string; configured: boolean; settingsUnavailable?: boolean };
+type OutputDirectory = { path: string; configured: boolean };
 
 function resolveOutputDirectory(pi: ExtensionAPI, cwd: string): OutputDirectory {
-  // Preserve the environment override's existing semantics: trimmed, process-relative, no shortcuts.
   const override = process.env.VISUAL_EXPLAINER_OUTPUT_DIR?.trim();
   if (override) return { path: resolve(override), configured: true };
 
   // Older Pi hosts lack this API. Keep their default/env behavior; never read project files ourselves.
-  const settingsUnavailable = typeof pi.getSettings !== "function";
-  const settings = settingsUnavailable ? {} : pi.getSettings() as { visualExplainer?: { outputDir?: unknown } };
+  const settings = typeof pi.getSettings === "function" ? pi.getSettings() as { visualExplainer?: { outputDir?: unknown } } : {};
   const value = settings.visualExplainer?.outputDir;
   if (value !== undefined && typeof value !== "string") throw new Error("visualExplainer.outputDir must be a string");
-  if (value === undefined || !value.trim()) {
-    return { path: join(homedir(), ".agent", "diagrams"), configured: false, settingsUnavailable };
-  }
+  if (value === undefined || !value.trim()) return { path: join(homedir(), ".agent", "diagrams"), configured: false };
 
   if (value === "project") {
     // A Pi launched from a Git hook can inherit another repository's location.
@@ -185,7 +181,7 @@ function assertResolvesToItself(path: string) {
   if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
 }
 
-// Validate without creating anything, before prepare directs the agent to write a source.
+// Validates without creating anything.
 function assertOutputDirectory({ path, configured }: OutputDirectory) {
   if (lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${path} must not be a symlink`);
   if (configured) assertResolvesToItself(path);
@@ -329,7 +325,6 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
   const summaryLines = [
     `Prepared visual explanation for: ${topic}`,
     `Output directory: ${output.path}`,
-    output.settingsUnavailable ? "This Pi version cannot read extension settings; using the default/environment directory. Update Pi for visualExplainer.outputDir." : undefined,
     goal ? `Goal: ${goal}` : undefined,
     audience ? `Audience: ${audience}` : undefined,
     shouldUseSubagent ? "Recommended start: use a scout subagent for context." : "Recommended start: gather context directly in this session.",
@@ -480,12 +475,12 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, or render a page source to HTML in the configured output directory (default ~/.agent/diagrams/). Prepare reports the resolved directory.",
+    description: "Plan visual explanations, or render a page source to HTML in the configured output directory (default ~/.agent/diagrams/).",
     promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source.",
     promptGuidelines: [
       "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
       "Visuals cost many tokens: ask before visual_explainer action=prepare unless the user asked for a diagram, visual review, recap, or visual plan. If prepare recommends a scout subagent and one is available, gather context first.",
-      "Use prepare to resolve the output directory before writing or locating pages, including /fact-check without a path. Write <name>.src.html there and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
+      "Use prepare to resolve the output directory before writing or locating pages. Write <name>.src.html there and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
       "A plan source (<ve-plan> tags, references/plans.md) renders the same way, checked against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
