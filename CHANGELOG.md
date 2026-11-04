@@ -2,9 +2,6 @@
 
 ## [Unreleased]
 
-### Fixed
-- Loading the pi extension inside a Bun-compiled pi (such as Pi-Bolt) no longer fails with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. `kit/render.mjs` and `plan/render.mjs` now treat an `argv[1]` that has no real path as "not the entry point" instead of throwing when they are imported.
-
 ### Added
 - Pages read well without any page CSS. Paragraphs and lists keep a comfortable line length, code blocks get a framed, scrollable style, plain lists get proper indents, and the blocks of a section get even spacing, so a figure's caption no longer sits on the paragraph after it.
 - A section menu for long pages. One `<nav>` line gives a bar that stays at the top, scrolls sideways on a phone, and marks the section you are reading.
@@ -18,6 +15,7 @@
 - A question whose suggested answer was written on the question instead of on the option rendered with nothing pre-selected and no warning. Rendering now stops with an error that shows where it belongs.
 - Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
 - An arrow's label no longer crosses the arrow beside it; the drawing widens to hold it.
+- The Pi extension loads in a Pi built as a single Bun binary, such as Pi-Bolt. It used to stop Pi from starting with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. Thanks to [@crisboarna](https://github.com/crisboarna) for #126.
 
 ## [0.14.0] - 2026-10-18
 
