@@ -46,12 +46,16 @@ function measure(minLabel) {
     const px = parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b);
     if (!smallest || px < smallest.px) smallest = { px: Math.round(px * 100) / 100, text: t.textContent.trim().slice(0, 40) };
   }
+  // SVG text with no fill gets the default black, which no kit token is; it vanishes on a dark scheme. A page whose own text is black is exempt.
+  const black = "rgb(0, 0, 0)";
+  const unfilled = getComputedStyle(document.body).color === black ? [] : [...document.querySelectorAll("svg text")].filter((t) => t.textContent.trim() && !t.closest("defs, marker, symbol, clipPath, mask, pattern") && t.checkVisibility() && getComputedStyle(t).fill === black);
   let prose = 0;
   for (const p of document.querySelectorAll("p, li")) if (!p.closest("figure") && !p.parentElement.closest("p, li")) prose += p.textContent.trim().split(/\s+/).filter(Boolean).length;
   return {
     overflow: document.documentElement.scrollWidth > window.innerWidth,
     smallest,
     small: smallest !== null && smallest.px < minLabel,
+    unfilled: unfilled.length ? { n: unfilled.length, text: unfilled[0].textContent.trim().slice(0, 40) } : null,
     figures: document.querySelectorAll("figure").length,
     prose,
     kit: document.documentElement.dataset.veKit === "ready",
@@ -403,6 +407,7 @@ export async function lookAt(file, { sheet = true } = {}) {
     ...WIDTHS.filter((w) => at[w].overflow).map((w) => `the page scrolls sideways at ${w}px`),
     ...WIDTHS.filter((w) => at[w].small).map((w) => `a diagram label renders at ${at[w].smallest.px}px at ${w}px ("${at[w].smallest.text}"); keep labels at ${MIN_LABEL}px or more`),
     ...(at[1280].kit ? [] : ["the kit's script did not run to its end"]),
+    ...(at[1280].unfilled ? [`${at[1280].unfilled.n} SVG label(s) have no fill, so they are black on a dark scheme ("${at[1280].unfilled.text}"); use a kit class or a token`] : []),
     ...result.problems,
     ...shapes,
   ];

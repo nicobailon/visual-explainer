@@ -1,0 +1,15 @@
+import { reduce } from "src/player.ts"
+init   = reduce(undefined, { type: "INIT" })
+events = {
+  "you press play": s => reduce(s, { type: "PLAY" }),
+  "you turn it up": s => reduce(s, { type: "VOL_UP" }),
+  "you turn it down": s => reduce(s, { type: "VOL_DOWN" }),
+  "the track ends": s => reduce(s, { type: "ENDED" }),
+}
+rules  = {
+  "never loud while stopped": {
+    holds: s => !(s.playback === "Stopped" && s.volume === "Loud"),
+    fails: { playback: "Stopped", volume: "Loud" },
+  },
+}
+state  = s => `${s.playback}-${s.volume}`.toLowerCase()

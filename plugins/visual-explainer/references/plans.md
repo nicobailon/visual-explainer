@@ -41,7 +41,7 @@ The tree sits beside the sticky hero; hovering a claim lights its parts. Draw th
 | Level | Answers | Claim | Exhibit |
 |---|---|---|---|
 | 1 | What can someone now do or see? | a behavior | `<ve-mock>` or `<ve-flow>` |
-| 2 | How does it work? | one entry point, rule, or record | `<ve-calls>` or `<ve-code>` |
+| 2 | How does it work? | one entry point, rule, or record | `<ve-calls>` or `<ve-code>`, or a `<ve-flow>` with a model (`machines.md`) |
 | 3 | Where? | `at="path:line"` | `<ve-code>` |
 
 - Split level 1 by behavior, never by file, layer, or order of work; for a refactor, by guarantee ("Nothing a caller sees changes."). Read aloud, the level-1 claims tell the whole change.

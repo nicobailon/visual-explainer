@@ -13,7 +13,7 @@ Use the skill's Comparison shape:
 
 | Section | Figure |
 |---|---|
-| The difference | one drawing per option, side by side, marking the boxes and edges each adds or removes |
+| The difference | one drawing per option, side by side, marking the boxes and edges each adds or removes; options that change a state machine in the code each draw their walked machine, with the rules it breaks (`references/machines.md`) |
 | Cases | the same mini diagram once per option, for each scenario that matters |
 | Trade-offs | a table with ok/warn/risk chips, one row per criterion |
 | Recommendation | the option you would pick and why |
