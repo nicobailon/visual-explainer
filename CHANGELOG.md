@@ -12,6 +12,7 @@
 - Diff reviews and comparisons walk a state machine read from code on each side, so they show a rule a change newly breaks or a state it makes unreachable.
 
 ### Fixed
+- A question whose suggested answer was written on the question instead of on the option rendered with nothing pre-selected and no warning. Rendering now stops with an error that shows where it belongs.
 - Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
 - An arrow's label no longer crosses the arrow beside it; the drawing widens to hold it.
 
