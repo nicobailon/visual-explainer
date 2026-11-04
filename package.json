@@ -5,7 +5,8 @@
   "scripts": {
     "check:versions": "node scripts/check-versions.mjs",
     "check:kit": "node scripts/check-kit.mjs",
-    "check:machine": "node scripts/check-machine.mjs"
+    "check:machine": "node scripts/check-machine.mjs",
+    "check:ask": "node scripts/check-ask.mjs"
   },
   "license": "MIT",
   "homepage": "https://github.com/nicobailon/visual-explainer#readme",

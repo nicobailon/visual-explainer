@@ -14,7 +14,7 @@ export function expandAsk(n, { errors, warnings, where, ids, k, total, claims = 
   ids.set(id, at);
   for (const name of Object.keys(n.attrs)) {
     if (name === "default") errors.push(`${at}: default goes on the option itself: <ve-opt value="…" default>`);
-    else if (!["id", "q", "multi"].includes(name)) errors.push(`${at}: unknown attribute ${name}=; <ve-ask> takes id, q and multi`);
+    else if (!["id", "q", "multi", "data-if"].includes(name)) errors.push(`${at}: unknown attribute ${name}=; <ve-ask> takes id, q and multi`);
   }
   const q = n.attrs.q || "";
   if (!q) errors.push(`${at}: needs q="the question"`);
