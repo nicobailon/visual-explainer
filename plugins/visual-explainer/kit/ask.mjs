@@ -12,6 +12,10 @@ export function expandAsk(n, { errors, warnings, where, ids, k, total, claims = 
   else if (id in Object.prototype) errors.push(`${at}: id="${id}" is a reserved name; pick another`);
   else if (ids.has(id)) errors.push(`${at}: id="${id}" is already used at ${ids.get(id)}`);
   ids.set(id, at);
+  for (const name of Object.keys(n.attrs)) {
+    if (name === "default") errors.push(`${at}: default goes on the option itself: <ve-opt value="…" default>`);
+    else if (!["id", "q", "multi", "data-if"].includes(name)) errors.push(`${at}: unknown attribute ${name}=; <ve-ask> takes id, q and multi`);
+  }
   const q = n.attrs.q || "";
   if (!q) errors.push(`${at}: needs q="the question"`);
   else if (words(q) > 15) warnings.push(`${at}: the question is ${words(q)} words; keep it to about 15`);

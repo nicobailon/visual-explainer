@@ -15,11 +15,11 @@ Typical sections; merge, reorder, drop, or add as the content needs:
 |---|---|
 | Verdict | one sentence + merge/blocked chip + `<ve-stack>` of lines added and removed |
 | What changed | file map with added/modified/deleted chips; `<ve-bars>` of lines per file |
-| Behavior | before/after of the same SVG, edges added or removed highlighted; a changed state machine or queue replays one event per step (`references/motion.md`) |
+| Behavior | before/after of the same SVG, edges added or removed highlighted; a changed state machine or queue replays one event per step (`references/motion.md`); a machine read from code is walked before and after, showing a rule the diff newly breaks or a state it makes unreachable (`references/machines.md`) |
 | Risks | severity-chip table: correctness, tests, API, security, performance |
 | Coupling | small SVG of what depends on the changed code |
 | Fixes | each risk worth acting on: `<ve-ask id="r1" q="Fix the unchecked null in parse()?">` (then `r2`, …; the risk in a few words) with `<ve-opt value="fix" default note="the fix in one line">Fix</ve-opt>` and `<ve-opt value="leave">Leave as is</ve-opt>` |
 
 Colors: red = removed or before · green = added or after · amber = risk · blue = context. Deliver with the skill's rules and hand over in one line.
 
-When the reply arrives: on a branch the user owns, apply only the fixes the reader explicitly accepted. Sending comments does not accept unanswered questions. Treat `no answer`, omitted answers, and `(default)` entries from older pages as unanswered, not approval. On someone else's PR, draft review comments for explicitly accepted fixes and do not post them.
+When the reply arrives: on a branch the user owns, apply only the fixes the reader picked; a question they left alone is not a yes. On someone else's PR, draft review comments for them and do not post them.

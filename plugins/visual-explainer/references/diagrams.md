@@ -85,7 +85,7 @@ A number that does not measure a span gets a small chart beside it: `<ve-waffle>
 
 ## Page structure for 4+ sections
 
-A sticky `<nav>` table of contents on the left; below 1000px a sticky top bar whose link list alone scrolls sideways (hidden scrollbar, right edge faded with `mask-image`). Sections get `scroll-margin-top` under it. Mark the active section with an `IntersectionObserver` (`rootMargin:'-10% 0px -80% 0px'`). Wrap `history.replaceState` in `try/catch`; it throws on `file://` pages.
+A kit `<nav class="ve-toc">` before `<main>` (`kit.md`), one link per section `id`. The kit makes it sticky, scrolls it sideways on a phone, and marks the section in view.
 
 ## Other shapes
 

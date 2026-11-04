@@ -1,0 +1,6 @@
+init   = { playback: "Stopped", volume: "Normal" }
+events = {
+  "you press play": { then: s => ({ ...s, playback: "Playing" }), at: "src/player.ts:99" },
+  "you turn it up": s => ({ ...s, volume: "Loud" }),
+}
+state  = s => s.playback
