@@ -15,6 +15,7 @@
 - A question whose suggested answer was written on the question instead of on the option rendered with nothing pre-selected and no warning. Rendering now stops with an error that shows where it belongs.
 - Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
 - An arrow's label no longer crosses the arrow beside it; the drawing widens to hold it.
+- The Pi extension loads in a Pi built as a single Bun binary, such as Pi-Bolt. It used to stop Pi from starting with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. Thanks to [@crisboarna](https://github.com/crisboarna) for #126.
 
 ## [0.14.0] - 2026-10-18
 
