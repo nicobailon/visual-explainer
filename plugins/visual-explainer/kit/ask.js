@@ -1,5 +1,5 @@
 // <ve-ask> on a kit page (kit/render.mjs inlines this only when the page has one, after kit/reply.js).
-// An answer the reader gives counts toward Reply (N) and goes into the reply; a question left alone is listed with its default, or as no answer.
+// An answer the reader gives counts toward Reply (N) and goes into the reply; a question left alone is listed as no answer, even with a default.
 {
 const R = window.veReply, asks = R ? R.$$("main fieldset.ask[data-ask]") : [];
 if (asks.length) {
@@ -26,7 +26,7 @@ if (asks.length) {
     a.addEventListener("click", (e) => { if (e.target.matches("input")) record(a); });
     a.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("input:checked")) record(a); });
   }
-  const state = (a) => (answered(a) ? pick(a) : [read(a) ?? []].flat().length ? `${pick(a)} (default)` : "no answer");
+  const state = (a) => (answered(a) ? pick(a) : "no answer");
   R.parts.push({
     count: () => asks.filter(answered).length,
     lines: () => asks.map((a) => `- ${a.dataset.ask} (${q(a)}): ${state(a)}`),

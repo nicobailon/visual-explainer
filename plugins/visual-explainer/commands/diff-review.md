@@ -22,4 +22,4 @@ Typical sections; merge, reorder, drop, or add as the content needs:
 
 Colors: red = removed or before · green = added or after · amber = risk · blue = context. Deliver with the skill's rules and hand over in one line.
 
-When the reply arrives: on a branch the user owns, apply the fixes they accepted. On someone else's PR, draft review comments for them and do not post them.
+When the reply arrives: on a branch the user owns, apply only the fixes the reader picked; a question they left alone is not a yes. On someone else's PR, draft review comments for them and do not post them.

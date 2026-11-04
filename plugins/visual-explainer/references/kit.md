@@ -89,4 +89,4 @@ Flags: `key`, `hot`, `async`, `new`, `gone`. `data-s` and `data-ref` work as on 
 
 A state machine in the user's code: a `<script type="text/plain" model>` child walks it, and the render draws the arrows, the marks, and the replay (`machines.md`).
 
-`<ve-ask id="ttl" q="Key lifetime?"><ve-opt value="60">60 s</ve-opt><ve-opt value="300" default>5 min</ve-opt></ve-ask>` asks the reader to choose; the answer joins their reply. `default` on a `<ve-opt>` pre-selects your pick; `multi` on `<ve-ask>` allows several, each pick with its own `default`.
+`<ve-ask id="ttl" q="Key lifetime?"><ve-opt value="60">60 s</ve-opt><ve-opt value="300" default>5 min</ve-opt></ve-ask>` asks the reader to choose; the answer joins their reply. `default` on a `<ve-opt>` pre-selects your pick and labels it Suggested; `multi` on `<ve-ask>` allows several, each pick with its own `default`. A pre-selected pick counts only once the reader picks it; until then the reply lists the question as `no answer`.
