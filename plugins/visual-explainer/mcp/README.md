@@ -9,6 +9,8 @@ It does not start an HTTP listener, handle credentials, call an LLM, or store ou
 
 Rendered files are written only inside the configured output directory. The default is `~/.agent/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths, including macOS `/tmp`, are rejected before anything is created. The default directory follows a symlinked `~/.agent`. Render targets reject existing symlinks and are written through a temporary file rename. Choose a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
 
+A page can hold a state-machine model (`<ve-flow>` with a `<script type="text/plain" model>`), which is code the render runs. The server refuses it unless started with `VISUAL_EXPLAINER_RUN_MODELS=1`. With it set, a page's model runs as Node with this server's permissions, importing from the `root` argument or the server's working directory; set it only when every client that can call the render tool is trusted.
+
 ## Run from a package install
 
 ```json
@@ -62,6 +64,7 @@ The server exposes the bundled command templates as MCP prompts:
 - `project-recap`
 - `compare`
 - `fact-check`
+- `state-machine`
 
 Pass `request` to fill the template's `$@` argument.
 

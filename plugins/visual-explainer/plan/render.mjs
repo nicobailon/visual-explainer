@@ -2,13 +2,14 @@
 // Turns a plan source page (<ve-*> tags) into one static, self-contained HTML page.
 // It checks the plan's shape, reads cited code from disk, and inlines plan.css, kit/reply.js, and plan.js.
 // No dependencies, so it runs from a copied skill folder.
-import { readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { dirname, extname, join, relative, resolve, sep } from "node:path";
+import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { addClass, esc, find, hasClass, inner, kids, parseHtml, rawText, serialize, textOf, words } from "../kit/html.mjs";
 import { expandFlow, ifAttrs } from "../kit/flow.mjs";
 import { expandAsk as askTag } from "../kit/ask.mjs";
+import { checkAt, fileReader } from "../kit/files.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -16,7 +17,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const hasPlan = (html) => find(parseHtml(html), (n) => n.name === "ve-plan").length > 0;
 
 /* ── code: read from disk inside the root, highlight, number ── */
-const SECRET_NAME = /(^|\/)\.(git|ssh|aws|gnupg|kube)(\/|$)|(^|\/)(\.env(\.[^/]*)?|\.npmrc|\.netrc|\.pypirc|\.pgpass|\.git-credentials|id_(rsa|dsa|ecdsa|ed25519)[^/]*|credentials[^/]*|secrets?(\.[^/]*)?)$|\.(pem|key|p12|pfx|tfstate|kdbx|keystore)$/i;
 const SECRET_TEXT = /-----BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_\w{30,}|sk-(?:ant-)?[A-Za-z0-9_-]{32,}|xox[abeprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{30,}/;
 const KEYWORDS = new Set(`abstract and as async await break case catch class const continue def default defer del delete do elif else enum except export extends false final finally fn for from func function go if impl import in instanceof interface is lambda let match mod mut new nil none not null of or package pass private protected pub public raise readonly return select self static struct super switch this throw throws trait true try type typeof undefined use var void where while with yield
 add alter by column constraint create cross distinct drop exists foreign group having index inner insert into join key left limit offset on order outer primary references returning right set skip table union unique update values when then end begin locked`.split(/\s+/));
@@ -55,34 +55,16 @@ function dedent(text) {
 const EDITORS = { vscode: "vscode://file", cursor: "cursor://file", windsurf: "windsurf://file", zed: "zed://file" };
 
 /* ── the renderer ── */
-export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode", sendBack = false } = {}) {
+export function renderPlan(source, { root = process.cwd(), editor = process.env.VISUAL_EXPLAINER_EDITOR || "vscode", sendBack = false, models = true } = {}) {
   const errors = [], warnings = [];
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
   const realRoot = realpathSync(root);
   const filesRead = new Set();
-  const fileCache = new Map();
+  const readFile = fileReader(realRoot);
   const editorBase = EDITORS[editor] ?? null;
   if (!editorBase && editor !== "none") warnings.push(`VISUAL_EXPLAINER_EDITOR="${editor}" is unknown (use ${Object.keys(EDITORS).join(", ")} or none); no editor links`);
 
-  function readFile(path) {
-    if (fileCache.has(path)) return fileCache.get(path);
-    let out;
-    try {
-      const requested = relative(realRoot, resolve(realRoot, path)).split(sep).join("/");
-      const real = realpathSync(resolve(realRoot, path));
-      const rel = relative(realRoot, real);
-      if (rel.startsWith("..") || rel.startsWith(sep) || /^[a-z]:/i.test(rel)) out = { error: `${path} is outside ${realRoot}` };
-      // check the cited name and the link target both, so a link named .env cannot pass as config.txt
-      else if (SECRET_NAME.test(requested) || SECRET_NAME.test(rel.split(sep).join("/"))) out = { error: `${path} looks like a secrets file; not reading it` };
-      else if (!statSync(real).isFile()) out = { error: `${path} is not a file` };
-      else out = { text: readFileSync(real, "utf8").replace(/\r\n/g, "\n"), abs: real };
-    } catch {
-      out = { missing: true, error: `${path} not found under ${realRoot}` };
-    }
-    fileCache.set(path, out);
-    return out;
-  }
   const editorHref = (abs, line) => {
     if (!editorBase || !abs) return null;
     const p = abs.replace(/\\/g, "/");
@@ -170,12 +152,8 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     if (c.attrs.status && !["built", "changed", "dropped"].includes(c.attrs.status)) errors.push(`${c.label}: status="${c.attrs.status}"; use built, changed, or dropped`);
     if ((c.attrs.status === "changed" || c.attrs.status === "dropped") && !c.attrs.note) warnings.push(`${c.label}: status="${c.attrs.status}" without note=""; say why`);
     if (c.attrs.at) {
-      const [path, line] = c.attrs.at.split(":");
-      const r = readFile(path);
-      // a path alone may name a file the plan creates; a line must exist
-      if (line !== undefined && !/^[1-9]\d*$/.test(line)) errors.push(`${c.label}: at="${c.attrs.at}"; write at="path" or at="path:line" with a line number from 1`);
-      else if (r.error && (!r.missing || line)) errors.push(`${c.label}: at="${c.attrs.at}": ${r.error}`);
-      else if (!r.missing && line && +line > r.text.split("\n").length) errors.push(`${c.label}: at="${c.attrs.at}", but ${path} has ${r.text.split("\n").length} lines`);
+      const r = checkAt(c.attrs.at, readFile);
+      if (r.error) errors.push(`${c.label}: ${r.error}`);
       c.atAbs = r.abs;
     }
   }
@@ -354,7 +332,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     // the callout shows and hides with its box
     const callout = (k, x, y) => (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no))
       .map((no, i) => { called.add(no); return `<g${ifAttrs(k, "ve-co")} data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`; }).join("");
-    return expandFlow(n, { errors, warnings, where, ref: refOf, callout });
+    return expandFlow(n, { errors, warnings, where, ref: refOf, callout, root, models });
   };
 
   const CHIP = { built: ["ok", "Built"], changed: ["warn", "Changed"], dropped: ["risk", "Dropped"] };
@@ -513,9 +491,9 @@ ${js}
  * The plan step shared by the Pi tool and the MCP server. Returns null for an ordinary page. A plan source becomes the
  * page, renamed from <name>.src.html, with the source kept beside it. A page already rendered passes through untouched.
  */
-export function renderPlanForHost(html, { root, filename, sendBack = false }) {
+export function renderPlanForHost(html, { root, filename, sendBack = false, models = true }) {
   if (!hasPlan(html)) return /<script data-ve-plan>/.test(html) ? { html, filename, note: "" } : null;
-  const r = renderPlan(html, { root, sendBack });
+  const r = renderPlan(html, { root, sendBack, models });
   if (r.errors.length) throw new Error(`The plan has ${r.errors.length} error(s); nothing was written:\n${r.errors.map((e) => `- ${e}`).join("\n")}`);
   const page = filename.replace(/\.src(\.html?)$/i, "$1");
   const source = page.replace(/\.html?$/i, ".src.html");

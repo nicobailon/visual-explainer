@@ -66,7 +66,7 @@ type RenderDetails = OpenResult & {
   sheets?: string[];
 };
 
-type PageReport = { figures: number; uncaptioned: number; dataTags: number; flows: number; proseWords: number };
+type PageReport = { figures: number; uncaptioned: number; dataTags: number; flows: number; proseWords: number; machines?: string[] };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
 
