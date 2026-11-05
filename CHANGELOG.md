@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.15.0] - 2026-11-04
+
+### Highlights
+- State machines drawn from your own code. Point a page at a reducer or transition function and it walks every state the code can reach: states you forgot to draw, events that never fire, dead ends, and broken rules you can replay step by step. A new `/state-machine` command does the whole job.
+- Questions you skip stay skipped. A suggested answer no longer reaches the agent as your choice unless you pick it.
+- Pages read well without any styling of their own, and long pages get a section menu that stays at the top.
+- In Pi, you choose where pages are saved, including a folder inside each project.
+- The Pi extension now loads in Pi builds that ship as a single Bun binary, such as Pi-Bolt.
 
 ### Added
 - Pages read well without any page CSS. Paragraphs and lists keep a comfortable line length, code blocks get a framed, scrollable style, plain lists get proper indents, and the blocks of a section get even spacing, so a figure's caption no longer sits on the paragraph after it.
@@ -10,14 +17,14 @@
 - In Pi, choose where pages are saved with a `visualExplainer.outputDir` setting, in your own settings or a project's. Set it to `"project"` to keep each repository's pages in its own `.agent/diagrams/`, or give any path. Thanks to [@IdrisGit](https://github.com/IdrisGit) for #128.
 
 ### Changed
-- Diff reviews and comparisons walk a state machine read from code on each side, so they show a rule a change newly breaks or a state it makes unreachable.
+- Diff reviews and comparisons walk a state machine read from the code on each side, so they show a rule a change newly breaks or a state it makes unreachable.
 
 ### Fixed
-- A question whose suggested answer was written on the question instead of on the option rendered with nothing pre-selected and no warning. Rendering now stops with an error that shows where it belongs.
+- Sending a reply no longer answers the questions you left alone. A question with a suggested answer used to go into the reply as that answer, marked "(default)", so an agent could read an untouched "Approve" as approval and start work. It now goes in as "no answer" until you pick an option. Thanks to [@IdrisGit](https://github.com/IdrisGit) for #129 and [@mplibunao](https://github.com/mplibunao) for reporting #127.
+- The Pi extension loads in a Pi built as a single Bun binary, such as Pi-Bolt. It used to stop Pi from starting with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. Thanks to [@crisboarna](https://github.com/crisboarna) for #126.
+- A question whose suggested answer was written on the question instead of on the option showed nothing pre-selected and gave no warning. Rendering now stops with an error that shows where it belongs.
 - Values that change during a step-through, like a counter, showed as black, unreadable text in dark mode unless the page styled them itself.
 - An arrow's label no longer crosses the arrow beside it; the drawing widens to hold it.
-- Sending a reply no longer answers the questions the reader left alone. A question with a suggested answer went into the reply as that answer, marked "(default)", so an agent could read an untouched "Approve" as approval and start work. It now goes in as "no answer" until the reader clicks an option. Thanks to [@IdrisGit](https://github.com/IdrisGit) for #129 and [@mplibunao](https://github.com/mplibunao) for reporting #127.
-- The Pi extension loads in a Pi built as a single Bun binary, such as Pi-Bolt. It used to stop Pi from starting with `ENOENT: no such file or directory, lstat '/$bunfs/root/pi'`. Thanks to [@crisboarna](https://github.com/crisboarna) for #126.
 
 ## [0.14.0] - 2026-10-18
 
