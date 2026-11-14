@@ -1,6 +1,6 @@
 # Hand-drawn SVG figures
 
-Inline SVG is the default figure: exact placement, page tokens and fonts, and motion. The kit (`kit.md`) styles and runs every pattern here; this file gives the markup contracts and the rules.
+Inline SVG is only for figures that truly need it (SKILL.md); it gives exact placement, page tokens and fonts, and motion. The kit (`kit.md`) styles and runs every pattern here; this file gives the markup contracts and the rules.
 
 Steps, replays, live figures, and 3D: `motion.md`.
 
