@@ -42,7 +42,7 @@ The kit already styles plain HTML, so a page adds none of it: a section's paragr
 
 | Part | Markup |
 |---|---|
-| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `y`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
+| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `x` and `y` (kit CSS sets `text-anchor: middle`, which beats a `text-anchor` attribute), so `x` is the box centre; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
 | Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>` (`l` ends at `x`, `r` starts there); draw edges before nodes |
 | Boundary, slots, axes | `rect.ve-bnd` + `text.ve-bnd-t` tag; `rect.ve-slot` (`.is-on` filled); `.ve-axis` lines + `text.ve-axis-t` |
 | Label | `<text class="ve-tag [key\|risk]">` for a note or a count on a drawing; SVG text with no fill renders black, which is a render error |
