@@ -21,7 +21,7 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
   </header>
   <figure>
     <div class="frame"><svg class="ve-svg" viewBox="0 0 800 300" aria-label="What the picture shows">…</svg></div>
-    <figcaption><span class="fig-n">Fig. 1</span>The claim in one sentence.</figcaption>
+    <figcaption><span class="fig-n"></span>The claim in one sentence.</figcaption>
   </figure>
   <section>
     <div class="sec-head"><p class="ve-label caps">Load</p><h2>The takeaway as a heading</h2></div>
@@ -33,6 +33,8 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
 ```
 
 The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and the SVG defs (`#ve-ah` arrowhead, `#ve-node` fill, `#ve-w-on` / `#ve-w-off` waffle cells).
+
+It also numbers each empty `.fig-n` in page order, and writes that number into an empty `<a href="#id"></a>` that points at `<figure id="id">`. A tag left open or a closing tag with nothing to close is a render error.
 
 **Registers:** `data-register="instrument"` (default), `blueprint`, `paper`, or `editorial` (`style-guide.md`). Use the tokens as `var(--accent)`, `var(--s-4)`; a page's own `:root { --accent: … }` wins over the kit.
 

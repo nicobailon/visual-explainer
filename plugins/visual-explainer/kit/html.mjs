@@ -13,7 +13,8 @@ function parseAttrs(src) {
 }
 
 export function parseHtml(html) {
-  const root = { name: "#root", attrs: {}, children: [] };
+  // `strays` holds closing tags that close nothing, which a browser drops without a word
+  const root = { name: "#root", attrs: {}, children: [], strays: [] };
   const stack = [root];
   const top = () => stack[stack.length - 1];
   const text = (raw) => raw && top().children.push({ text: raw });
@@ -26,7 +27,7 @@ export function parseHtml(html) {
     if (m[0].startsWith("<!")) { top().children.push({ text: m[0], comment: true }); continue; }
     if (m[1]) {
       const i = stack.findLastIndex((n) => n.name === m[1].toLowerCase());
-      if (i > 0) { stack[i].closeRaw = m[0]; stack.length = i; } else text(m[0]);
+      if (i > 0) { stack[i].closeRaw = m[0]; stack.length = i; } else { text(m[0]); root.strays.push({ name: m[1].toLowerCase(), pos: m.index }); }
       continue;
     }
     const name = m[2].toLowerCase();

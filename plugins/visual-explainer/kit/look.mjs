@@ -2,7 +2,7 @@
 // script errors, sideways scrolling, labels under 12 px, text that overlaps or runs out of its drawing, headings that sit on what
 // follows, every stepper step, and a contact sheet of the first screen, the figures, and the steps. playwright-core is an optional peer.
 import { createRequire } from "node:module";
-import { readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -202,6 +202,12 @@ function goStep([r, k]) {
 }
 
 const pngSize = (png) => ({ w: png.readUInt32BE(16), h: png.readUInt32BE(20) });
+// a crop carries its figure's own number, so the sheet and the page agree
+function figName(f) {
+  if (!f.matches("main figure")) return "Stepper";
+  const n = f.querySelector("figcaption .fig-n")?.textContent.match(/\d+/)?.[0];
+  return n ? `Fig ${n}` : `Figure ${[...document.querySelectorAll("main figure")].indexOf(f) + 1} (no number)`;
+}
 
 // Lays the crops out in rows on sheets of at most SHEET_W × SHEET_H: the first screens, then each figure, then each stepper's steps
 // as thumbnails. A page with more than fits on MAX_SHEETS is drawn smaller before anything is left out.
@@ -231,7 +237,7 @@ function layout(items) {
     if (toSheets(rows).length <= MAX_SHEETS) break;
   }
   const sheets = toSheets(rows);
-  return { sheets: sheets.slice(0, MAX_SHEETS), omitted: sheets.slice(MAX_SHEETS).flat().flat().length };
+  return { sheets: sheets.slice(0, MAX_SHEETS), omitted: sheets.slice(MAX_SHEETS).flat().flat() };
 }
 
 function toSheets(rows) {
@@ -321,6 +327,8 @@ export async function lookAt(file, { sheet = true } = {}) {
       await page.waitForTimeout(100);
       result.problems.push(...new Set(gaps));
       if (sheet) items.push({ kind: "overview", cells: [{ png: desktop, ...pngSize(desktop), label: "First screen · 1280" }, { png: phone, ...pngSize(phone), label: "390" }] });
+      // a figure in a closed <details> is checked and cropped as a reader who opens it sees it
+      if (await page.evaluate(() => [...document.querySelectorAll("main details:not([open])")].map((d) => (d.open = true)).length)) note(await page.evaluate(inspect, null));
 
       // figures below the first screen, steppers aside (their steps follow)
       const figs = await page.$$("main figure");
@@ -340,11 +348,11 @@ export async function lookAt(file, { sheet = true } = {}) {
           await el.evaluate((e) => { for (const [f, s] of e.__veOld) s === null ? f.removeAttribute("style") : f.setAttribute("style", s); delete e.__veOld; });
         }
       };
-      for (const [i, fig] of figs.entries()) {
+      for (const fig of figs) {
         const { top, stepped } = await fig.evaluate((f) => ({ top: f.getBoundingClientRect().bottom + scrollY, stepped: f.matches(".ve-steps") || !!f.querySelector(".ve-steps") }));
         if (!sheet || stepped || top <= 900) continue;
         const png = await shoot(fig);
-        items.push({ kind: "figure", cells: [{ png, ...pngSize(png), label: `Fig ${i + 1}` }] });
+        items.push({ kind: "figure", cells: [{ png, ...pngSize(png), label: await fig.evaluate(figName) }] });
       }
 
       // each stepper, step by step
@@ -354,13 +362,13 @@ export async function lookAt(file, { sheet = true } = {}) {
         const fig = (await root.evaluateHandle((e) => e.closest("figure") ?? e)).asElement();
         // a step's thumbnail is its drawing; the caption is text the agent wrote
         const drawing = (await root.evaluateHandle((e) => e.querySelector(".frame") ?? e.querySelector("svg") ?? e)).asElement();
-        const figN = await fig.evaluate((f) => [...document.querySelectorAll("main figure")].indexOf(f) + 1);
+        const name = await fig.evaluate(figName);
         const cells = [];
         for (let k = 0; k < n; k++) {
           if (!(await page.evaluate(goStep, [r, k]))) break;
           await page.waitForTimeout(60);
           note(await page.evaluate(inspect, r), `${k + 1}`);
-          if (sheet) { const png = await shoot(drawing); cells.push({ png, ...pngSize(png), label: `${figN ? `Fig ${figN}` : "Stepper"} · step ${k + 1}/${n}` }); }
+          if (sheet) { const png = await shoot(drawing); cells.push({ png, ...pngSize(png), label: `${name} · step ${k + 1}/${n}` }); }
         }
         if (n) await page.evaluate(goStep, [r, n - 1]);
         if (cells.length) items.push({ kind: "steps", cells });
@@ -391,7 +399,13 @@ export async function lookAt(file, { sheet = true } = {}) {
       for (const f of readdirSync(dirname(path))) if (own.test(f)) rmSync(join(dirname(path), f));
       const { sheets, omitted } = layout(items);
       result.sheets = await drawSheets(browser, sheets, outBase);
-      result.omitted = omitted;
+      // what does not fit on the sheets is still one file per crop, named by its label, so the agent can read any figure
+      const crops = `${outBase}.crops`;
+      rmSync(crops, { recursive: true, force: true });
+      if (omitted.length) mkdirSync(crops);
+      for (const c of omitted) writeFileSync(join(crops, `${c.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.png`), c.png);
+      result.omitted = omitted.length;
+      if (omitted.length) result.crops = crops;
     }
   } catch (e) {
     // the page is already written; a browser failure is a skipped check, not a failed render
@@ -421,6 +435,6 @@ export function lookLines(r) {
   const lines = shown.length
     ? [...shown.map((p) => `✗ ${p}`), ...(r.problems.length > shown.length ? [`✗ … and ${r.problems.length - shown.length} more`] : [])]
     : [`✓ Visual check: no problems · smallest label ${WIDTHS.map((w) => `${r.widths[w].smallest?.px ?? "—"}px at ${w}`).join(", ")}`];
-  if (r.sheets.length) lines.push(`Look at: ${r.sheets.join(", ")}${r.omitted ? ` (${r.omitted} more crops left out)` : ""}`);
+  if (r.sheets.length) lines.push(`Look at: ${r.sheets.join(", ")}${r.omitted ? ` (${r.omitted} more crops in ${r.crops}/, named by label: fig-12.png)` : ""}`);
   return lines;
 }
