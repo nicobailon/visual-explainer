@@ -6,6 +6,9 @@
 - Figures number themselves. Leave the number in a caption empty and rendering writes `Fig. 1`, `Fig. 2`, … in page order; a link written as `<a href="#figure-id"></a>` gets that figure's number. Adding or moving a figure no longer leaves two figures with the same number or a reference to the wrong one.
 - Every figure can be looked at after a render. Figures that do not fit on the contact sheets are saved one file each, such as `fig-12.png`, and the render prints where. Figures inside a closed `<details>` panel are now checked and included too.
 
+### Changed
+- Plain box-and-arrow diagrams are laid out for the agent by default instead of drawn by hand, so it writes no coordinates and there are fewer misplaced labels, which helps smaller models most. Diagrams that need more than boxes and arrows are still drawn by hand. Thanks to [@nicezic](https://github.com/nicezic) for #137.
+
 ### Fixed
 - A tag that is never closed, or a closing tag with nothing to close, now stops the render with its line number. The browser used to repair these silently, often by pulling the rest of the page into one figure or panel.
 - Contact sheet labels use the figure numbers printed on the page, so `Fig 15` on the sheet is `Fig. 15` on the page.
