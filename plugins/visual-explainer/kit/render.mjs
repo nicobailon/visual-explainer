@@ -155,7 +155,8 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
     svg.openRaw = style ? svg.openRaw.replace(style[0], ` style=${style[1]}${style[2].replace(/;?\s*$/, "")}; --ve-min: ${min}px${style[1]}`) : svg.openRaw.replace(/\s*(\/?)>$/, ` style="--ve-min: ${min}px"$1>`);
   }
   // a browser repairs a missing or extra closing tag without a word, often by pulling the rest of the page into one figure or panel
-  for (const n of find(doc, (x) => !x.selfClose && x.closeRaw === undefined && !OPTIONAL_END.has(x.name))) errors.push(`${where(n)}: never closed; add </${n.name}>`);
+  // a raw-text tag (script, style) with no ending gets closeRaw "" from the parser, so a falsy closeRaw is a missing one
+  for (const n of find(doc, (x) => !x.selfClose && !x.closeRaw && !OPTIONAL_END.has(x.name))) errors.push(`${where(n)}: never closed; add </${n.name}>`);
   for (const s of doc.strays.filter((x) => !OPTIONAL_END.has(x.name))) errors.push(`line ${lineOf(s.pos)} </${s.name}>: closes nothing; remove it`);
   // figures are numbered in page order, so adding or moving one never leaves two "Fig. 15"s or a stale "(Fig. 17)"
   const numbered = find(doc, (x) => hasClass(x, "fig-n") && FIG_TEXT.test(textOf(x)));

@@ -14,5 +14,6 @@ assert.equal(renderPage(numbered.html).html, numbered.html);
 assert.deepEqual(renderPage(page(`${fig("a")}<a href="#c"></a>`)).errors, ['line 2 <a>: href="#c" names no numbered <figure>']);
 assert.deepEqual(renderPage(page(`<details><summary>More</summary>\n${fig("a")}`)).errors, ["line 2 <details>: never closed; add </details>"]);
 assert.deepEqual(renderPage(page(`${fig("a")}\n</figure><p>ok</p>`)).errors, ["line 3 </figure>: closes nothing; remove it"]);
+assert.deepEqual(renderPage(page(fig("a")).replace("</main>", "</main>\n<script>let x = 1;")).errors, ["line 4 <script>: never closed; add </script>"]);
 
 console.log("Figure check passed");

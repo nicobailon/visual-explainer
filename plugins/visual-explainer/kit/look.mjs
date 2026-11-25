@@ -13,6 +13,11 @@ const MIN_HEADING_GAP = 8;
 const SHEET_W = 1200, SHEET_H = 960, PAD = 16, GAP = 12, LABEL = 22, MAX_SHEETS = 3;
 // a font still downloading after load must not hold the render; a late font only shifts glyphs slightly
 const fontsReady = () => Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]);
+// a closed <details> is checked as a reader who opens it sees it; its figures are marked so they get a crop even on the first screen
+const openPanels = () => [...document.querySelectorAll("main details:not([open])")].map((d) => {
+  for (const f of [...d.querySelectorAll("figure"), d.closest("figure")]) if (f) f.__veRevealed = true;
+  d.open = true;
+}).length;
 
 async function launch() {
   let chromium;
@@ -302,6 +307,7 @@ export async function lookAt(file, { sheet = true } = {}) {
       page.on("pageerror", (e) => result.errors.push(`page error at ${width}px: ${e.message}`));
       await page.goto(url, { waitUntil: "load", timeout: 15000 });
       await page.evaluate(fontsReady);
+      await page.evaluate(openPanels);
       await page.waitForTimeout(300);
       result.widths[width] = await page.evaluate(measure, MIN_LABEL);
       await page.close();
@@ -327,8 +333,7 @@ export async function lookAt(file, { sheet = true } = {}) {
       await page.waitForTimeout(100);
       result.problems.push(...new Set(gaps));
       if (sheet) items.push({ kind: "overview", cells: [{ png: desktop, ...pngSize(desktop), label: "First screen · 1280" }, { png: phone, ...pngSize(phone), label: "390" }] });
-      // a figure in a closed <details> is checked and cropped as a reader who opens it sees it
-      if (await page.evaluate(() => [...document.querySelectorAll("main details:not([open])")].map((d) => (d.open = true)).length)) note(await page.evaluate(inspect, null));
+      if (await page.evaluate(openPanels)) note(await page.evaluate(inspect, null));
 
       // figures below the first screen, steppers aside (their steps follow)
       const figs = await page.$$("main figure");
@@ -349,8 +354,8 @@ export async function lookAt(file, { sheet = true } = {}) {
         }
       };
       for (const fig of figs) {
-        const { top, stepped } = await fig.evaluate((f) => ({ top: f.getBoundingClientRect().bottom + scrollY, stepped: f.matches(".ve-steps") || !!f.querySelector(".ve-steps") }));
-        if (!sheet || stepped || top <= 900) continue;
+        const { top, stepped, revealed } = await fig.evaluate((f) => ({ top: f.getBoundingClientRect().bottom + scrollY, stepped: f.matches(".ve-steps") || !!f.querySelector(".ve-steps"), revealed: !!f.__veRevealed }));
+        if (!sheet || stepped || (top <= 900 && !revealed)) continue;
         const png = await shoot(fig);
         items.push({ kind: "figure", cells: [{ png, ...pngSize(png), label: await fig.evaluate(figName) }] });
       }
