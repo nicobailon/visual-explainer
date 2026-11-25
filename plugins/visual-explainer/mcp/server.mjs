@@ -118,7 +118,7 @@ function outputFilename(input) {
 function resolveOutputDirectory() {
   const configured = process.env.VISUAL_EXPLAINER_OUTPUT_DIR?.trim();
   return {
-    path: configured ? resolve(configured) : join(homedir(), ".agent", "diagrams"),
+    path: configured ? resolve(configured) : join(homedir(), ".agents", "diagrams"),
     configured: Boolean(configured),
   };
 }
@@ -257,7 +257,7 @@ function prepareVisualExplanation(params) {
     "Choose the page shape with the visual-explainer prompts and skill resources.",
     "Gather and verify the facts yourself; the server does not call an LLM.",
     "Write <name>.src.html in the output directory and call visual_explainer_render_html with path (without file access: html and filename).",
-    "The server writes only inside its output directory (default ~/.agent/diagrams/).",
+    "The server writes only inside its output directory (default ~/.agents/diagrams/).",
   ];
 
   const structuredContent = { topic, goal, audience, files, recommendedFlow };
@@ -387,7 +387,7 @@ function registerTools(server) {
 
   server.registerTool("visual_explainer_render_html", {
     title: "Render Visual Explainer HTML",
-    description: "Render a page source (path) or HTML to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
+    description: "Render a page source (path) or HTML to the configured output directory (default ~/.agents/diagrams/). Does not call an LLM.",
     inputSchema: renderInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },

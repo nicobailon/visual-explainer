@@ -81,7 +81,7 @@ The Pi extension registers one native `visual_explainer` tool. Use `action: "pre
 
 #### Pi output directory
 
-Output defaults to `~/.agent/diagrams/`, regardless of global or `--local` installation. **Merge** this field into existing personal (`~/.pi/agent/settings.json`) or project (`<project>/.pi/settings.json`) settings, then run `/reload` or restart Pi:
+Output defaults to `~/.agents/diagrams/`, regardless of global or `--local` installation. **Merge** this field into existing personal (`~/.pi/agent/settings.json`) or project (`<project>/.pi/settings.json`) settings, then run `/reload` or restart Pi:
 
 ```json
 {
@@ -93,7 +93,7 @@ Output defaults to `~/.agent/diagrams/`, regardless of global or `--local` insta
 
 Precedence: default → personal settings → trusted project settings → nonblank `VISUAL_EXPLAINER_OUTPUT_DIR`. Pi handles merging and project trust.
 
-- `"project"` uses the session's Git root plus `.agent/diagrams/`, or the session directory outside Git.
+- `"project"` uses the session's Git root plus `.agents/diagrams/`, or the session directory outside Git.
 - Other strings are paths: `"docs/diagrams"`, `"/some/destination"`, or `"~/Documents/my diagrams"`. Relative paths use the session directory; only the exact `"project"` is special.
 - Blank values select the default; non-strings are an error. The environment variable keeps its existing behavior (resolved against Pi's launch directory, no `~`).
 
@@ -115,7 +115,7 @@ curl -fsSL https://raw.githubusercontent.com/nicobailon/visual-explainer/main/in
 
 **MCP:**
 
-Use `visual-explainer-mcp` from a package install, or run `npm install --no-package-lock` before pointing your host at `plugins/visual-explainer/mcp/server.mjs` from a checkout. Some hosts need an absolute path to the binary. The MCP server is local stdio only. It does not call an LLM, start an HTTP listener, handle credentials, or write outside its configured output directory (default `~/.agent/diagrams/`). Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths, including macOS `/tmp`, are rejected before anything is created. The default directory follows a symlinked `~/.agent`. Render targets reject existing symlinks and are written through a temporary file rename. Point the jail at a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write.
+Use `visual-explainer-mcp` from a package install, or run `npm install --no-package-lock` before pointing your host at `plugins/visual-explainer/mcp/server.mjs` from a checkout. Some hosts need an absolute path to the binary. The MCP server is local stdio only. It does not call an LLM, start an HTTP listener, handle credentials, or write outside its configured output directory (default `~/.agents/diagrams/`). Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths, including macOS `/tmp`, are rejected before anything is created. The default directory follows a symlinked `~/.agent`. Render targets reject existing symlinks and are written through a temporary file rename. Point the jail at a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write.
 
 Example package configuration:
 
@@ -482,7 +482,7 @@ Any command that produces a scrollable page supports `--slides` to generate a sl
 For a portable presentation file, add `--pptx` to `/generate-slides` or run the exporter after generating an HTML deck:
 
 ```bash
-visual-explainer-pptx ~/.agent/diagrams/my-deck.html ~/.agent/diagrams/my-deck.pptx
+visual-explainer-pptx ~/.agents/diagrams/my-deck.html ~/.agents/diagrams/my-deck.pptx
 ```
 
 PPTX export is best-effort and static. It extracts titles, text, bullets, simple tables, code blocks, and Mermaid source placeholders from `<section class="slide">` elements. It does not preserve animations, reader navigation, responsive layout, custom fonts, live Mermaid/Chart.js/SVG/canvas rendering, or JavaScript behavior. Use the HTML deck for final fidelity.
@@ -533,7 +533,7 @@ plugins/
         └── slide-deck.html (slide engine + reference deck)
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` by default (native Pi can configure the directory above) → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. When Chrome and `playwright-core` are available, the renderer also checks the page in a browser at phone and desktop widths and writes `filename.sheet.png`, a contact sheet of the first screen, the figures, and every step, which the agent looks at instead of taking its own screenshots. If your pages are only read on a desktop, set `VISUAL_EXPLAINER_WIDTHS=1280` to skip the phone pass. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
+**Output:** `~/.agents/diagrams/filename.html` by default (native Pi can configure the directory above) → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. When Chrome and `playwright-core` are available, the renderer also checks the page in a browser at phone and desktop widths and writes `filename.sheet.png`, a contact sheet of the first screen, the figures, and every step, which the agent looks at instead of taking its own screenshots. If your pages are only read on a desktop, set `VISUAL_EXPLAINER_WIDTHS=1280` to skip the phone pass. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
 
 Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when you ask for it. Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 
@@ -541,7 +541,7 @@ Pages are figure-first: the first screen shows the answer as a picture and one s
 
 - Generated HTML is portable and self-contained, but auto-opening depends on the harness, browser access, and sandbox rules.
 - PPTX export is a static best-effort handoff. The HTML deck remains the source of truth for full visual fidelity.
-- Output defaults to `~/.agent/diagrams/`. Native Pi supports `visualExplainer.outputDir`; Pi and MCP accept a nonblank `VISUAL_EXPLAINER_OUTPUT_DIR` override. Other harnesses can follow a user-supplied path.
+- Output defaults to `~/.agents/diagrams/`. Native Pi supports `visualExplainer.outputDir`; Pi and MCP accept a nonblank `VISUAL_EXPLAINER_OUTPUT_DIR` override. Other harnesses can follow a user-supplied path.
 - Results vary by model capability.
 
 ## Credits

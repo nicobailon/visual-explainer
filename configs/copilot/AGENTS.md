@@ -6,4 +6,4 @@ For a VS Code workspace, copy these instructions into the project custom-instruc
 
 When the user asks for a diagram, architecture overview, diff review, plan review, project recap, slide deck, or complex comparison table, read `plugins/visual-explainer/SKILL.md` and follow its workflow. Use the command markdown in `plugins/visual-explainer/commands/` as templates when helpful.
 
-Write generated HTML to `~/.agent/diagrams/` unless the user asks for another path. Open it in a browser only when the environment permits it. If browser access is blocked, report the file path.
+Write generated HTML to `~/.agents/diagrams/` unless the user asks for another path. Open it in a browser only when the environment permits it. If browser access is blocked, report the file path.

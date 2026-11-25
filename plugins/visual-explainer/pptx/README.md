@@ -17,14 +17,14 @@ It does not preserve:
 From a package install:
 
 ```bash
-visual-explainer-pptx ~/.agent/diagrams/my-deck.html ~/.agent/diagrams/my-deck.pptx
+visual-explainer-pptx ~/.agents/diagrams/my-deck.html ~/.agents/diagrams/my-deck.pptx
 ```
 
 From a checkout, install dependencies first:
 
 ```bash
 npm install --no-package-lock
-node plugins/visual-explainer/pptx/export.mjs ~/.agent/diagrams/my-deck.html ~/.agent/diagrams/my-deck.pptx
+node plugins/visual-explainer/pptx/export.mjs ~/.agents/diagrams/my-deck.html ~/.agents/diagrams/my-deck.pptx
 ```
 
 If you omit the output path, the exporter writes beside the input with a `.pptx` suffix.

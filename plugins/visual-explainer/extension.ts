@@ -157,7 +157,7 @@ function resolveOutputDirectory(pi: ExtensionAPI, cwd: string): OutputDirectory 
   const settings = typeof pi.getSettings === "function" ? pi.getSettings() as { visualExplainer?: { outputDir?: unknown } } : {};
   const value = settings.visualExplainer?.outputDir;
   if (value !== undefined && typeof value !== "string") throw new Error("visualExplainer.outputDir must be a string");
-  if (value === undefined || !value.trim()) return { path: join(homedir(), ".agent", "diagrams"), configured: false };
+  if (value === undefined || !value.trim()) return { path: join(homedir(), ".agents", "diagrams"), configured: false };
 
   if (value === "project") {
     // A Pi launched from a Git hook can inherit another repository's location.
@@ -165,7 +165,7 @@ function resolveOutputDirectory(pi: ExtensionAPI, cwd: string): OutputDirectory 
     for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR"]) delete env[key];
     const git = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
     const root = git.status === 0 ? git.stdout.replace(/\r?\n$/, "") : cwd;
-    return { path: join(root, ".agent", "diagrams"), configured: true };
+    return { path: join(root, ".agents", "diagrams"), configured: true };
   }
   // Nonblank settings paths are literal, including surrounding spaces and "./project".
   const path = value === "~" ? homedir() : value.startsWith("~/") ? join(homedir(), value.slice(2)) : resolve(cwd, value);
@@ -475,7 +475,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, or render a page source to HTML in the configured output directory (default ~/.agent/diagrams/).",
+    description: "Plan visual explanations, or render a page source to HTML in the configured output directory (default ~/.agents/diagrams/).",
     promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source.",
     promptGuidelines: [
       "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
