@@ -48,7 +48,7 @@ Shape the page to the content; merge, reorder, or drop sections.
 
 | Content | Figure |
 |---|---|
-| Architecture, data flow, pipeline, state, sequence, schema, before/after | hand-drawn SVG (`references/diagrams.md`), with flow dots, stepped, or replayed when it moves; a plain box-and-arrow flow can be `<ve-flow>` |
+| Architecture, data flow, pipeline, state, sequence, schema, before/after | `<ve-flow>` for a plain box-and-arrow flow, stepped or replayed when it moves (`references/kit.md`); hand-drawn SVG (`references/diagrams.md`) for what `<ve-flow>` can't draw: flow dots, a sequence or schema, a before/after side by side, exact geometry |
 | A claim in one small part: permission bits, a key's fields | a close-up of that part, drawn large, values on it |
 | Cards, timelines, file maps | CSS grid |
 | Scenarios, failure modes, options | small multiples |
@@ -60,7 +60,7 @@ Shape the page to the content; merge, reorder, or drop sections.
 | A setting to feel: TTL, rollout % | live figure |
 | Slide deck, only when asked (`/generate-slides`, `--slides`); PPTX only on request or `--pptx` | `references/slides.md` |
 
-Hand-drawn SVG is the default; never bend a figure to fit a tag. Steppers, replays, live figures, and three.js: `references/motion.md`. Mermaid only when the user asks for it or supplies its source; images (a hero or concept art) only when an image tool exists; both, and the older v0.11 recipes: `references/extras.md`. Do not read or copy `templates/page.html`.
+Hand-drawn SVG is the default for anything a tag can't draw as it stands; never bend a figure to fit a tag. Steppers, replays, live figures, and three.js: `references/motion.md`. Mermaid only when the user asks for it or supplies its source; images (a hero or concept art) only when an image tool exists; both, and the older v0.11 recipes: `references/extras.md`. Do not read or copy `templates/page.html`.
 
 ## Words
 
