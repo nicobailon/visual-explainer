@@ -21,7 +21,7 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
   </header>
   <figure>
     <div class="frame"><svg class="ve-svg" viewBox="0 0 800 300" aria-label="What the picture shows">…</svg></div>
-    <figcaption><span class="fig-n">Fig. 1</span>The claim in one sentence.</figcaption>
+    <figcaption><span class="fig-n"></span>The claim in one sentence.</figcaption>
   </figure>
   <section>
     <div class="sec-head"><p class="ve-label caps">Load</p><h2>The takeaway as a heading</h2></div>
@@ -34,6 +34,8 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
 
 The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and the SVG defs (`#ve-ah` arrowhead, `#ve-node` fill, `#ve-w-on` / `#ve-w-off` waffle cells).
 
+It also numbers each empty `.fig-n` in page order, and writes that number into an empty `<a href="#id"></a>` that points at `<figure id="id">`. A tag left open or a closing tag with nothing to close is a render error.
+
 **Registers:** `data-register="instrument"` (default), `blueprint`, `paper`, or `editorial` (`style-guide.md`). Use the tokens as `var(--accent)`, `var(--s-4)`; a page's own `:root { --accent: … }` wins over the kit.
 
 The kit already styles plain HTML, so a page adds none of it: a section's paragraphs and lists at 65ch, `<pre>` code blocks, bare `<ul>`/`<ol>`, and the gaps between a section's blocks. A page's own rule always wins.
@@ -42,7 +44,7 @@ The kit already styles plain HTML, so a page adds none of it: a section's paragr
 
 | Part | Markup |
 |---|---|
-| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `y`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
+| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `x` and `y` (kit CSS sets `text-anchor: middle`, which beats a `text-anchor` attribute), so `x` is the box centre; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
 | Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>` (`l` ends at `x`, `r` starts there); draw edges before nodes |
 | Boundary, slots, axes | `rect.ve-bnd` + `text.ve-bnd-t` tag; `rect.ve-slot` (`.is-on` filled); `.ve-axis` lines + `text.ve-axis-t` |
 | Label | `<text class="ve-tag [key\|risk]">` for a note or a count on a drawing; SVG text with no fill renders black, which is a render error |
