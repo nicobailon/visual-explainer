@@ -48,7 +48,9 @@ for (const root of document.querySelectorAll('.ve-steps')) {
   addEventListener('beforeprint', () => { show(n - 1); root.classList.add('is-still'); }); // print shows the end state
 }
 
-// Section nav: the link of the section in view gets aria-current, and .pos counts it.
+// Section nav: the link of the section that has reached the line 20% down the screen gets aria-current, and .pos counts it. A .sub
+// link is a subsection of the link before it that is not .sub: once its heading reaches the line it is marked too, and it is not
+// counted. Positions are read on scroll, since a jump to a link can carry a heading past the line without ever crossing it.
 for (const nav of document.querySelectorAll('.ve-toc')) {
   const links = [...nav.querySelectorAll('a[href^="#"]')], pos = nav.querySelector('.pos');
   const targets = links.map((a) => {
@@ -56,18 +58,30 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
     if (!t) throw new Error(`the section nav links to ${a.hash}, but no element has that id`);
     return t;
   });
-  // every section in the band, so scrolling back re-marks the one still there; the lowest one in the band wins
-  const seen = new Set();
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) e.isIntersecting ? seen.add(e.target) : seen.delete(e.target);
-    const i = targets.findLastIndex((t) => seen.has(t));
-    if (i >= 0) {
-      links.forEach((a, j) => (j === i ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
-      if (pos) pos.textContent = `${i + 1} / ${links.length}`;
-      try { history.replaceState(null, '', links[i].hash); } catch {} // some browsers throw on file:// pages
-    }
-  }, { rootMargin: '-10% 0px -80% 0px' });
-  for (const t of targets) io.observe(t);
+  const section = links.map((a, j) => (a.classList.contains('sub') ? links.findLastIndex((b, k) => k < j && !b.classList.contains('sub')) : j));
+  if (section.includes(-1)) throw new Error('the section nav starts with a .sub link; put its section first');
+  const tops = links.filter((a, j) => section[j] === j);
+  // the URL is written only after the reader scrolls: written on load, it would replace the #hash the browser is about to scroll to
+  let shown = -1, queued = false, write = false;
+  const mark = () => {
+    queued = false;
+    // a heading with no box (display: none) reports a zero rectangle, which would read as reached
+    const line = innerHeight * 0.2, reached = targets.map((t) => t.getClientRects().length > 0 && t.getBoundingClientRect().top <= line);
+    const i = reached.findLastIndex((r, j) => r && section[j] === j);
+    if (i < 0) return;
+    const sub = reached.findLastIndex((r, j) => r && j !== i && section[j] === i);
+    const cur = sub >= 0 ? sub : i;
+    if (cur === shown) return; // Safari limits replaceState calls, so only a change writes
+    shown = cur;
+    links.forEach((a, j) => (j === i || j === cur ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
+    if (pos) pos.textContent = `${tops.indexOf(links[i]) + 1} / ${tops.length}`;
+    if (write) try { history.replaceState(null, '', links[cur].hash); } catch {} // some browsers throw on file:// pages
+  };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
+  addEventListener('scroll', () => { write = true; queue(); }, { passive: true });
+  addEventListener('resize', queue); // the line moves with the window's height
+  new ResizeObserver(queue).observe(document.body); // headings move when the layout or the content changes size
+  mark();
 }
 
 if (!still) {
