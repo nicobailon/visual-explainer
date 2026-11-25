@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Changed
-- Pages are saved to `~/.agents/diagrams/` by default instead of `~/.agent/diagrams/`, and the `"project"` output setting uses `.agents/diagrams/` in the repo. Pages already in the old folder stay there; move them with `mv ~/.agent/diagrams/* ~/.agents/diagrams/` to keep them in one place.
+- Pages are saved to `~/.agents/diagrams/` by default instead of `~/.agent/diagrams/`, and the `"project"` output setting uses `.agents/diagrams/` in the repo. Pages already in the old folder stay there; move them with `mkdir -p ~/.agents/diagrams && mv ~/.agent/diagrams/* ~/.agents/diagrams/` to keep them in one place.
 
 ### Fixed
 - Narrated videos no longer hang partway through rendering with ffmpeg 9.1. Its built-in AAC encoder never finished on a voice track where exact silence runs into speech, which every narrated video starts with. The voice track now carries an inaudible noise floor instead of exact silence.
