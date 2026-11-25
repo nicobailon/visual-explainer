@@ -7,7 +7,7 @@ This directory contains the local Model Context Protocol server for visual-expla
 The server is stdio-only. It is meant for MCP hosts that launch a local child process.
 It does not start an HTTP listener, handle credentials, call an LLM, or store output outside the local machine.
 
-Rendered files are written only inside the configured output directory. The default is `~/.agent/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths, including macOS `/tmp`, are rejected before anything is created. The default directory follows a symlinked `~/.agent`. Render targets reject existing symlinks and are written through a temporary file rename. Choose a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
+Rendered files are written only inside the configured output directory. The default is `~/.agents/diagrams/`. Set `VISUAL_EXPLAINER_OUTPUT_DIR` to move that jail to another directory on the same machine; unset keeps the default path byte-identical. A configured jail must resolve to itself, so symlinked jail paths, including macOS `/tmp`, are rejected before anything is created. The default directory follows a symlinked `~/.agents`. Render targets reject existing symlinks and are written through a temporary file rename. Choose a directory only your user can write; avoid world-writable or group-writable shared folders so another local user cannot replace render targets between validation and write. Filenames must be basenames. Paths, traversal, control characters, and symlink targets are rejected.
 
 A page can hold a state-machine model (`<ve-flow>` with a `<script type="text/plain" model>`), which is code the render runs. The server refuses it unless started with `VISUAL_EXPLAINER_RUN_MODELS=1`. With it set, a page's model runs as Node with this server's permissions, importing from the `root` argument or the server's working directory; set it only when every client that can call the render tool is trusted.
 
@@ -47,7 +47,7 @@ Then point the host at the server entry:
 ## Exposed tools
 
 - `visual_explainer_prepare`: returns a recommended visual explanation flow. It does not write files.
-- `visual_explainer_render_html`: validates a complete HTML document and writes it to the configured output directory (default `~/.agent/diagrams/`).
+- `visual_explainer_render_html`: validates a complete HTML document and writes it to the configured output directory (default `~/.agents/diagrams/`).
 
 Render defaults to `open: false`. Set `open: true` only when you want the server to request a browser or Glimpse window.
 

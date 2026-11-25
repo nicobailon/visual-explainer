@@ -20,4 +20,4 @@ Launch `agy` from the project and run `/skills` to confirm `visual-explainer` is
 
 Antigravity SDK projects can reuse the same `SKILL.md` content as an Agent Skill resource, but this repo does not ship a separate SDK wrapper. The command markdown files under `plugins/visual-explainer/commands/` remain reference prompts. No separate Antigravity plugin adapter is shipped because that would duplicate the canonical skill directory.
 
-Generated pages should be written to `~/.agent/diagrams/` and opened in a browser when the environment allows it. If browser access is blocked, report the file path.
+Generated pages should be written to `~/.agents/diagrams/` and opened in a browser when the environment allows it. If browser access is blocked, report the file path.
