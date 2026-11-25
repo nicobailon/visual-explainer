@@ -142,7 +142,7 @@ code { font: .875em var(--font-mono); font-variant-ligatures: none; }
 /* a.sub links an h3 subsection: the top bar leaves it out (its section is marked instead); data-layout="side" turns the bar into a
    left column on a wide screen, where subsections show indented */
 .ve-toc a.sub { display: none; }
-@media (min-width: 72rem) {
+@media screen and (min-width: 72rem) {
   body:has(> .ve-toc[data-layout="side"]) main { margin-left: max(16rem, (100% - 64rem) / 2); max-width: min(64rem, 100% - 16rem); }
   .ve-toc[data-layout="side"] { position: fixed; inset: 0 auto 0 0; width: 14rem; flex-direction: column; align-items: stretch; gap: var(--s-3); padding: var(--s-8) var(--s-4); border-bottom: 0; overflow-y: auto; }
   .ve-toc[data-layout="side"] > div { flex: none; flex-direction: column; gap: 0; padding: 0; overflow: visible; mask-image: none; }

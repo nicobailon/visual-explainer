@@ -64,7 +64,8 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
   let shown = -1, queued = false;
   const mark = () => {
     queued = false;
-    const line = innerHeight * 0.2, reached = targets.map((t) => t.getBoundingClientRect().top <= line);
+    // a heading in a closed <details> has no box, and its zero rectangle would read as reached
+    const line = innerHeight * 0.2, reached = targets.map((t) => t.getClientRects().length > 0 && t.getBoundingClientRect().top <= line);
     const i = reached.findLastIndex((r, j) => r && section[j] === j);
     if (i < 0) return;
     const sub = reached.findLastIndex((r, j) => r && j !== i && section[j] === i);
@@ -75,7 +76,10 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
     if (pos) pos.textContent = `${tops.indexOf(links[i]) + 1} / ${tops.length}`;
     try { history.replaceState(null, '', links[cur].hash); } catch {} // some browsers throw on file:// pages
   };
-  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(mark); } }, { passive: true });
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
+  addEventListener('scroll', queue, { passive: true });
+  addEventListener('resize', queue); // the line moves with the window's height
+  new ResizeObserver(queue).observe(document.body); // headings move when the layout or the content changes size
   mark();
 }
 
