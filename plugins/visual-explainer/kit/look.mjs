@@ -6,7 +6,6 @@ import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const WIDTHS = [390, 1280];
 const MIN_LABEL = 12;
 const MIN_HEADING_GAP = 8;
 // ≈1.15 megapixels, the most a model takes in before it scales an image down
@@ -281,6 +280,11 @@ async function drawSheets(browser, sheets, outBase) {
  * With `sheet`, writes <name>.sheet.png (and -2, -3 … when one would be too small to read) beside the page, replacing older ones.
  */
 export async function lookAt(file, { sheet = true } = {}) {
+  // VISUAL_EXPLAINER_WIDTHS=1280 drops the phone pass for pages read only on a desktop; 1280 always runs, since the kit checks read it
+  const asked = process.env.VISUAL_EXPLAINER_WIDTHS?.trim() || "390,1280";
+  const widths = asked.split(/[\s,]+/).map(Number);
+  if (!widths.includes(1280) || !widths.every((w) => Number.isInteger(w) && w >= 320)) return { skipped: `VISUAL_EXPLAINER_WIDTHS="${asked}" must list widths in px that include 1280, such as 1280 or 390,1280`, problems: [], sheets: [] };
+  const phone = Math.min(...widths) < 1280 ? Math.min(...widths) : null;
   const got = await launch();
   if (got.skipped) return { skipped: got.skipped, problems: [], sheets: [] };
   const { browser } = got;
@@ -296,7 +300,7 @@ export async function lookAt(file, { sheet = true } = {}) {
   };
   try {
     // as a reader opens it, at each width
-    for (const width of WIDTHS) {
+    for (const width of widths) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       page.on("console", (m) => {
         if (m.type() !== "error") return;
@@ -324,15 +328,19 @@ export async function lookAt(file, { sheet = true } = {}) {
       note(await page.evaluate(inspect, null));
       const gaps = await page.evaluate(headings, MIN_HEADING_GAP);
       const desktop = sheet ? await page.screenshot() : null;
-      await page.setViewportSize({ width: 390, height: 900 });
-      await page.waitForTimeout(100);
-      gaps.push(...await page.evaluate(headings, MIN_HEADING_GAP));
-      const phone = sheet ? await page.screenshot() : null;
-      await page.setViewportSize({ width: 1280, height: 900 });
-      await page.evaluate(() => scrollTo(0, 0));
-      await page.waitForTimeout(100);
+      const cells = [{ png: desktop, ...(sheet && pngSize(desktop)), label: "First screen · 1280" }];
+      if (phone) {
+        await page.setViewportSize({ width: phone, height: 900 });
+        await page.waitForTimeout(100);
+        gaps.push(...await page.evaluate(headings, MIN_HEADING_GAP));
+        const png = sheet ? await page.screenshot() : null;
+        cells.push({ png, ...(sheet && pngSize(png)), label: `${phone}` });
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.evaluate(() => scrollTo(0, 0));
+        await page.waitForTimeout(100);
+      }
       result.problems.push(...new Set(gaps));
-      if (sheet) items.push({ kind: "overview", cells: [{ png: desktop, ...pngSize(desktop), label: "First screen · 1280" }, { png: phone, ...pngSize(phone), label: "390" }] });
+      if (sheet) items.push({ kind: "overview", cells });
       if (await page.evaluate(openPanels)) note(await page.evaluate(inspect, null));
 
       // figures below the first screen, steppers aside (their steps follow)
@@ -423,8 +431,8 @@ export async function lookAt(file, { sheet = true } = {}) {
   const shapes = [...geometry].map(([key, steps]) => (steps.length ? `${key} (step${steps.length > 1 ? "s" : ""} ${steps.join(", ")})` : key));
   result.problems = [
     ...result.errors,
-    ...WIDTHS.filter((w) => at[w].overflow).map((w) => `the page scrolls sideways at ${w}px`),
-    ...WIDTHS.filter((w) => at[w].small).map((w) => `a diagram label renders at ${at[w].smallest.px}px at ${w}px ("${at[w].smallest.text}"); keep labels at ${MIN_LABEL}px or more`),
+    ...widths.filter((w) => at[w].overflow).map((w) => `the page scrolls sideways at ${w}px`),
+    ...widths.filter((w) => at[w].small).map((w) => `a diagram label renders at ${at[w].smallest.px}px at ${w}px ("${at[w].smallest.text}"); keep labels at ${MIN_LABEL}px or more`),
     ...(at[1280].kit ? [] : ["the kit's script did not run to its end"]),
     ...(at[1280].unfilled ? [`${at[1280].unfilled.n} SVG label(s) have no fill, so they are black on a dark scheme ("${at[1280].unfilled.text}"); use a kit class or a token`] : []),
     ...result.problems,
@@ -439,7 +447,7 @@ export function lookLines(r) {
   const shown = r.problems.slice(0, 12);
   const lines = shown.length
     ? [...shown.map((p) => `✗ ${p}`), ...(r.problems.length > shown.length ? [`✗ … and ${r.problems.length - shown.length} more`] : [])]
-    : [`✓ Visual check: no problems · smallest label ${WIDTHS.map((w) => `${r.widths[w].smallest?.px ?? "—"}px at ${w}`).join(", ")}`];
+    : [`✓ Visual check: no problems · smallest label ${Object.entries(r.widths).map(([w, m]) => `${m.smallest?.px ?? "—"}px at ${w}`).join(", ")}`];
   if (r.sheets.length) lines.push(`Look at: ${r.sheets.join(", ")}${r.omitted ? ` (${r.omitted} more crops in ${r.crops}/, named by label: fig-12.png)` : ""}`);
   return lines;
 }
