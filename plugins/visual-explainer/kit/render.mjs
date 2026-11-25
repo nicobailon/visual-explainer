@@ -16,6 +16,10 @@ import { PeleError, render as drawMermaid } from "./vendor/pele.mjs";
 import { hasPlan, renderPlan, renderPlanForHost } from "../plan/render.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+// tags whose closing tag HTML lets you leave out
+const OPTIONAL_END = new Set("html head body p li dt dd tr td th thead tbody tfoot option optgroup colgroup caption rb rt rp".split(" "));
+// a .fig-n or a link to a figure the render numbers: empty, or a number it wrote before
+const FIG_TEXT = /^\s*(?:fig\.?\s*\d*)?\s*$/i;
 
 // Each register's families, at the weights the kit uses.
 const FONTS = {
@@ -149,6 +153,19 @@ export function renderPage(source, { sendBack = false, root = process.cwd(), mod
     const style = svg.openRaw.match(/\sstyle\s*=\s*(["'])(.*?)\1/is);
     if (!style && svg.attrs.style !== undefined) continue;
     svg.openRaw = style ? svg.openRaw.replace(style[0], ` style=${style[1]}${style[2].replace(/;?\s*$/, "")}; --ve-min: ${min}px${style[1]}`) : svg.openRaw.replace(/\s*(\/?)>$/, ` style="--ve-min: ${min}px"$1>`);
+  }
+  // a browser repairs a missing or extra closing tag without a word, often by pulling the rest of the page into one figure or panel
+  // a raw-text tag (script, style) with no ending gets closeRaw "" from the parser, so a falsy closeRaw is a missing one
+  for (const n of find(doc, (x) => !x.selfClose && !x.closeRaw && !OPTIONAL_END.has(x.name))) errors.push(`${where(n)}: never closed; add </${n.name}>`);
+  for (const s of doc.strays.filter((x) => !OPTIONAL_END.has(x.name))) errors.push(`line ${lineOf(s.pos)} </${s.name}>: closes nothing; remove it`);
+  // figures are numbered in page order, so adding or moving one never leaves two "Fig. 15"s or a stale "(Fig. 17)"
+  const numbered = find(doc, (x) => hasClass(x, "fig-n") && FIG_TEXT.test(textOf(x)));
+  for (const [i, s] of numbered.entries()) s.children = [{ text: `Fig. ${i + 1}` }];
+  const figById = new Map(find(doc, (x) => x.name === "figure" && x.attrs.id).map((f) => [f.attrs.id, numbered.indexOf(find(f, (x) => numbered.includes(x))[0]) + 1]));
+  for (const a of find(doc, (x) => x.name === "a" && x.attrs.href?.startsWith("#") && !kids(x).length && FIG_TEXT.test(textOf(x)))) {
+    const k = figById.get(a.attrs.href.slice(1));
+    if (k) a.children = [{ text: `Fig. ${k}` }];
+    else errors.push(`${where(a)}: href="${a.attrs.href}" names no numbered <figure>`);
   }
   if (errors.length) return { html: source, kit: true, errors, warnings };
 
