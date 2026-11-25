@@ -2,18 +2,29 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-24
+
+### Highlights
+- Figures number themselves. Add, move, or delete a figure and every caption and every "see Fig. 4" link stays right.
+- Long pages can list their sections in a sidebar on a desktop, with subsections indented under them, so you always see where you are in the page.
+- Plain box-and-arrow diagrams are laid out for the agent instead of drawn by hand, so fewer labels land in the wrong place, especially with smaller models.
+- The page check now sees every figure, including ones inside collapsed sections and ones that don't fit on the contact sheets.
+- If your pages are only read on a desktop, you can skip the phone-width check and get faster renders.
+
 ### Added
-- Figures number themselves. Leave the number in a caption empty and rendering writes `Fig. 1`, `Fig. 2`, … in page order; a link written as `<a href="#figure-id"></a>` gets that figure's number. Adding or moving a figure no longer leaves two figures with the same number or a reference to the wrong one.
-- Every figure can be looked at after a render. Figures that do not fit on the contact sheets are saved one file each, such as `fig-12.png`, and the render prints where. Figures inside a closed `<details>` panel are now checked and included too.
-- Pages that are only read on a desktop can skip the phone-width check. Set `VISUAL_EXPLAINER_WIDTHS=1280` and the render checks and screenshots the page at desktop width only, so each render is faster and the contact sheet has no phone screenshot to review. Thanks to [@overfullstack](https://github.com/overfullstack) for #140.
-- Long pages read on a desktop can put their section list in a left column instead of the bar across the top, so every section stays in view. Subsections can be listed too, indented under their section, and the section you are reading is marked with the subsection inside it. Phones keep the top bar. Thanks to [@overfullstack](https://github.com/overfullstack) for #139.
+- Figures number themselves. Leave the number in a caption empty and rendering writes `Fig. 1`, `Fig. 2`, … in page order. A link written as `<a href="#figure-id"></a>` gets that figure's number. Adding or moving a figure no longer leaves two figures with the same number or a reference to the wrong one.
+- Every figure can be looked at after a render. Figures that don't fit on the contact sheets are saved as one image each, such as `fig-12.png`, and the render says where. Figures inside a collapsed `<details>` section are now checked and pictured too, at phone and desktop widths.
+- A sidebar section list for long pages. On a wide screen, `data-layout="side"` puts the section list in a left column instead of the bar across the top, so every section stays in view. Subsections can be listed too, indented under their section, and the section you're reading is marked along with the subsection inside it. Phones keep the top bar. Thanks to [@overfullstack](https://github.com/overfullstack) for #139.
+- Pages that are only read on a desktop can skip the phone-width check. Set `VISUAL_EXPLAINER_WIDTHS=1280` and the page is checked and pictured at desktop width only, so each render is faster and the contact sheet has no phone screenshot to review. Thanks to [@overfullstack](https://github.com/overfullstack) for #140.
 
 ### Changed
-- Plain box-and-arrow diagrams are laid out for the agent by default instead of drawn by hand, so it writes no coordinates and there are fewer misplaced labels, which helps smaller models most. Diagrams that need more than boxes and arrows are still drawn by hand. Thanks to [@nicezic](https://github.com/nicezic) for #137.
+- Plain box-and-arrow diagrams are laid out for the agent by default instead of drawn by hand. The agent writes no coordinates, so fewer labels end up in the wrong place, which helps smaller models most. Diagrams that need more than boxes and arrows are still drawn by hand. Thanks to [@nicezic](https://github.com/nicezic) for #137.
+- The guide for diagram boxes now says a box's label is centred on its `x` as well as its `y`, so labels land in the middle of the box the first time. Thanks to [@nicezic](https://github.com/nicezic) for #136.
 
 ### Fixed
-- A tag that is never closed, or a closing tag with nothing to close, now stops the render with its line number. The browser used to repair these silently, often by pulling the rest of the page into one figure or panel.
+- A tag that is never closed, including a `<script>`, or a closing tag with nothing to close now stops the render and names its line. The browser used to repair these silently, often by pulling the rest of the page into one figure or panel.
 - Contact sheet labels use the figure numbers printed on the page, so `Fig 15` on the sheet is `Fig. 15` on the page.
+- Opening a page from a link to one of its sections now lands on that section. It used to jump back to the first section.
 
 ## [0.15.0] - 2026-11-04
 
