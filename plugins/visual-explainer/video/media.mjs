@@ -29,10 +29,12 @@ export function loadVoice(dir, lines) {
 // Seconds a line lasts: its clip, or the time a viewer needs to read it as a caption.
 export const lineLength = (text, pcm) => (pcm ? pcm.length / 2 / RATE : Math.max(1.5, text.split(/\s+/).length / WPS));
 
-// Lay each clip at its start time on one silent track and write a WAV file.
+// Lay each clip at its start time on one silent track and write a WAV file. Every sample gets -1, 0 or +1 of fixed noise
+// (about -90 dB, inaudible): ffmpeg 9.1's own AAC encoder at 192k never finishes on exact-zero silence followed by speech.
 export function writeTrack(file, clips, total) {
   const data = Buffer.alloc(Math.ceil(total * RATE) * 2);
   for (const { at, pcm } of clips) pcm.copy(data, Math.round(at * RATE) * 2);
+  for (let i = 0; i < data.length; i += 2) data.writeInt16LE(Math.max(-32768, Math.min(32767, data.readInt16LE(i) + ((Math.imul(i, 2654435761) >>> 16) % 3) - 1)), i);
   const head = Buffer.alloc(44);
   head.write("RIFF", 0); head.writeUInt32LE(36 + data.length, 4); head.write("WAVE", 8);
   head.write("fmt ", 12); head.writeUInt32LE(16, 16); head.writeUInt16LE(1, 20); head.writeUInt16LE(1, 22);
