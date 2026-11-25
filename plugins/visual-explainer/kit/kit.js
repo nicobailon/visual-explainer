@@ -61,10 +61,11 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
   const section = links.map((a, j) => (a.classList.contains('sub') ? links.findLastIndex((b, k) => k < j && !b.classList.contains('sub')) : j));
   if (section.includes(-1)) throw new Error('the section nav starts with a .sub link; put its section first');
   const tops = links.filter((a, j) => section[j] === j);
-  let shown = -1, queued = false;
+  // the URL is written only after the reader scrolls: written on load, it would replace the #hash the browser is about to scroll to
+  let shown = -1, queued = false, write = false;
   const mark = () => {
     queued = false;
-    // a heading in a closed <details> has no box, and its zero rectangle would read as reached
+    // a heading with no box (display: none) reports a zero rectangle, which would read as reached
     const line = innerHeight * 0.2, reached = targets.map((t) => t.getClientRects().length > 0 && t.getBoundingClientRect().top <= line);
     const i = reached.findLastIndex((r, j) => r && section[j] === j);
     if (i < 0) return;
@@ -74,10 +75,10 @@ for (const nav of document.querySelectorAll('.ve-toc')) {
     shown = cur;
     links.forEach((a, j) => (j === i || j === cur ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
     if (pos) pos.textContent = `${tops.indexOf(links[i]) + 1} / ${tops.length}`;
-    try { history.replaceState(null, '', links[cur].hash); } catch {} // some browsers throw on file:// pages
+    if (write) try { history.replaceState(null, '', links[cur].hash); } catch {} // some browsers throw on file:// pages
   };
   const queue = () => { if (!queued) { queued = true; requestAnimationFrame(mark); } };
-  addEventListener('scroll', queue, { passive: true });
+  addEventListener('scroll', () => { write = true; queue(); }, { passive: true });
   addEventListener('resize', queue); // the line moves with the window's height
   new ResizeObserver(queue).observe(document.body); // headings move when the layout or the content changes size
   mark();
