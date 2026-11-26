@@ -186,6 +186,8 @@ figcaption { font-size: var(--t-body); color: var(--text-dim); margin-top: var(-
 .ve-axis-t { fill: var(--text-dim); font: 500 14px var(--font-mono); text-anchor: middle; font-variant-numeric: tabular-nums; }
 /* <ve-flow> on a page: its labels stay at 12 px or more, and a small drawing grows no more than 1.3× (kit/flow.mjs sets both) */
 .ve-svg.ve-flow { min-width: var(--min); max-width: var(--max); }
+/* a flow cannot shrink below --min, so in a page's own grid it takes the whole row instead of scrolling in one cell */
+figure:has(.ve-flow) { grid-column: 1 / -1; }
 /* flags on <ve-flow> parts: new, gone (an arrow also gets ✕) */
 .ve-n.is-new .sh { stroke: var(--ok); stroke-dasharray: 6 4; }
 .ve-n.is-gone .sh { stroke: var(--risk); stroke-dasharray: 3 4; opacity: .7; }

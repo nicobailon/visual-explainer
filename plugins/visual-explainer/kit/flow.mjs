@@ -65,6 +65,9 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
     edges.splice(0, edges.length, ...m.edges);
     n.machine = m;
   }
+  // on a page, a row of 5+ boxes outgrows the column once labels stay at 12 px, so a flow wider than tall turns to run top-down
+  const bs = [...boxes.values()], col = (b) => (b.x - PAD) / (W + GX), row = (b) => (b.y - PAD) / (H + GY);
+  if (page && Math.max(...bs.map(col)) >= 4 && Math.max(...bs.map(col)) > Math.max(...bs.map(row))) for (const b of bs) [b.x, b.y] = [PAD + row(b) * (W + GX), PAD + col(b) * (H + GY)];
   const pairs = new Set(edges.map((e) => `${e.attrs.from}>${e.attrs.to}`));
   const toks = [];
   const lifts = new Map(); // region id → the sides its lifted arrows already leave from

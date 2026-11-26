@@ -16,4 +16,8 @@ assert.deepEqual(renderPage(page(`<details><summary>More</summary>\n${fig("a")}`
 assert.deepEqual(renderPage(page(`${fig("a")}\n</figure><p>ok</p>`)).errors, ["line 3 </figure>: closes nothing; remove it"]);
 assert.deepEqual(renderPage(page(fig("a")).replace("</main>", "</main>\n<script>let x = 1;")).errors, ["line 4 <script>: never closed; add </script>"]);
 
+// a <ve-flow> row of 5+ boxes would scroll sideways on a page, so it turns to run top-down; 4 in a row stay as written
+const flow = (n) => renderPage(page(`<figure><ve-flow label="l">${[...Array(n)].map((_, i) => `<ve-node id="n${i}" at="${i + 1} 1">N</ve-node>`).join("")}</ve-flow></figure>`)).html.match(/ve-flow"[^>]*viewBox="\S+ \S+ (\d+) (\d+)"/).slice(1).map(Number);
+assert.ok(flow(4)[0] > flow(4)[1] && flow(5)[0] < flow(5)[1]);
+
 console.log("Figure check passed");
