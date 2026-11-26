@@ -16,7 +16,7 @@ Turn what you know into something a person understands in ten seconds. The defau
 
 - Write `<descriptive-name>.src.html` in the output directory: native Pi uses `prepare`'s reported `outputDir`; elsewhere use the tool's directory, the user's path, or `~/.agents/diagrams/`. Pick a register with `<html data-register="…">` and put `<link rel="stylesheet" href="kit.css" data-ve-kit>` in `<head>`. The kit (`references/kit.md`) brings tokens, fonts, figure CSS, and script; add only this page's CSS. CDN only for libraries.
 - Render to `<name>.html`. Pi: `visual_explainer` `prepare` → `render` with `path:"<name>.src.html"` (ask before `prepare` unless a visual was requested). MCP: `visual_explainer_render_html` with `path` (no file access: `html` + `filename`). Elsewhere: `node <this skill's directory>/kit/render.mjs <name>.src.html --open`. A source error writes nothing until it is fixed. `viewer:"glimpse"` only on request.
-- The render then looks at the page in a browser: fix every `✗` it lists, look at its sheet once (Pi and MCP attach it; elsewhere open the printed path), then fix with small edits to the `.src.html` and render again. Never write the whole page again, or write browser scripts or take screenshots to check a page. No comments in the source.
+- The render then looks at the page in a browser: fix every `✗` it lists, look at its sheet once if you can view images (Pi and MCP attach it; elsewhere open the printed path), then fix with small edits to the `.src.html` and render again; a host without file edits sends the whole page again with only the fixes changed. Never rewrite the page from scratch, or write browser scripts or take screenshots to check a page. No comments in the source.
 - Never read the kit's CSS, JS, or `.mjs` source for a page; the references and render errors cover what a page needs. Only a standalone slide or video deck copies the one block its reference names from `kit/kit.css`.
 - A terminal table of 4+ rows or 3+ columns becomes a page and a one-line reply.
 - A Markdown companion (`<name>.md`) only when the user asks for AI-readable output; ask before overwriting one.
@@ -87,6 +87,6 @@ Exact, calm, visual, and specific to the subject: someone who understands the sy
 
 ```
 □ the render shows no ✗, and its Page: line no figure without a caption
-□ one look at the sheet: the first screen is the answer; each figure states its claim and draws the mechanism; it would not pass for a generic template
+□ one look at the sheet, if you can view images: the first screen is the answer; each figure states its claim and draws the mechanism; it would not pass for a generic template
 □ slides: each fits, all source items are covered, the delivery check passes
 ```
