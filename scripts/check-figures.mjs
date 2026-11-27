@@ -16,10 +16,11 @@ assert.deepEqual(renderPage(page(`<details><summary>More</summary>\n${fig("a")}`
 assert.deepEqual(renderPage(page(`${fig("a")}\n</figure><p>ok</p>`)).errors, ["line 3 </figure>: closes nothing; remove it"]);
 assert.deepEqual(renderPage(page(fig("a")).replace("</main>", "</main>\n<script>let x = 1;")).errors, ["line 4 <script>: never closed; add </script>"]);
 
-// more than 4 columns of <ve-flow> boxes scroll sideways in a page column, so the render warns and the layout stays as written
+// a <ve-flow> wider than a page column (5 boxes in a row, or 4 with a long label beside a vertical arrow) warns, and its layout stays as written
 const flow = (n) => renderPage(page(`<figure><ve-flow label="l">${[...Array(n)].map((_, i) => `<ve-node id="n${i}" at="${i + 1} 1">N</ve-node>`).join("")}</ve-flow></figure>`));
 assert.deepEqual(flow(4).warnings, []);
-assert.match(flow(5).warnings.join(), /more than 4 columns are wider than a page column/);
+assert.match(flow(5).warnings.join(), /needs 1053 px to keep labels at 12 px, wider than a page column/);
 assert.match(flow(5).html, /ve-flow"[^>]*viewBox="\S+ \S+ 1228 96"/);
+assert.match(renderPage(page(`<figure><ve-flow label="l"><ve-node id="a" at="4 1">A</ve-node><ve-node id="b" at="4 2">B</ve-node><ve-edge from="a" to="b" label="retries with exponential backoff later"/></ve-flow></figure>`)).warnings.join(), /wider than a page column/);
 
 console.log("Figure check passed");

@@ -69,8 +69,6 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   const toks = [];
   const lifts = new Map(); // region id → the sides its lifted arrows already leave from
   const width = Math.max(...[...boxes.values()].map((b) => b.x)) + W + PAD, height = Math.max(...[...boxes.values()].map((b) => b.y)) + H + PAD;
-  // a page column (main is 64rem) holds 4 columns with labels at 12 px; a wider flow scrolls sideways in its frame
-  if (page && width > 2 * PAD + 4 * W + 3 * GX) warnings.push(`${where(n)}: more than 4 columns are wider than a page column, so the drawing scrolls sideways; keep at most 4 columns, for example by running it top-down (swap the two numbers of each at="column row")`);
   const rects = new Map([...regions].filter(([, g]) => g.ids.length).map(([id, g]) => {
     const bs = g.ids.map((i) => boxes.get(i)), x = Math.min(...bs.map((b) => b.x)) - RX, y = Math.min(...bs.map((b) => b.y)) - RT;
     return [id, { k: g.k, ids: g.ids, x, y, w: Math.max(...bs.map((b) => b.x)) + W + RX - x, h: Math.max(...bs.map((b) => b.y)) + H + RX - y }];
@@ -131,6 +129,9 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   const regionSvg = [...rects].map(([id, r]) => `<rect class="ve-bnd" x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8"/><text class="ve-bnd-t" x="${r.x + 12}" y="${r.y + 20}">${esc(r.k.attrs.label || id)}</text>`);
   // tokens sit between the arrows and the boxes, so a token enters a box and leaves from the far side
   // on a page, 14-unit labels stay at 12 px or more on narrow screens, and a small drawing does not grow past 1.3×
-  const size = page ? ` ve-flow" style="--min: ${Math.ceil((w * 12) / 14)}px; --max: ${Math.round(w * 1.3)}px` : "";
+  const min = Math.ceil((w * 12) / 14), size = page ? ` ve-flow" style="--min: ${min}px; --max: ${Math.round(w * 1.3)}px` : "";
+  // a page column holds 984 px at 1280 px (5 boxes in a row need 1053), so a wider drawing scrolls sideways in its frame
+  // shortcut: measured on the default layout; beside the side section nav the column is narrower, so a drawing just under 984 px still scrolls there unwarned
+  if (page && min > 984) warnings.push(`${where(n)}: the drawing needs ${min} px to keep labels at 12 px, wider than a page column (984 px at 1280 px), so it scrolls sideways; keep at most 4 columns, for example by running it top-down (swap the two numbers of each at="column row"), and keep labels beside vertical arrows short`);
   return `<div class="frame"><svg class="ve-svg${size}" viewBox="${x0} ${y0} ${w} ${height - y0}" role="img" aria-label="${esc(n.attrs.label || "")}">${regionSvg.join("")}${edgeSvg.join("")}${toks.join("")}${nodeSvg.join("")}${callouts.join("")}</svg></div>${n.machine?.proof ?? ""}`;
 }
