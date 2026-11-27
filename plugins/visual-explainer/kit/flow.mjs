@@ -67,7 +67,13 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
   }
   // on a page, a row of 5+ boxes outgrows the column once labels stay at 12 px, so a flow wider than tall turns to run top-down
   const bs = [...boxes.values()], col = (b) => (b.x - PAD) / (W + GX), row = (b) => (b.y - PAD) / (H + GY);
-  if (page && Math.max(...bs.map(col)) >= 4 && Math.max(...bs.map(col)) > Math.max(...bs.map(row))) for (const b of bs) [b.x, b.y] = [PAD + row(b) * (W + GX), PAD + col(b) * (H + GY)];
+  const turned = page && Math.max(...bs.map(col)) >= 4 && Math.max(...bs.map(col)) > Math.max(...bs.map(row));
+  if (turned) for (const b of bs) [b.x, b.y] = [PAD + row(b) * (W + GX), PAD + col(b) * (H + GY)];
+  // whether a straight arrow segment enters a box other than the two it joins (arrow ends sit on box edges, so shrink each box a little)
+  const blocked = (x1, y1, x2, y2, ...skip) => {
+    const [xa, xb, ya, yb] = [Math.min(x1, x2), Math.max(x1, x2), Math.min(y1, y2), Math.max(y1, y2)];
+    return [...boxes.values()].some((b) => !skip.includes(b) && xa < b.x + W - 0.5 && xb > b.x + 0.5 && ya < b.y + H - 0.5 && yb > b.y + 0.5);
+  };
   const pairs = new Set(edges.map((e) => `${e.attrs.from}>${e.attrs.to}`));
   const toks = [];
   const lifts = new Map(); // region id → the sides its lifted arrows already leave from
@@ -103,7 +109,15 @@ export function expandFlow(n, { errors, warnings, where, ref, callout = () => ""
     }
     else if (ay === by) { const x2 = bx > ax ? b.x : b.x + W; d = `M${x1} ${ay + off}H${x2}`; mx = (x1 + x2) / 2; my = ay + off; }
     else if (ax === bx) { const y1 = by > ay ? a.y + H : a.y; d = `M${ax + off} ${y1}V${y2}`; mx = ax + off; my = (y1 + y2) / 2; vertical = true; }
-    else { d = `M${x1} ${ay + off}H${bx + off}V${y2}`; mx = (x1 + bx) / 2; my = ay + off; } // out of the side, then into the top or bottom
+    else {
+      // out of the side, then into the top or bottom; once a flow turns, that vertical can run behind a box in the destination's column,
+      // so when it does, leave from the top or bottom instead if that route is clear
+      const x2 = bx > ax ? b.x : b.x + W, y1 = by > ay ? a.y + H : a.y;
+      const side = blocked(x1, ay + off, bx + off, ay + off, a, b) || blocked(bx + off, ay + off, bx + off, y2, a, b);
+      const flip = !blocked(ax + off, y1, ax + off, by + off, a, b) && !blocked(ax + off, by + off, x2, by + off, a, b);
+      if (turned && side && flip) { d = `M${ax + off} ${y1}V${by + off}H${x2}`; mx = (ax + x2) / 2; my = by + off; }
+      else { d = `M${x1} ${ay + off}H${bx + off}V${y2}`; mx = (x1 + bx) / 2; my = ay + off; }
+    }
     const r = ref(e);
     // an arrow that appears at a step draws in; one drawn from the start (step 0) just lights
     const draw = page && e.attrs["data-s"] && !/^\s*0\b/.test(e.attrs["data-s"]) ? ' pathLength="1"' : "";

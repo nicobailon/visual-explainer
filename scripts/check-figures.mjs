@@ -20,4 +20,13 @@ assert.deepEqual(renderPage(page(fig("a")).replace("</main>", "</main>\n<script>
 const flow = (n) => renderPage(page(`<figure><ve-flow label="l">${[...Array(n)].map((_, i) => `<ve-node id="n${i}" at="${i + 1} 1">N</ve-node>`).join("")}</ve-flow></figure>`)).html.match(/ve-flow"[^>]*viewBox="\S+ \S+ (\d+) (\d+)"/).slice(1).map(Number);
 assert.ok(flow(4)[0] > flow(4)[1] && flow(5)[0] < flow(5)[1]);
 
+// turning must not hide an arrow behind another box: a(1 1)→b(5 3) leaves a from the bottom, because c(2 3) shares b's turned column
+const crossed = renderPage(page(`<figure><ve-flow label="l"><ve-node id="a" at="1 1">A</ve-node><ve-node id="b" at="5 3">B</ve-node><ve-node id="c" at="2 3">C</ve-node><ve-edge from="a" to="b" label="go"/></ve-flow></figure>`)).html;
+const boxes = [...crossed.matchAll(/<g class="ve-n[^"]*"[^>]*translate\((\d+) (\d+)\)"><rect class="sh" width="(\d+)" height="(\d+)"/g)].map((m) => m.slice(1).map(Number));
+const points = [];
+let px = 0, py = 0;
+for (const [, c, v] of crossed.match(/<path class="ve-e[^"]*"[^>]* d="([^"]+)"/)[1].matchAll(/([MHV])([^MHV]*)/g)) { const n = v.trim().split(/\s+/).map(Number); if (c === "M") [px, py] = n; else if (c === "H") px = n[0]; else py = n[0]; points.push([px, py]); }
+const hidden = points.slice(1).some(([x1, y1], i) => boxes.some(([bx, by, bw, bh]) => Math.min(points[i][0], x1) < bx + bw - 0.5 && Math.max(points[i][0], x1) > bx + 0.5 && Math.min(points[i][1], y1) < by + bh - 0.5 && Math.max(points[i][1], y1) > by + 0.5));
+assert.ok(!hidden);
+
 console.log("Figure check passed");
